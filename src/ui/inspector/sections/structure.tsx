@@ -5,22 +5,25 @@ import { selectActiveLevel, useStore } from '../../../store'
 import { halfWallHeight, setHalfWallHeight, setWallDrawKind, wallDrawKind, type WallDrawKind } from '../../../tools/wallOptions'
 import { MaterialPicker } from '../../MaterialPicker'
 import { selectionFacts } from '../facts'
-import { NumberField, patchLevel } from '../fields'
+import { labelOf, NumberField, patchLevel } from '../fields'
 import { registerInspectorSection, type InspectorSectionProps } from '../registry'
+import { T } from '../../../i18n/T'
+import { useTranslate } from '../../../i18n'
 
 const STAIR_SHAPES: StairShape[] = ['straight', 'l-shape', 'u-shape', 'spiral']
 const ROOF_SHAPES: RoofShape[] = ['flat', 'shed', 'gable', 'hip', 'mansard', 'dome']
 
 function StairSection({ selection }: InspectorSectionProps) {
+  const tr = useTranslate()
   const id = selection[0] ?? ''
   const level = useStore(selectActiveLevel)
   const stair = level?.stairs.find((item) => item.id === id)
   if (!stair || !level) return null
   return (
     <div className="props">
-      <h2>Stair</h2>
+      <h2><T k="Stair" /></h2>
       <label className="field">
-        Shape
+        <T k="Shape" />
         <select
           value={stair.shape}
           onChange={(event) => {
@@ -33,7 +36,7 @@ function StairSection({ selection }: InspectorSectionProps) {
         >
           {STAIR_SHAPES.map((shape) => (
             <option key={shape} value={shape}>
-              {shape}
+              {tr(labelOf(shape))}
             </option>
           ))}
         </select>
@@ -62,7 +65,7 @@ function StairSection({ selection }: InspectorSectionProps) {
       />
       {stair.shape === 'l-shape' || stair.shape === 'u-shape' ? (
         <label className="field">
-          Turn
+          <T k="Turn" />
           <select
             value={stair.turnLeft === false ? 'right' : 'left'}
             onChange={(event) => {
@@ -73,8 +76,8 @@ function StairSection({ selection }: InspectorSectionProps) {
               })
             }}
           >
-            <option value="left">Left</option>
-            <option value="right">Right</option>
+            <option value="left">{tr('Left')}</option>
+            <option value="right">{tr('Right')}</option>
           </select>
         </label>
       ) : null}
@@ -90,10 +93,10 @@ function StairSection({ selection }: InspectorSectionProps) {
             })
           }}
         />
-        Railing
+        <T k="Railing" />
       </label>
       <label className="field">
-        Material
+        <T k="Material" />
         <MaterialPicker
           value={stair.material}
           onChange={(next) =>
@@ -109,6 +112,7 @@ function StairSection({ selection }: InspectorSectionProps) {
 }
 
 function RoofSection({ selection }: InspectorSectionProps) {
+  const tr = useTranslate()
   const id = selection[0] ?? ''
   const level = useStore(selectActiveLevel)
   const roof = level?.roofs.find((item) => item.id === id)
@@ -117,9 +121,9 @@ function RoofSection({ selection }: InspectorSectionProps) {
   const ridgeDeg = Math.round((roof.ridgeAngle * 180) / Math.PI)
   return (
     <div className="props">
-      <h2>Roof</h2>
+      <h2><T k="Roof" /></h2>
       <label className="field">
-        Shape
+        <T k="Shape" />
         <select
           value={roof.shape}
           onChange={(event) => {
@@ -132,13 +136,13 @@ function RoofSection({ selection }: InspectorSectionProps) {
         >
           {ROOF_SHAPES.map((shape) => (
             <option key={shape} value={shape}>
-              {shape}
+              {tr(labelOf(shape))}
             </option>
           ))}
         </select>
       </label>
       <label className="field">
-        Pitch {pitchDeg}°
+        {tr('Pitch {n}°', { n: pitchDeg })}
         <input
           type="range"
           min={5}
@@ -166,7 +170,7 @@ function RoofSection({ selection }: InspectorSectionProps) {
         }
       />
       <label className="field">
-        Ridge {ridgeDeg}°
+        {tr('Ridge {n}°', { n: ridgeDeg })}
         <input
           type="range"
           min={-180}
@@ -191,7 +195,7 @@ function RoofSection({ selection }: InspectorSectionProps) {
           })
         }
       >
-        Rotate ridge 90°
+        <T k="Rotate ridge 90°" />
       </button>
       <NumberField
         label="Thickness"
@@ -205,7 +209,7 @@ function RoofSection({ selection }: InspectorSectionProps) {
         }
       />
       <label className="field">
-        Material
+        <T k="Material" />
         <MaterialPicker
           value={roof.material}
           onChange={(next) =>
@@ -229,7 +233,7 @@ function RoofSection({ selection }: InspectorSectionProps) {
                 })
               }
             >
-              Remove skylight {index + 1}
+              {tr('Remove skylight')} {index + 1}
             </button>
           ))}
         </div>
@@ -245,7 +249,7 @@ function ColumnSection({ selection }: InspectorSectionProps) {
   if (!column) return null
   return (
     <div className="props">
-      <h2>Column</h2>
+      <h2><T k="Column" /></h2>
       <NumberField
         label="Size"
         value={column.size}
@@ -269,10 +273,10 @@ function ColumnSection({ selection }: InspectorSectionProps) {
             })
           }}
         />
-        Round
+        <T k="Round" />
       </label>
       <label className="field">
-        Material
+        <T k="Material" />
         <MaterialPicker
           value={column.material}
           onChange={(next) =>
@@ -294,7 +298,7 @@ function SlabSection({ selection }: InspectorSectionProps) {
   if (!slab) return null
   return (
     <div className="props">
-      <h2>Slab</h2>
+      <h2><T k="Slab" /></h2>
       <NumberField
         label="Thickness"
         value={slab.thickness}
@@ -318,7 +322,7 @@ function SlabSection({ selection }: InspectorSectionProps) {
         }
       />
       <label className="field">
-        Material
+        <T k="Material" />
         <MaterialPicker
           value={slab.material}
           onChange={(next) =>
@@ -334,6 +338,7 @@ function SlabSection({ selection }: InspectorSectionProps) {
 }
 
 function CurveSection({ selection }: InspectorSectionProps) {
+  const tr = useTranslate()
   const id = selection[0] ?? ''
   const level = useStore(selectActiveLevel)
   const wall = level?.walls.find((item) => item.id === id)
@@ -342,7 +347,7 @@ function CurveSection({ selection }: InspectorSectionProps) {
   return (
     <div className="props">
       <label className="field">
-        Curve {wall.bulge.toFixed(2)} m
+        {tr('Curve {bulge} m', { bulge: wall.bulge.toFixed(2) })}
         <input
           type="range"
           min={-limit}
@@ -363,13 +368,14 @@ function CurveSection({ selection }: InspectorSectionProps) {
 }
 
 function WallToolSection({ state }: InspectorSectionProps) {
+  const tr = useTranslate()
   const [kind, setKind] = useState<WallDrawKind>(wallDrawKind())
   const [height, setHeight] = useState(halfWallHeight())
   if (state.tool !== 'wall') return null
   return (
     <div className="props">
       <label className="field">
-        Wall kind
+        <T k="Wall kind" />
         <select
           value={kind}
           onChange={(event) => {
@@ -378,13 +384,13 @@ function WallToolSection({ state }: InspectorSectionProps) {
             setKind(next)
           }}
         >
-          <option value="wall">Full height</option>
-          <option value="half">Half wall</option>
+          <option value="wall">{tr('Full height')}</option>
+          <option value="half">{tr('Half wall')}</option>
         </select>
       </label>
       {kind === 'half' ? (
         <label className="field">
-          Half height {height.toFixed(2)} m
+          {tr('Half height {h} m', { h: height.toFixed(2) })}
           <input
             type="range"
             min={0.4}

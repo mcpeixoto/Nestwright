@@ -1,4 +1,5 @@
 import './level'
+import './floorNumber'
 import './multi'
 import './wall'
 import './opening'

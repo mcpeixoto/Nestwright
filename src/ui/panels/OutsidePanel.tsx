@@ -7,8 +7,10 @@ import { useStore } from '../../store'
 import { setBrush, useBrush, type SculptMode, type WaterKind } from '../../tools/brushState'
 import { selectSpecies } from '../../tools/plant-brush'
 import { icon } from '../../tools/icons'
-import { NumberField } from '../inspector/fields'
+import { labelOf, NumberField } from '../inspector/fields'
 import { registerPanel, setPanelOpen } from './registry'
+import { T } from '../../i18n/T'
+import { useTranslate } from '../../i18n'
 
 const SPECIES_ICON: Record<string, string> = {
   oak: '<path d="M12 22V12"/><circle cx="12" cy="8" r="4"/>',
@@ -45,9 +47,10 @@ function Slider({
   value: number
   onChange: (value: number) => void
 }) {
+  const tr = useTranslate()
   return (
     <label className="field">
-      <span className="field-label">{label}</span>
+      <span className="field-label">{tr(label)}</span>
       <input
         type="range"
         min={min}
@@ -80,6 +83,7 @@ function resize(partial: { width?: number; depth?: number; resolution?: number }
 }
 
 function SpeciesPalette() {
+  const tr = useTranslate()
   const species = useBrush().species
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
@@ -88,8 +92,8 @@ function SpeciesPalette() {
           type="button"
           key={id}
           className={species === id ? 'on' : ''}
-          title={id}
-          aria-label={id}
+          title={tr(labelOf(id))}
+          aria-label={tr(labelOf(id))}
           onClick={() => {
             selectSpecies(id)
             useStore.getState().setTool('plant-brush')
@@ -102,6 +106,7 @@ function SpeciesPalette() {
 }
 
 function BrushControls() {
+  const tr = useTranslate()
   const brush = useBrush()
   const tool = useStore((s) => s.tool)
   const sculpting = tool === 'terrain-sculpt'
@@ -113,11 +118,11 @@ function BrushControls() {
     <div className="props">
       {sculpting && (
         <label className="field">
-          Sculpt
+          <T k="Sculpt" />
           <select value={brush.sculpt} onChange={(event) => setBrush({ sculpt: event.target.value as SculptMode })}>
             {(['raise', 'lower', 'flatten', 'smooth'] as const).map((mode) => (
               <option key={mode} value={mode}>
-                {mode}
+                {tr(labelOf(mode))}
               </option>
             ))}
           </select>
@@ -131,11 +136,11 @@ function BrushControls() {
       )}
       {painting && (
         <label className="field">
-          Layer
+          <T k="Layer" />
           <select value={brush.layer} onChange={(event) => setBrush({ layer: event.target.value as GroundLayer })}>
             {(tool === 'path' ? (['path', 'paving', 'gravel'] as const) : GROUND_LAYERS).map((layer) => (
               <option key={layer} value={layer}>
-                {layer}
+                {tr(labelOf(layer))}
               </option>
             ))}
           </select>
@@ -153,22 +158,22 @@ function BrushControls() {
       )}
       {watering && (
         <label className="field">
-          Water
+          <T k="Water" />
           <select value={brush.waterKind} onChange={(event) => setBrush({ waterKind: event.target.value as WaterKind })}>
-            <option value="pond">Pond</option>
-            <option value="pool">Pool</option>
-            <option value="stream">Stream</option>
+            <option value="pond">{tr('Pond')}</option>
+            <option value="pool">{tr('Pool')}</option>
+            <option value="stream">{tr('Stream')}</option>
           </select>
         </label>
       )}
       {fencing && (
         <>
           <label className="field">
-            Fence
+            <T k="Fence" />
             <select value={brush.fenceStyle} onChange={(event) => setBrush({ fenceStyle: event.target.value })}>
               {FENCE_STYLES.map((style) => (
                 <option key={style} value={style}>
-                  {style}
+                  {tr(labelOf(style))}
                 </option>
               ))}
             </select>
@@ -181,12 +186,13 @@ function BrushControls() {
 }
 
 function OutsideBody() {
+  const tr = useTranslate()
   const terrain = useStore((s) => s.project.terrain)
   const units = useStore((s) => s.project.units)
   const area = Math.abs(polygonArea(terrain?.boundary ?? []))
   return (
     <div className="props" style={{ overflow: 'auto', padding: 12, height: '100%' }}>
-      <h2>Outside</h2>
+      <h2><T k="Outside" /></h2>
       <label className="check">
         <input
           type="checkbox"
@@ -198,7 +204,7 @@ function OutsideBody() {
             })
           }}
         />
-        Terrain
+        <T k="Terrain" />
       </label>
       <NumberField label="Width" value={terrain?.width ?? 0} step={1} onCommit={(width) => resize({ width })} />
       <NumberField label="Depth" value={terrain?.depth ?? 0} step={1} onCommit={(depth) => resize({ depth })} />
@@ -214,13 +220,13 @@ function OutsideBody() {
           useStore.getState().apply('Flatten under house', (draft) => flattenUnderHouse(draft))
         }}
       >
-        Flatten under house
+        <T k="Flatten under house" />
       </button>
       <p className="readout">
-        Plot {formatArea(area, units)} · {terrain?.plants.length ?? 0} plants · {terrain?.water.length ?? 0} water
+        {tr('Plot {area} · {plants} plants · {water} water', { area: formatArea(area, units), plants: terrain?.plants.length ?? 0, water: terrain?.water.length ?? 0 })}
       </p>
       <BrushControls />
-      <h2>Plants</h2>
+      <h2><T k="Plants" /></h2>
       <SpeciesPalette />
     </div>
   )
@@ -234,15 +240,16 @@ useStore.subscribe((state, prev) => {
 })
 
 function BrushFloat() {
+  const tr = useTranslate()
   const tool = useStore((s) => s.tool)
   const brush = useBrush()
   if (!BRUSH_PANEL_TOOLS.has(tool)) return null
   return (
     <div className="props">
       <BrushControls />
-      {tool === 'plant-brush' && <p className="hint">Shift-drag erases. Spacing follows {brush.species} ({speciesProfile(brush.species).spacing} m).</p>}
-      {tool === 'water' && <p className="hint">Click a polygon. Enter finishes. Pools drag out as a rectangle.</p>}
-      {tool === 'plot-boundary' && <p className="hint">Click corners, Enter closes. Drag an existing corner to edit it.</p>}
+      {tool === 'plant-brush' && <p className="hint">{tr('Shift-drag erases. Spacing follows {species} ({spacing} m).', { species: tr(labelOf(brush.species)), spacing: speciesProfile(brush.species).spacing })}</p>}
+      {tool === 'water' && <p className="hint"><T k="Click a polygon. Enter finishes. Pools drag out as a rectangle." /></p>}
+      {tool === 'plot-boundary' && <p className="hint"><T k="Click corners, Enter closes. Drag an existing corner to edit it." /></p>}
     </div>
   )
 }

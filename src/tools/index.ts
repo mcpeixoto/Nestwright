@@ -20,6 +20,7 @@ import './fence'
 import './plot-boundary'
 import './path'
 import './ivy'
+import './balcony'
 
 export { getTool, listTools, registerTool } from './registry'
 export type { Tool, ToolContext } from './types'

@@ -2,15 +2,16 @@ import { selectActiveLevel, useStore } from '../../../store'
 import { selectionFacts } from '../facts'
 import { NumberField, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
+import { T } from '../../../i18n/T'
 
 function LevelSection() {
   const level = useStore(selectActiveLevel)
   if (!level) return null
   return (
     <div className="props">
-      <h2>Level</h2>
+      <h2><T k="Level" /></h2>
       <label className="field">
-        Name
+        <T k="Name" />
         <input
           value={level.name}
           onChange={(event) => {
@@ -51,7 +52,7 @@ function LevelSection() {
           })
         }
       />
-      <p className="hint">Select a wall, opening, room or piece of furniture.</p>
+      <p className="hint"><T k="Select a wall, opening, room or piece of furniture." /></p>
     </div>
   )
 }

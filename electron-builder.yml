@@ -7,6 +7,7 @@ files:
   - dist-electron/**
   - package.json
 mac:
+  icon: build/icon.icns
   identity: null
   category: public.app-category.games
   target:

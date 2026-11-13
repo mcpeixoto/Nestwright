@@ -20,4 +20,5 @@ contextBridge.exposeInMainWorld('nestwright', {
     ipcRenderer.on('nestwright:coop-closed', listener)
     return () => ipcRenderer.removeListener('nestwright:coop-closed', listener)
   },
+  quit: () => ipcRenderer.invoke('nestwright:quit') as Promise<void>,
 })

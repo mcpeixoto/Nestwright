@@ -47,6 +47,10 @@ function createWindow(): BrowserWindow {
 }
 
 function registerIpc() {
+  ipcMain.handle('nestwright:quit', () => {
+    app.quit()
+  })
+
   ipcMain.handle('nestwright:open-file', async (_event, accept: string) => {
     const acceptText = String(accept)
     const model = /glb|gltf|\bobj\b/i.test(acceptText)

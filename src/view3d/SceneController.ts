@@ -475,7 +475,11 @@ export class SceneController {
       const flightOwns = beforeRender?.() ?? false
       if (!flightOwns) {
         if (this.rig) this.rig.update?.(dt)
-        else this.controls?.update()
+        else {
+          const sens = useSettings.getState().mouseSensitivity
+          if (this.controls && Number.isFinite(sens) && sens > 0) this.controls.rotateSpeed = sens
+          this.controls?.update()
+        }
       }
       for (const layer of this.eachLayer()) layer.update?.(dt, this.elapsed)
       for (const child of this.helpers.children) {

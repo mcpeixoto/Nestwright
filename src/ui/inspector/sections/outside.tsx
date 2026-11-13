@@ -3,6 +3,8 @@ import type { Terrain } from '../../../model/types'
 import { useStore } from '../../../store'
 import { labelOf, NumberField } from '../fields'
 import { registerInspectorSection } from '../registry'
+import { T } from '../../../i18n/T'
+import { useTranslate } from '../../../i18n'
 
 function findWater(terrain: Terrain, id: string) {
   return terrain.water.find((body) => body.id === id)
@@ -17,15 +19,16 @@ function findPlant(terrain: Terrain, id: string) {
 }
 
 function WaterSection() {
+  const tr = useTranslate()
   const id = useStore((s) => s.selection[0] ?? '')
   const body = useStore((s) => findWater(s.project.terrain, id))
   if (!body) return null
   const depth = waterDepth(body)
   return (
     <div className="props">
-      <h2>{labelOf(body.kind)}</h2>
+      <h2>{tr(labelOf(body.kind))}</h2>
       <label className="field">
-        Kind
+        <T k="Kind" />
         <select
           value={body.kind}
           onChange={(event) => {
@@ -38,9 +41,9 @@ function WaterSection() {
             })
           }}
         >
-          <option value="pond">Pond</option>
-          <option value="pool">Pool</option>
-          <option value="stream">Stream</option>
+          <option value="pond">{tr('Pond')}</option>
+          <option value="pool">{tr('Pool')}</option>
+          <option value="stream">{tr('Stream')}</option>
         </select>
       </label>
       <NumberField
@@ -74,6 +77,7 @@ function WaterSection() {
 }
 
 function FenceSection() {
+  const tr = useTranslate()
   const id = useStore((s) => s.selection[0] ?? '')
   const fence = useStore((s) => findFence(s.project.terrain, id))
   if (!fence) return null
@@ -81,9 +85,9 @@ function FenceSection() {
   const gates = new Set(fence.gates ?? [])
   return (
     <div className="props">
-      <h2>Fence</h2>
+      <h2><T k="Fence" /></h2>
       <label className="field">
-        Style
+        <T k="Style" />
         <select
           value={FENCE_STYLES.includes(fence.style as (typeof FENCE_STYLES)[number]) ? fence.style : FENCE_STYLES[0]}
           onChange={(event) => {
@@ -96,7 +100,7 @@ function FenceSection() {
         >
           {FENCE_STYLES.map((style) => (
             <option key={style} value={style}>
-              {labelOf(style)}
+              {tr(labelOf(style))}
             </option>
           ))}
         </select>
@@ -129,7 +133,7 @@ function FenceSection() {
               })
             }}
           />
-          Gate on segment {index + 1}
+          {tr('Gate on segment')} {index + 1}
         </label>
       ))}
     </div>
@@ -137,14 +141,15 @@ function FenceSection() {
 }
 
 function PlantSection() {
+  const tr = useTranslate()
   const id = useStore((s) => s.selection[0] ?? '')
   const plant = useStore((s) => findPlant(s.project.terrain, id))
   if (!plant) return null
   return (
     <div className="props">
-      <h2>{labelOf(plant.species)}</h2>
+      <h2>{tr(labelOf(plant.species))}</h2>
       <label className="field">
-        Species
+        <T k="Species" />
         <select
           value={plant.species}
           onChange={(event) => {
@@ -157,7 +162,7 @@ function PlantSection() {
         >
           {PLANT_SPECIES.map((species) => (
             <option key={species} value={species}>
-              {labelOf(species)}
+              {tr(labelOf(species))}
             </option>
           ))}
         </select>

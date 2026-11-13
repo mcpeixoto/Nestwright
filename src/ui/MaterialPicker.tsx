@@ -1,6 +1,10 @@
 import { useState } from 'react'
+import { materialCategoryName } from '../i18n/catalog'
+import { useTranslate } from '../i18n'
+import { useSettings } from '../settings'
 import { getMaterialDef, MATERIAL_CATEGORIES, MATERIALS, swatchColor } from '../materials/library'
 import type { MaterialRef } from '../model/types'
+import { T } from '../i18n/T'
 
 function channel(hex: string, index: number): number {
   const body = hex.replace('#', '')
@@ -55,6 +59,8 @@ function cssHex(hex: string): string {
 }
 
 export function MaterialPicker({ value, onChange }: { value: MaterialRef; onChange: (next: MaterialRef) => void }) {
+  const tr = useTranslate()
+  const language = useSettings((s) => s.language)
   const [open, setOpen] = useState(false)
   const def = getMaterialDef(value.id)
   const tint = value.tint || def?.color || '#cccccc'
@@ -64,37 +70,37 @@ export function MaterialPicker({ value, onChange }: { value: MaterialRef; onChan
     <div className="mat-pick">
       <button type="button" className="swatch-btn" onClick={() => setOpen((v) => !v)}>
         <span className="swatch" style={{ background: value.tint || swatchColor(value.id) }} />
-        <span>{def?.name ?? value.id}</span>
+        <span>{def ? tr(def.name) : value.id}</span>
       </button>
       <label className="field">
-        Tint
+        <T k="Tint" />
         <input
           type="color"
-          aria-label="Tint colour"
+          aria-label={tr('Tint colour')}
           value={cssHex(tint)}
           onChange={(event) => onChange({ ...value, tint: event.target.value })}
         />
       </label>
       <label className="field">
-        Brightness
+        <T k="Brightness" />
         <input
           type="range"
           min={0}
           max={100}
           step={1}
-          aria-label="Tint brightness"
+          aria-label={tr('Tint brightness')}
           value={brightness}
           onChange={(event) => onChange({ ...value, tint: withLightness(cssHex(tint), Number(event.target.value) / 100) })}
         />
       </label>
       <label className="field">
-        Scale
+        <T k="Scale" />
         <input
           type="range"
           min={0.25}
           max={4}
           step={0.05}
-          aria-label="Material scale"
+          aria-label={tr('Material scale')}
           value={scale}
           onChange={(event) => onChange({ ...value, scale: Number(event.target.value) })}
         />
@@ -103,13 +109,13 @@ export function MaterialPicker({ value, onChange }: { value: MaterialRef; onChan
         <div className="swatch-pop">
           {MATERIAL_CATEGORIES.map((category) => (
             <div key={category}>
-              <div className="swatch-cat">{category}</div>
+              <div className="swatch-cat">{materialCategoryName(language, category)}</div>
               <div className="swatch-grid">
                 {MATERIALS.filter((material) => material.category === category).map((material) => (
                   <button
                     type="button"
                     key={material.id}
-                    title={material.name}
+                    title={tr(material.name)}
                     className={material.id === value.id ? 'swatch on' : 'swatch'}
                     style={{ background: material.color }}
                     onClick={() => {

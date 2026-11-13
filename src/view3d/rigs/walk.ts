@@ -4,6 +4,7 @@ import { isPassableOpening, levelObstacles, rectFootprint, type Footprint } from
 import { integrateWalk } from '../../model/walkMove'
 import { pointInPolygon } from '../../model/geometry'
 import type { Item, Level, Project, Stair } from '../../model/types'
+import { useSettings } from '../../settings'
 import { roomsFor, useStore, type ViewMode } from '../../store'
 import { isPhotoMode } from '../../ui/photoSession'
 import { registerRig } from '../rigs'
@@ -256,8 +257,10 @@ function onKeyUp(event: KeyboardEvent): void {
 }
 
 function lookBy(dx: number, dy: number, scale: number): void {
-  yaw -= dx * scale
-  pitch -= dy * scale
+  const settings = useSettings.getState()
+  const sens = Number.isFinite(settings.mouseSensitivity) && settings.mouseSensitivity > 0 ? settings.mouseSensitivity : 1
+  yaw -= dx * scale * sens
+  pitch += (settings.invertY ? 1 : -1) * dy * scale * sens
   pitch = Math.max(-1.2, Math.min(1.2, pitch))
 }
 

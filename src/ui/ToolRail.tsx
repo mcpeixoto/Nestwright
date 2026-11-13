@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslate } from '../i18n'
 import { useStore } from '../store'
 import { listTools } from '../tools/registry'
 import type { Tool } from '../tools/types'
@@ -26,9 +27,18 @@ function shownTool(tools: Tool[], groupId: string, activeId: string, remembered:
 
 export function ToolRail() {
   const tool = useStore((s) => s.tool)
-  const tools = listTools().filter((item) => item.id !== 'place-item' && item.id !== 'select')
+  const apartment = useStore((s) => s.project.kind === 'apartment')
+  const tr = useTranslate()
   const select = listTools().find((item) => item.id === 'select')
-  const panels = usePanelList().filter((panel) => panel.placement === 'left' || panel.placement === 'right')
+  const tools = listTools().filter((item) => {
+    if (item.id === 'place-item' || item.id === 'select') return false
+    if (apartment && item.group === 'outside') return false
+    if (!apartment && item.id === 'balcony') return false
+    return true
+  })
+  const panels = usePanelList().filter(
+    (panel) => (panel.placement === 'left' || panel.placement === 'right') && !(apartment && panel.id === 'outside'),
+  )
   const open = useOpenPanelIds()
   const [openGroup, setOpenGroup] = useState<string | null>(null)
 
@@ -38,8 +48,8 @@ export function ToolRail() {
         <button
           type="button"
           className={tool === select.id ? 'tool on' : 'tool'}
-          title={select.shortcut ? `${select.label} (${select.shortcut})` : select.label}
-          aria-label={select.label}
+          title={select.shortcut ? `${tr(select.label)} (${select.shortcut})` : tr(select.label)}
+          aria-label={tr(select.label)}
           onClick={() => useStore.getState().setTool(select.id)}
           dangerouslySetInnerHTML={{ __html: select.icon }}
         />
@@ -59,8 +69,8 @@ export function ToolRail() {
             <button
               type="button"
               className={active ? 'tool on' : 'tool'}
-              title={group.label}
-              aria-label={group.label}
+              title={tr(group.label)}
+              aria-label={tr(group.label)}
               aria-expanded={openGroup === group.id}
               onClick={() => {
                 useStore.getState().setTool(iconTool.id)
@@ -69,7 +79,7 @@ export function ToolRail() {
               dangerouslySetInnerHTML={{ __html: iconTool.icon }}
             />
             {openGroup === group.id && (
-              <div className="rail-flyout" role="menu" aria-label={group.label}>
+              <div className="rail-flyout" role="menu" aria-label={tr(group.label)}>
                 {groupTools.map((item) => (
                   <button
                     type="button"
@@ -79,7 +89,7 @@ export function ToolRail() {
                     onClick={() => useStore.getState().setTool(item.id)}
                   >
                     <span className="flyout-icon" dangerouslySetInnerHTML={{ __html: item.icon }} />
-                    <span>{item.label}</span>
+                    <span>{tr(item.label)}</span>
                     {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
                   </button>
                 ))}
@@ -95,7 +105,7 @@ export function ToolRail() {
               type="button"
               key={panel.id}
               className={open.includes(panel.id) ? 'tool on' : 'tool'}
-              title={panel.shortcut ? `${panel.title} (${panel.shortcut})` : panel.title}
+              title={panel.shortcut ? `${tr(panel.title)} (${panel.shortcut})` : tr(panel.title)}
               aria-pressed={open.includes(panel.id)}
               onClick={() => togglePanel(panel.id)}
               dangerouslySetInnerHTML={{ __html: panel.icon }}
@@ -105,11 +115,11 @@ export function ToolRail() {
               type="button"
               key={panel.id}
               className={open.includes(panel.id) ? 'tool on' : 'tool'}
-              title={panel.title}
+              title={tr(panel.title)}
               aria-pressed={open.includes(panel.id)}
               onClick={() => togglePanel(panel.id)}
             >
-              {panel.title.slice(0, 1)}
+              {tr(panel.title).slice(0, 1)}
             </button>
           ),
         )}

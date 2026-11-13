@@ -15,5 +15,6 @@ export function electronPlatform(): Platform {
     coopSend: (peerId, raw) => bridge.coopSend?.(peerId, raw),
     onCoopMessage: (cb) => bridge.onCoopMessage?.(cb) ?? (() => {}),
     onCoopClose: (cb) => bridge.onCoopClose?.(cb) ?? (() => {}),
+    quit: () => bridge.quit?.() ?? Promise.resolve(),
   }
 }

@@ -5,6 +5,7 @@ import { selectActiveLevel, useStore } from '../../../store'
 import { selectionFacts } from '../facts'
 import { NumberField, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
+import { useTranslate } from '../../../i18n'
 
 function valueOf(params: Record<string, number | string | boolean>, def: ParamDef): number | string | boolean {
   const raw = params[def.key]
@@ -12,6 +13,7 @@ function valueOf(params: Record<string, number | string | boolean>, def: ParamDe
 }
 
 function ParamsSection() {
+  const tr = useTranslate()
   const id = useStore((s) => s.selection[0] ?? '')
   const level = useStore(selectActiveLevel)
   const item = level?.items.find((entry) => entry.id === id)
@@ -33,14 +35,14 @@ function ParamsSection() {
           return (
             <label className="check" key={def.key}>
               <input type="checkbox" checked={Boolean(value)} onChange={(event) => commit(def.key, event.target.checked)} />
-              {def.label}
+              {tr(def.label)}
             </label>
           )
         }
         if (def.kind === 'enum') {
           return (
             <label className="field" key={def.key}>
-              {def.label}
+              {tr(def.label)}
               <select value={String(value)} onChange={(event) => commit(def.key, event.target.value)}>
                 {(def.options ?? []).map((option) => (
                   <option key={option} value={option}>

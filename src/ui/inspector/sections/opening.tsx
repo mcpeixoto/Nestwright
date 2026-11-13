@@ -5,8 +5,11 @@ import { DOOR_TYPES, WINDOW_TYPES } from '../../../tools/openingTool'
 import { selectionFacts } from '../facts'
 import { labelOf, NumberField, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
+import { T } from '../../../i18n/T'
+import { useTranslate } from '../../../i18n'
 
 function OpeningSection() {
+  const tr = useTranslate()
   const id = useStore((s) => s.selection[0] ?? '')
   const level = useStore(selectActiveLevel)
   const opening = level?.openings.find((item) => item.id === id)
@@ -14,9 +17,9 @@ function OpeningSection() {
   const types: OpeningType[] = [...DOOR_TYPES, ...WINDOW_TYPES]
   return (
     <div className="props">
-      <h2>{labelOf(opening.type)}</h2>
+      <h2>{tr(labelOf(opening.type))}</h2>
       <label className="field">
-        Type
+        <T k="Type" />
         <select
           value={opening.type}
           onChange={(event) => {
@@ -34,7 +37,7 @@ function OpeningSection() {
         >
           {types.map((type) => (
             <option key={type} value={type}>
-              {labelOf(type)}
+              {tr(labelOf(type))}
             </option>
           ))}
         </select>
@@ -84,7 +87,7 @@ function OpeningSection() {
             })
           }}
         />
-        Flip hinge
+        <T k="Flip hinge" />
       </label>
       <label className="check">
         <input
@@ -98,7 +101,7 @@ function OpeningSection() {
             })
           }}
         />
-        Flip swing
+        <T k="Flip swing" />
       </label>
     </div>
   )

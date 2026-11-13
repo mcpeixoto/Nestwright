@@ -1,8 +1,11 @@
 import { useStore } from '../store'
 import { addLevelAbove } from './actions'
 import { addLevelBelow, deleteActiveLevel, duplicateActiveLevel } from './levelActions'
+import { T } from '../i18n/T'
+import { useTranslate } from '../i18n'
 
 export function LevelBar() {
+  const tr = useTranslate()
   const levels = useStore((s) => s.project.levels)
   const activeId = useStore((s) => s.activeLevelId)
   const display = useStore((s) => s.levelDisplay)
@@ -20,7 +23,7 @@ export function LevelBar() {
             onClick={() => useStore.getState().setActiveLevel(level.id)}
           >
             <input
-              aria-label={`${level.name} name`}
+              aria-label={tr('{name} name', { name: level.name })}
               value={level.name}
               onChange={(event) => {
                 const next = event.target.value
@@ -36,16 +39,16 @@ export function LevelBar() {
         ))}
       </div>
       <button type="button" onClick={addLevelAbove}>
-        Add level above
+        <T k="Add level above" />
       </button>
       <button type="button" onClick={addLevelBelow}>
-        Add level below
+        <T k="Add level below" />
       </button>
       <button type="button" onClick={duplicateActiveLevel}>
-        Duplicate
+        <T k="Duplicate" />
       </button>
       <button type="button" onClick={deleteActiveLevel} disabled={last}>
-        Delete level
+        <T k="Delete level" />
       </button>
       <label className="check">
         <input
@@ -53,14 +56,14 @@ export function LevelBar() {
           checked={showRoofs}
           onChange={(event) => useStore.getState().setShowRoofs(event.target.checked)}
         />
-        Roof
+        <T k="Roof" />
       </label>
       <label className="display-mode">
-        Show
+        <T k="Show" />
         <select value={display} onChange={(event) => useStore.getState().setLevelDisplay(event.target.value as typeof display)}>
-          <option value="current">This level</option>
-          <option value="current-below">This and below</option>
-          <option value="all">All levels</option>
+          <option value="current">{tr('This level')}</option>
+          <option value="current-below">{tr('This and below')}</option>
+          <option value="all">{tr('All levels')}</option>
         </select>
       </label>
     </footer>

@@ -5,6 +5,8 @@ import { MaterialPicker } from '../../MaterialPicker'
 import { selectionFacts } from '../facts'
 import { labelOf, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
+import { T } from '../../../i18n/T'
+import { useTranslate } from '../../../i18n'
 
 const ROOM_TYPES: RoomType[] = [
   'living',
@@ -25,6 +27,7 @@ const ROOM_TYPES: RoomType[] = [
 ]
 
 function RoomSection() {
+  const tr = useTranslate()
   const roomKey = useStore((s) => s.selection[0] ?? '')
   const level = useStore(selectActiveLevel)
   const units = useStore((s) => s.project.units)
@@ -42,9 +45,9 @@ function RoomSection() {
   }
   return (
     <div className="props">
-      <h2>Room</h2>
+      <h2><T k="Room" /></h2>
       <label className="field">
-        Name
+        <T k="Name" />
         <input
           value={room.name}
           onChange={(event) => {
@@ -56,7 +59,7 @@ function RoomSection() {
         />
       </label>
       <label className="field">
-        Type
+        <T k="Type" />
         <select
           value={room.type}
           onChange={(event) => {
@@ -68,13 +71,13 @@ function RoomSection() {
         >
           {ROOM_TYPES.map((type) => (
             <option key={type} value={type}>
-              {labelOf(type)}
+              {tr(labelOf(type))}
             </option>
           ))}
         </select>
       </label>
       <label className="field">
-        Floor
+        <T k="Floor" />
         <MaterialPicker
           value={room.floor}
           onChange={(next) =>
@@ -84,7 +87,7 @@ function RoomSection() {
           }
         />
       </label>
-      <p className="readout">Area {formatArea(room.area, units)}</p>
+      <p className="readout">{tr('Area {area}', { area: formatArea(room.area, units) })}</p>
     </div>
   )
 }

@@ -11,6 +11,7 @@ declare global {
       coopSend?: (peerId: string | null, raw: string) => void
       onCoopMessage?: (cb: (msg: { peerId: string; raw: string }) => void) => () => void
       onCoopClose?: (cb: (msg: { peerId: string }) => void) => () => void
+      quit?: () => Promise<void>
     }
     __nestwright?: {
       useStore: typeof import('../store').useStore
