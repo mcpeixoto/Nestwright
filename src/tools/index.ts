@@ -11,6 +11,7 @@ import './skylight'
 import './slab'
 import './railing'
 import './column'
+import './paint'
 
 export { getTool, listTools, registerTool } from './registry'
 export type { Tool, ToolContext } from './types'

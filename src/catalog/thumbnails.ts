@@ -100,6 +100,10 @@ function pump() {
 }
 
 /** Queue a 128px thumbnail. Safe when WebGL is missing: the library still places the item. */
+export function forgetThumb(id: string): void {
+  thumbs.delete(id)
+}
+
 export function requestThumb(id: string): void {
   if (thumbs.has(id) || queue.includes(id)) return
   queue.push(id)

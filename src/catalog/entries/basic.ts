@@ -281,6 +281,8 @@ const entries: CatalogEntry[] = [
       )
       mesh.position.y = h - shadeH / 2
       mesh.castShadow = true
+      mesh.userData.shade = true
+      mesh.userData.slot = 'shade'
       g.add(mesh)
       return g
     },
@@ -295,15 +297,18 @@ const entries: CatalogEntry[] = [
     materialSlots: { cord: ref('metal-black'), shade: ref('plaster-warm') },
     light: { color: '#fff0d4', intensity: 40, distance: 7, offsetY: 0.35 },
     build: (ctx) => {
-      const { w, h } = ctx.size
+      const { w, d, h } = ctx.size
       const g = group()
       const shadeMat = (mat(ctx, 'shade') as THREE.MeshStandardMaterial).clone()
       shadeMat.emissive = new THREE.Color('#ffe0b0')
       shadeMat.emissiveIntensity = 0.55
       tube(g, mat(ctx, 'cord'), 0.008, h * 0.62, 0, h * 0.69, 0)
-      const shade = new THREE.Mesh(new THREE.CylinderGeometry(w / 2, w * 0.28, h * 0.32, 20, 1, true), shadeMat)
-      shade.position.y = h * 0.2
+      const shadeR = Math.min(w, d) / 2
+      const shade = new THREE.Mesh(new THREE.CylinderGeometry(shadeR, shadeR * 0.56, h * 0.32, 20, 1, true), shadeMat)
+      shade.position.y = Math.max(h * 0.16, h * 0.32) / 2 + 0.01
       shade.castShadow = true
+      shade.userData.shade = true
+      shade.userData.slot = 'shade'
       g.add(shade)
       return g
     },

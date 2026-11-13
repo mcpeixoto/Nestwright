@@ -5,9 +5,11 @@ import { stairHoleOutline } from '../model/stairs'
 import { buildItem } from '../builders/items'
 import { buildOpening } from '../builders/openings'
 import { buildWall } from '../builders/walls'
-import type { Item, Level, Project, Vec2 } from '../model/types'
+import type { Item, Level, Project } from '../model/types'
+import { gizmoOwnsPointer } from './layers/gizmo'
+import { paintFromHits, type ViewHit } from './paintPick'
 import { pixelRatioCap, useSettings } from '../settings'
-import { roomsFor, selectActiveLevel, useStore } from '../store'
+import { roomsFor, useStore } from '../store'
 import { getRig, type CameraRig } from './rigs'
 import {
   bindSceneHost,
@@ -19,13 +21,6 @@ import {
 import './layers/builtin'
 
 export type { SceneViewState as ViewState } from './layers'
-
-interface Drag {
-  ids: string[]
-  origins: Map<string, Vec2>
-  start: Vec2
-  levelId: string
-}
 
 interface Press {
   x: number
@@ -72,8 +67,6 @@ export class SceneController {
   private layers = new Map<string, SceneLayer>()
   private raycaster = new THREE.Raycaster()
   private pointer = new THREE.Vector2()
-  private plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
-  private drag: Drag | null = null
   private press: Press | null = null
   private rig: CameraRig | null = null
   private framedFor: string | null = null
@@ -124,7 +117,6 @@ export class SceneController {
     this.mountAll()
 
     canvas.addEventListener('pointerdown', this.onDown, true)
-    canvas.addEventListener('pointermove', this.onMove)
     canvas.addEventListener('pointerup', this.onUp)
     this.lastTime = performance.now()
     this.frameLoop()
@@ -142,7 +134,6 @@ export class SceneController {
     this.unbindHost = null
     cancelAnimationFrame(this.raf)
     this.canvas.removeEventListener('pointerdown', this.onDown, true)
-    this.canvas.removeEventListener('pointermove', this.onMove)
     this.canvas.removeEventListener('pointerup', this.onUp)
     this.rig?.deactivate?.()
     this.controls?.dispose()
@@ -169,6 +160,7 @@ export class SceneController {
       prev.activeLevelId === state.activeLevelId &&
       prev.levelDisplay === state.levelDisplay &&
       prev.view === state.view &&
+      prev.tool === state.tool &&
       prev.selection === state.selection
     ) {
       return
@@ -307,7 +299,7 @@ export class SceneController {
       if (state.levelDisplay !== 'all' && above) visible = false
       if (state.levelDisplay === 'current' && level.id !== state.activeLevelId) visible = false
       bucket.group.visible = visible
-      const cutaway = level.id === state.activeLevelId
+      const cutaway = level.id === state.activeLevelId && state.tool !== 'paint'
       bucket.structural.traverse((obj) => {
         if (obj.userData.ceiling || obj.userData.roof) obj.visible = !cutaway
       })
@@ -365,7 +357,7 @@ export class SceneController {
     if (this.rig) {
       if (this.controls) this.controls.enabled = false
       this.rig.activate?.(this.camera, this.canvas)
-    } else if (this.controls && !this.drag) {
+    } else if (this.controls && !gizmoOwnsPointer()) {
       this.controls.enabled = true
     }
   }
@@ -410,60 +402,37 @@ export class SceneController {
 
   private onDown = (e: PointerEvent) => {
     if (e.button !== 0 || !this.renderer) return
+    if (e.altKey) {
+      this.paintPointer(e, true)
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
     const state = useStore.getState()
+    if (state.tool === 'paint' && state.view !== 'walk') {
+      this.paintPointer(e, false)
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
+    if (gizmoOwnsPointer()) {
+      if (this.controls) this.controls.enabled = false
+      return
+    }
     if (state.tool !== 'select' || state.view === 'walk') return
     const hit = this.pick(e)
     this.press = { x: e.clientX, y: e.clientY, hit, consumed: false }
     if (hit?.kind !== 'item') return
     if (e.shiftKey) state.select([hit.id], true)
     else if (!state.selection.includes(hit.id)) state.select([hit.id])
-    const level = selectActiveLevel(useStore.getState())
-    if (!level) return
-    const selected = useStore.getState().selection.filter((id) => level.items.some((item) => item.id === id))
-    const ids = selected.includes(hit.id) ? selected : [hit.id]
-    const origins = new Map<string, Vec2>()
-    for (const id of ids) {
-      const item = level.items.find((it) => it.id === id)
-      if (item) origins.set(id, { x: item.position.x, y: item.position.y })
-    }
-    const start = this.floorPoint(e, level.elevation)
-    if (!start) return
-    this.drag = { ids, origins, start, levelId: level.id }
     this.press.consumed = true
     if (this.controls) this.controls.enabled = false
     e.preventDefault()
     e.stopPropagation()
   }
 
-  private onMove = (e: PointerEvent) => {
-    const drag = this.drag
-    if (!drag) return
-    const level = useStore.getState().project.levels.find((l) => l.id === drag.levelId)
-    const plan = this.floorPoint(e, level?.elevation ?? 0)
-    if (!plan) return
-    const dx = plan.x - drag.start.x
-    const dy = plan.y - drag.start.y
-    useStore.getState().apply('Move items', (draft) => {
-      const target = draft.levels.find((l) => l.id === drag.levelId)
-      if (!target) return
-      for (const id of drag.ids) {
-        const origin = drag.origins.get(id)
-        const item = target.items.find((it) => it.id === id)
-        if (!origin || !item) continue
-        item.position = {
-          x: Math.round((origin.x + dx) / 0.05) * 0.05,
-          y: Math.round((origin.y + dy) / 0.05) * 0.05,
-        }
-      }
-    })
-  }
-
   private onUp = (e: PointerEvent) => {
-    if (this.drag) {
-      this.drag = null
-      if (this.controls && !this.rig) this.controls.enabled = true
-      return
-    }
+    if (this.controls && !this.rig && !gizmoOwnsPointer()) this.controls.enabled = true
     const press = this.press
     this.press = null
     if (!press || press.consumed || e.button !== 0) return
@@ -474,6 +443,18 @@ export class SceneController {
       return
     }
     useStore.getState().select([press.hit.id], e.shiftKey)
+  }
+
+  private paintPointer(e: PointerEvent, eyedrop: boolean): void {
+    if (!this.ndc(e)) return
+    this.raycaster.setFromCamera(this.pointer, this.camera)
+    const hits = this.raycaster.intersectObject(this.root, true)
+    const mapped: ViewHit[] = []
+    for (const hit of hits) {
+      const normal = hit.face ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld) : null
+      mapped.push({ object: hit.object, normal })
+    }
+    paintFromHits(useStore.getState().activeLevelId, mapped, eyedrop, e.shiftKey)
   }
 
   private pick(e: PointerEvent): { id: string; kind: string } | null {
@@ -489,15 +470,6 @@ export class SceneController {
       }
     }
     return null
-  }
-
-  private floorPoint(e: PointerEvent, elevation: number): Vec2 | null {
-    if (!this.ndc(e)) return null
-    this.raycaster.setFromCamera(this.pointer, this.camera)
-    this.plane.constant = -elevation
-    const hit = new THREE.Vector3()
-    if (!this.raycaster.ray.intersectPlane(this.plane, hit)) return null
-    return { x: hit.x, y: hit.z }
   }
 
   private ndc(e: PointerEvent): boolean {
@@ -569,5 +541,13 @@ function disposeTree(obj: THREE.Object3D): void {
   obj.traverse((child) => {
     const mesh = child as THREE.Mesh
     mesh.geometry?.dispose()
+    const listed = mesh.material
+    const materials = Array.isArray(listed) ? listed : listed ? [listed] : []
+    for (const material of materials) {
+      if (!material.userData?.owned) continue
+      const standard = material as THREE.MeshStandardMaterial
+      if (standard.map?.userData?.owned) standard.map.dispose()
+      material.dispose()
+    }
   })
 }

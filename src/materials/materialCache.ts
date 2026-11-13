@@ -49,12 +49,18 @@ export function getMaterial(ref: MaterialRef | undefined): THREE.MeshStandardMat
     if (tint) color.multiply(new THREE.Color(tint))
     mat.color.copy(color)
   }
-  if (id === 'glass') {
+  if (id === 'glass' || id === 'frosted-glass') {
     mat.transparent = true
-    mat.opacity = 0.28
-    mat.roughness = 0.05
+    mat.opacity = id === 'frosted-glass' ? 0.5 : 0.28
+    mat.roughness = id === 'frosted-glass' ? 0.65 : 0.05
     mat.metalness = 0
     mat.depthWrite = false
+    mat.bumpMap = null
+    mat.bumpScale = 0
+  }
+  if (id === 'mirror') {
+    mat.roughness = 0.02
+    mat.metalness = 1
     mat.bumpMap = null
     mat.bumpScale = 0
   }

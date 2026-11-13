@@ -5,6 +5,7 @@ import { togglePanel, useOpenPanelIds, usePanelList } from './panels/registry'
 const GROUPS = [
   { id: 'build', label: 'Build' },
   { id: 'openings', label: 'Openings' },
+  { id: 'interior', label: 'Interior' },
   { id: 'measure', label: 'Measure' },
 ] as const
 

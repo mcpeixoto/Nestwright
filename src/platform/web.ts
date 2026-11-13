@@ -16,9 +16,19 @@ export function webPlatform(): Platform {
             return
           }
           const reader = new FileReader()
-          reader.onload = () => resolve({ name: file.name, data: String(reader.result ?? '') })
+          const binary = /glb|gltf|obj/i.test(accept)
+          reader.onload = () => {
+            const raw = String(reader.result ?? '')
+            if (!binary) {
+              resolve({ name: file.name, data: raw })
+              return
+            }
+            const comma = raw.indexOf(',')
+            resolve({ name: file.name, data: comma >= 0 ? raw.slice(comma + 1) : raw })
+          }
           reader.onerror = () => resolve(null)
-          reader.readAsText(file)
+          if (binary) reader.readAsDataURL(file)
+          else reader.readAsText(file)
         }
         input.click()
       })
