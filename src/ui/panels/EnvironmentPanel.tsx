@@ -89,6 +89,8 @@ export function EnvironmentPanel() {
   const env = useStore((s) => s.project.environment)
   const clock = useSyncExternalStore(subscribeClock, getClockSnapshot, getClockSnapshot)
   const quality = useSettings((s) => s.graphicsQuality)
+  const playerName = useSettings((s) => s.playerName)
+  const playerColor = useSettings((s) => s.playerColor)
   const time = clockTime(env?.time ?? 12)
   const latitude = env?.latitude ?? 41
   const preset = PRESETS.find((item) => Math.abs(item.latitude - latitude) < 0.2)
@@ -270,6 +272,23 @@ export function EnvironmentPanel() {
           ))}
         </select>
         <span className="readout">Plant density {plants}%</span>
+      </label>
+      <label className="field">
+        Your name
+        <input
+          value={playerName}
+          maxLength={40}
+          onChange={(event) => useSettings.getState().setSettings({ playerName: event.target.value })}
+        />
+      </label>
+      <label className="field">
+        Your colour
+        <input
+          type="color"
+          aria-label="Your colour"
+          value={playerColor || '#3FB8AF'}
+          onChange={(event) => useSettings.getState().setSettings({ playerColor: event.target.value })}
+        />
       </label>
     </div>
   )

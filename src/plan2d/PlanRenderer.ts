@@ -123,6 +123,13 @@ export class PlanRenderer {
     this.requestDraw()
   }
 
+  centerOn(p: { x: number; y: number }): void {
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) return
+    this.cam.x = p.x
+    this.cam.y = p.y
+    this.requestDraw()
+  }
+
   requestDraw(): void {
     if (this.pending || this.disposed) return
     this.pending = true

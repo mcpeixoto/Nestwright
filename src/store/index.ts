@@ -22,8 +22,31 @@ export type LevelDisplay = 'all' | 'current' | 'current-below'
 const COALESCE_MS = 400
 const HISTORY_CAP = 80
 
+export const UNDO_BLOCKED = "Partner changed this — can't undo"
+export const REDO_BLOCKED = "Partner changed this — can't redo"
+
 type PatchListener = (patches: Patch[]) => void
+type EditListener = (patches: Patch[], inverse: Patch[]) => void
 const patchListeners = new Set<PatchListener>()
+const editListeners = new Set<EditListener>()
+
+function emitEdit(patches: Patch[], inverse: Patch[]): void {
+  if (patches.length === 0) return
+  for (const listener of patchListeners) {
+    try {
+      listener(patches)
+    } catch {
+      /* a co-op listener must not break the edit */
+    }
+  }
+  for (const listener of editListeners) {
+    try {
+      listener(patches, inverse)
+    } catch {
+      /* a co-op listener must not break the edit */
+    }
+  }
+}
 
 function bootProject(): Project {
   const saved = loadAutosave()
@@ -69,6 +92,8 @@ export interface StoreState {
   setLibraryOpen: (open: boolean) => void
   setMessage: (message: string) => void
   subscribePatches: (listener: PatchListener) => () => void
+  /** Apply, undo, and redo. Inverse patches let a co-op client rebase in-flight edits. */
+  subscribeEdits: (listener: EditListener) => () => void
   applyRemotePatches: (patches: Patch[]) => void
 }
 
@@ -124,20 +149,25 @@ export const useStore = create<StoreState>((set, get) => ({
       if (history.length > HISTORY_CAP) history = history.slice(history.length - HISTORY_CAP)
     }
     set({ project: next as Project, past: history, future: [], canUndo: true, canRedo: false })
-    for (const listener of patchListeners) {
-      try {
-        listener(patches)
-      } catch {
-        /* a co-op listener must not break the edit */
-      }
-    }
+    emitEdit(patches, inversePatches)
   },
 
   undo() {
     const { past, future, project } = get()
     const entry = past[past.length - 1]
     if (!entry) return
-    const restored = applyPatches(project, entry.inversePatches) as Project
+    let restored: Project
+    try {
+      restored = applyPatches(project, entry.inversePatches) as Project
+    } catch {
+      const nextPast = past.slice(0, -1)
+      set({
+        past: nextPast,
+        canUndo: nextPast.length > 0,
+        message: UNDO_BLOCKED,
+      })
+      return
+    }
     const nextPast = past.slice(0, -1)
     set({
       project: restored,
@@ -146,13 +176,25 @@ export const useStore = create<StoreState>((set, get) => ({
       canUndo: nextPast.length > 0,
       canRedo: true,
     })
+    emitEdit(entry.inversePatches, entry.patches)
   },
 
   redo() {
     const { past, future, project } = get()
     const entry = future[0]
     if (!entry) return
-    const restored = applyPatches(project, entry.patches) as Project
+    let restored: Project
+    try {
+      restored = applyPatches(project, entry.patches) as Project
+    } catch {
+      const nextFuture = future.slice(1)
+      set({
+        future: nextFuture,
+        canRedo: nextFuture.length > 0,
+        message: REDO_BLOCKED,
+      })
+      return
+    }
     const nextFuture = future.slice(1)
     set({
       project: restored,
@@ -161,6 +203,7 @@ export const useStore = create<StoreState>((set, get) => ({
       canUndo: true,
       canRedo: nextFuture.length > 0,
     })
+    emitEdit(entry.patches, entry.inversePatches)
   },
 
   setProject(project) {
@@ -239,6 +282,11 @@ export const useStore = create<StoreState>((set, get) => ({
   subscribePatches(listener) {
     patchListeners.add(listener)
     return () => patchListeners.delete(listener)
+  },
+
+  subscribeEdits(listener) {
+    editListeners.add(listener)
+    return () => editListeners.delete(listener)
   },
 
   applyRemotePatches(patches) {

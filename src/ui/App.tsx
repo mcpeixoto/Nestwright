@@ -7,6 +7,7 @@ import { HelpDialog } from './HelpDialog'
 import { PhotoMode } from './PhotoMode'
 import { usePhotoSession } from './photoSession'
 import './panels/EnvironmentPanel'
+import './together/install'
 import './topbar/exportMenu'
 import { Inspector } from './Inspector'
 import { LevelBar } from './LevelBar'
@@ -18,15 +19,19 @@ import { StatusBar } from './StatusBar'
 import { installShortcuts } from './installShortcuts'
 import { TopBar } from './TopBar'
 import { ToolRail } from './ToolRail'
+import { TogetherChrome } from './together/chrome'
+import { useCompareVariant } from './together/compare'
+import { VariantPane } from './together/VariantPane'
 
 export function App() {
   const view = useStore((s) => s.view)
   const photo = usePhotoSession().photo
+  const compareId = useCompareVariant()
   const panels = usePanelList()
   const openIds = useOpenPanelIds()
   const open = new Set(openIds)
-  const showPlan = !photo && (view === '2d' || view === 'split')
-  const show3d = photo || view === '3d' || view === 'split' || view === 'walk'
+  const showPlan = !photo && !compareId && (view === '2d' || view === 'split')
+  const show3d = photo || !!compareId || view === '3d' || view === 'split' || view === 'walk'
   const left = panels.filter((panel) => panel.placement === 'left' && open.has(panel.id))
   const right = panels.filter((panel) => panel.placement === 'right' && open.has(panel.id))
   const bottom = panels.filter((panel) => panel.placement === 'bottom' && open.has(panel.id))
@@ -51,13 +56,14 @@ export function App() {
         {left.map((panel) => (
           <PanelSlot key={panel.id} panel={panel} />
         ))}
-        <main className={view === 'split' ? 'stage split' : 'stage'}>
+        <main className={compareId ? 'stage compare' : view === 'split' ? 'stage split' : 'stage'}>
           <div className={showPlan ? 'pane' : 'pane hidden'}>
             <PlanCanvas />
           </div>
           <div className={show3d ? 'pane' : 'pane hidden'}>
             <Viewport3D />
           </div>
+          {compareId && <VariantPane />}
           {floating.map((panel) => (
             <PanelSlot key={panel.id} panel={panel} />
           ))}
@@ -77,6 +83,7 @@ export function App() {
       <LevelBar />
       <StatusBar />
       <HelpDialog />
+      <TogetherChrome />
       {photo && <PhotoMode />}
     </div>
   )
