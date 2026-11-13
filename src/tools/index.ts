@@ -5,6 +5,7 @@ import './openingTool'
 import './measure'
 import './pan'
 import './placeItem'
+import './paint'
 
 export { getTool, listTools, registerTool } from './registry'
 export type { Tool, ToolContext } from './types'

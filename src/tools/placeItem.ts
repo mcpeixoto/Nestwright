@@ -27,7 +27,8 @@ function poseAt(point: Vec2): { position: Vec2; rotation: number } {
   const entry = catalogId ? getEntry(catalogId) : undefined
   if (!level || !entry) return { position: point, rotation: 0 }
   const near = nearestWallPoint(level, point)
-  if (!near || near.distance > 0.45 + entry.defaultSize.d) return { position: point, rotation: 0 }
+  const reach = entry.againstWall ? Math.max(1.4, entry.defaultSize.d + 0.8) : 0.45 + entry.defaultSize.d
+  if (!near || near.distance > reach) return { position: point, rotation: 0 }
   const dx = point.x - near.point.x
   const dy = point.y - near.point.y
   const mag = Math.hypot(dx, dy) || 1
@@ -65,7 +66,12 @@ registerTool({
     const pose = poseAt(ctx.point)
     const id = catalogId
     const levelId = level.id
-    const elevation = id === 'pendant-lamp' ? Math.max(0, level.height - entry.defaultSize.h) : 0
+    const elevation =
+      entry.mount === 'ceiling' || id === 'pendant-lamp'
+        ? Math.max(0, level.height - entry.defaultSize.h)
+        : entry.mount === 'wall'
+          ? Math.max(0, Math.min(entry.mountHeight ?? 1.45, level.height - entry.defaultSize.h))
+          : 0
     useStore.getState().apply('Place item', (draft) => {
       const target = draft.levels.find((l) => l.id === levelId)
       if (!target) return

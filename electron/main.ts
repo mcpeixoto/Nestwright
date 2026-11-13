@@ -30,14 +30,24 @@ function createWindow(): BrowserWindow {
 
 function registerIpc() {
   ipcMain.handle('nestwright:open-file', async (_event, accept: string) => {
-    const wantJson = String(accept).includes('json') && !String(accept).includes('nest')
+    const acceptText = String(accept)
+    const model = /glb|gltf|\bobj\b/i.test(acceptText)
+    const wantJson = acceptText.includes('json') && !acceptText.includes('nest')
     const result = await dialog.showOpenDialog({
-      title: 'Open project',
+      title: model ? 'Import model' : 'Open project',
       properties: ['openFile'],
-      filters: [{ name: 'Nestwright', extensions: wantJson ? ['json'] : ['nest', 'json'] }],
+      filters: [
+        model
+          ? { name: '3D model', extensions: ['glb', 'gltf', 'obj'] }
+          : { name: 'Nestwright', extensions: wantJson ? ['json'] : ['nest', 'json'] },
+      ],
     })
     const filePath = result.filePaths[0]
     if (result.canceled || !filePath) return null
+    if (model) {
+      const bytes = await fs.readFile(filePath)
+      return { name: path.basename(filePath), data: bytes.toString('base64') }
+    }
     const data = await fs.readFile(filePath, 'utf8')
     return { name: path.basename(filePath), data }
   })

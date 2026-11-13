@@ -1,4 +1,5 @@
 import { selectActiveLevel, useStore } from '../store'
+import { eyedropPlan } from '../tools/paint'
 import { getTool } from '../tools/registry'
 import type { ToolContext } from '../tools/types'
 import { setPlanCursor } from './cursor'
@@ -87,6 +88,12 @@ export class PlanInput {
       return
     }
     if (e.button !== 0 && e.button !== 2) return
+    if (e.altKey && e.button === 0) {
+      const ctx = this.context(e)
+      eyedropPlan(ctx.raw, ctx.shift)
+      this.renderer.requestDraw()
+      return
+    }
     const tool = getTool(useStore.getState().tool)
     tool?.onPointerDown?.(this.context(e))
     this.renderer.requestDraw()

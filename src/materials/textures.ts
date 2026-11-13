@@ -156,6 +156,59 @@ function drawPattern(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingCon
     ctx.globalAlpha = 1
     return
   }
+  if (spec.kind === 'stripes') {
+    const band = size / 10
+    for (let i = 0; i < 12; i++) {
+      ctx.fillStyle = ink(i)
+      ctx.fillRect(0, i * band, size, band - 2)
+    }
+    return
+  }
+  if (spec.kind === 'checker') {
+    const n = 8
+    const s = size / n
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        ctx.fillStyle = ink((x + y) % 2)
+        ctx.fillRect(x * s, y * s, s, s)
+      }
+    }
+    return
+  }
+  if (spec.kind === 'floral') {
+    for (let i = 0; i < 18; i++) {
+      const cx = hash(i) * size
+      const cy = hash(i + 4) * size
+      const petal = 8 + hash(i + 2) * 16
+      ctx.fillStyle = ink(i + 1)
+      ctx.globalAlpha = rough ? 0.45 : 0.9
+      for (let k = 0; k < 5; k++) {
+        const a = (k / 5) * Math.PI * 2
+        ctx.beginPath()
+        ctx.ellipse(cx + Math.cos(a) * petal * 0.45, cy + Math.sin(a) * petal * 0.45, petal * 0.45, petal * 0.22, a, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+    ctx.globalAlpha = 1
+    return
+  }
+  if (spec.kind === 'weave') {
+    ctx.globalAlpha = 1
+    const step = size / 14
+    for (let i = 0; i < 16; i++) {
+      ctx.strokeStyle = ink(i)
+      ctx.lineWidth = rough ? 3 : 4
+      ctx.beginPath()
+      ctx.moveTo(0, i * step)
+      ctx.bezierCurveTo(size * 0.3, i * step + 6, size * 0.7, i * step - 6, size, i * step)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(i * step, 0)
+      ctx.bezierCurveTo(i * step + 6, size * 0.3, i * step - 6, size * 0.7, i * step, size)
+      ctx.stroke()
+    }
+    return
+  }
   if (spec.kind === 'fabric') {
     ctx.globalAlpha = rough ? 0.5 : 0.35
     for (let i = 0; i < size; i += 4) {

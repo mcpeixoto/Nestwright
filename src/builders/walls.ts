@@ -180,15 +180,16 @@ export function buildWall(wall: Wall, level: Level, neighbours: readonly Wall[])
     }
   }
 
-  const addPart = (bucket: Bucket, ref: Wall['left']) => {
+  const addPart = (bucket: Bucket, ref: Wall['left'], face: 'left' | 'right' | 'end') => {
     const geo = bucket.geometry()
     if (!geo) return
     const mesh = new THREE.Mesh(geo, getMaterial(ref))
     tag(mesh, wall.id)
+    mesh.userData.face = face
     group.add(mesh)
   }
-  addPart(left, wall.left)
-  addPart(right, wall.right)
-  addPart(ends, wall.left)
+  addPart(left, wall.left, 'left')
+  addPart(right, wall.right, 'right')
+  addPart(ends, wall.left, 'end')
   return group
 }

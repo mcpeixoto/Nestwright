@@ -11,6 +11,10 @@ export type PatternKind =
   | 'terrazzo'
   | 'marble'
   | 'fabric'
+  | 'stripes'
+  | 'floral'
+  | 'checker'
+  | 'weave'
 
 export interface PatternSpec {
   kind: PatternKind
@@ -61,6 +65,26 @@ export const MATERIALS: MaterialDef[] = [
   { id: 'roof-tiles', name: 'Roof tiles', category: 'Roof', color: '#8e4638', roughness: 0.8, metalness: 0, tileSize: 0.7, pattern: { kind: 'tiles', colors: ['#9a5142', '#7a3b30'], grout: '#5c2e26' }, costPerM2: 42 },
   { id: 'roof-metal', name: 'Standing seam', category: 'Roof', color: '#8d9290', roughness: 0.32, metalness: 0.7, tileSize: 0.8, pattern: { kind: 'planks', colors: ['#9aa09d', '#7e8482'] }, costPerM2: 38 },
   { id: 'wood-cladding', name: 'Wood cladding', category: 'Wood', color: '#b08968', roughness: 0.7, metalness: 0, tileSize: 1, pattern: { kind: 'planks', colors: ['#c29a74', '#9a7450', '#d0ae86'] }, costPerM2: 50 },
+  { id: 'wallpaper-floral', name: 'Floral wallpaper', category: 'Paper', color: '#f3e6d8', roughness: 0.8, metalness: 0, tileSize: 0.6, pattern: { kind: 'floral', colors: ['#f7efe4', '#c47a5a', '#3d6b66', '#e8b86d'] }, costPerM2: 22 },
+  { id: 'wallpaper-stripes', name: 'Striped wallpaper', category: 'Paper', color: '#efe6d4', roughness: 0.78, metalness: 0, tileSize: 0.5, pattern: { kind: 'stripes', colors: ['#f4ecdf', '#d7c4a4'] }, costPerM2: 20 },
+  { id: 'plaster-pink', name: 'Pink plaster', category: 'Plaster', color: '#e7cfc6', roughness: 0.9, metalness: 0, tileSize: 1.5, pattern: { kind: 'noise', colors: ['#f0ddd4', '#d9b8ae'] }, costPerM2: 18 },
+  { id: 'paint-ochre', name: 'Ochre paint', category: 'Paint', color: '#c8923a', roughness: 0.55, metalness: 0, tileSize: 2, pattern: { kind: 'noise', colors: ['#d4a24a', '#b07e2c'] }, costPerM2: 12 },
+  { id: 'paint-charcoal', name: 'Charcoal paint', category: 'Paint', color: '#2c2e31', roughness: 0.5, metalness: 0, tileSize: 2, pattern: { kind: 'noise', colors: ['#3a3d41', '#232528'] }, costPerM2: 14 },
+  { id: 'wood-cladding-dark', name: 'Dark cladding', category: 'Wood', color: '#4a3428', roughness: 0.68, metalness: 0, tileSize: 1, pattern: { kind: 'planks', colors: ['#5c4032', '#3a281e', '#6b4b38'] }, costPerM2: 54 },
+  { id: 'polished-concrete', name: 'Polished concrete', category: 'Masonry', color: '#c5c2bb', roughness: 0.28, metalness: 0.04, tileSize: 1.4, pattern: { kind: 'noise', colors: ['#d0cdc6', '#b3b0a8'] }, costPerM2: 48 },
+  { id: 'cork', name: 'Cork', category: 'Wood', color: '#c4a06a', roughness: 0.86, metalness: 0, tileSize: 0.5, pattern: { kind: 'noise', colors: ['#d2b07a', '#a8844e', '#e0c48e'] }, costPerM2: 36 },
+  { id: 'tile-zellige-green', name: 'Green zellige', category: 'Tile', color: '#2f6d5d', roughness: 0.34, metalness: 0, tileSize: 0.4, pattern: { kind: 'hex', colors: ['#3d7d6a', '#24584c', '#4e9480'], grout: '#e6dcc8' }, costPerM2: 78 },
+  { id: 'tile-checker', name: 'Checker tile', category: 'Tile', color: '#e7e2d8', roughness: 0.32, metalness: 0, tileSize: 0.5, pattern: { kind: 'checker', colors: ['#f4f0e8', '#2a2c2e'], grout: '#cfc6b8' }, costPerM2: 42 },
+  { id: 'slate-dark', name: 'Dark slate', category: 'Stone', color: '#3c403f', roughness: 0.72, metalness: 0.04, tileSize: 0.8, pattern: { kind: 'tiles', colors: ['#4a4f4d', '#2e3331'], grout: '#1c1f1e' }, costPerM2: 74 },
+  { id: 'travertine', name: 'Travertine', category: 'Stone', color: '#e4d5bc', roughness: 0.45, metalness: 0.02, tileSize: 1.1, pattern: { kind: 'marble', colors: ['#efe4d0', '#c4b496'] }, costPerM2: 96 },
+  { id: 'rattan', name: 'Rattan', category: 'Fabric', color: '#c7a56b', roughness: 0.8, metalness: 0, tileSize: 0.25, pattern: { kind: 'weave', colors: ['#d4b57e', '#a8884e'] }, costPerM2: 40 },
+  { id: 'boucle', name: 'Boucle', category: 'Fabric', color: '#e6dcc8', roughness: 1, metalness: 0, tileSize: 0.3, pattern: { kind: 'noise', colors: ['#f0e6d4', '#d5c8b0', '#cbbba0'] }, costPerM2: 52 },
+  { id: 'velvet-rust', name: 'Rust velvet', category: 'Fabric', color: '#8c4636', roughness: 0.82, metalness: 0, tileSize: 0.35, pattern: { kind: 'fabric', colors: ['#a25540', '#6e3428'] }, costPerM2: 50 },
+  { id: 'leather-black', name: 'Black leather', category: 'Fabric', color: '#1c1d1f', roughness: 0.48, metalness: 0.06, tileSize: 0.5, pattern: { kind: 'noise', colors: ['#2a2c2e', '#121314'] }, costPerM2: 64 },
+  { id: 'chrome', name: 'Chrome', category: 'Metal', color: '#d5d8dc', roughness: 0.08, metalness: 1, tileSize: 0.5, pattern: { kind: 'none' }, costPerM2: 60 },
+  { id: 'copper', name: 'Copper', category: 'Metal', color: '#b8734a', roughness: 0.32, metalness: 0.92, tileSize: 0.4, pattern: { kind: 'noise', colors: ['#c98458', '#8d542f'] }, costPerM2: 58 },
+  { id: 'frosted-glass', name: 'Frosted glass', category: 'Glass', color: '#e7eef0', roughness: 0.62, metalness: 0, tileSize: 0.8, pattern: { kind: 'noise', colors: ['#f4f7f8', '#d5e0e4'] } },
+  { id: 'mirror', name: 'Mirror', category: 'Glass', color: '#d8dee4', roughness: 0.02, metalness: 1, tileSize: 1, pattern: { kind: 'none' } },
 ]
 
 const byId = new Map(MATERIALS.map((m) => [m.id, m]))
