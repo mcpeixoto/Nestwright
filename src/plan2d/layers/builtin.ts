@@ -10,6 +10,7 @@ import type { ToolContext } from '../../tools/types'
 import { itemCorners } from '../snap'
 import { fillPoly, paperLabel, strokeLine, strokePoly } from '../draw'
 import { registerPlanLayer, type PlanDrawContext } from '../layers'
+import { installOutsidePlan } from './outside'
 
 const labelAt = new WeakMap<Vec2[], Vec2>()
 
@@ -293,3 +294,5 @@ function drawDim(
   ctx2d.fillText(label, mid.x, mid.y - 4)
   ctx2d.restore()
 }
+
+installOutsidePlan()

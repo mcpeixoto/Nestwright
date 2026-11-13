@@ -18,6 +18,12 @@ export function selectionFacts(selection: readonly string[], state: InspectorMat
   const openings = level.openings.filter((opening) => selection.includes(opening.id))
   const items = level.items.filter((item) => selection.includes(item.id))
   const room = roomsFor(level).find((item) => selection.includes(item.key)) ?? null
-  const total = walls.length + openings.length + items.length + (room ? 1 : 0)
+  const terrain = state.project.terrain
+  const outside = terrain
+    ? terrain.plants.filter((plant) => selection.includes(plant.id)).length +
+      terrain.water.filter((body) => selection.includes(body.id)).length +
+      terrain.fences.filter((fence) => selection.includes(fence.id)).length
+    : 0
+  const total = walls.length + openings.length + items.length + (room ? 1 : 0) + outside
   return { level, walls, openings, items, room, total }
 }

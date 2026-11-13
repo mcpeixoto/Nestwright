@@ -166,6 +166,7 @@ export class SceneController {
       prev.activeLevelId === state.activeLevelId &&
       prev.levelDisplay === state.levelDisplay &&
       prev.view === state.view &&
+      prev.tool === state.tool &&
       prev.selection === state.selection
     ) {
       return
@@ -466,6 +467,11 @@ export class SceneController {
     this.raycaster.setFromCamera(this.pointer, this.camera)
     const hits = this.raycaster.intersectObject(this.root, true)
     for (const hit of hits) {
+      const ids = hit.object.userData.instanceIds
+      if (typeof hit.instanceId === 'number' && Array.isArray(ids)) {
+        const id = ids[hit.instanceId]
+        if (typeof id === 'string') return { id, kind: String(hit.object.userData.kind ?? 'plant') }
+      }
       let obj: THREE.Object3D | null = hit.object
       while (obj && obj !== this.root) {
         const id = obj.userData.entityId

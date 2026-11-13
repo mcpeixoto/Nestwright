@@ -59,6 +59,34 @@ function WallSection() {
           }
         />
       </label>
+      <NumberField
+        label="Ivy left"
+        value={wall.ivy?.left ?? 0}
+        step={0.05}
+        onCommit={(value) =>
+          patchLevel('Ivy', (draft) => {
+            const found = draft.walls.find((item) => item.id === id)
+            if (!found) return
+            const ivy = { left: found.ivy?.left ?? 0, right: found.ivy?.right ?? 0 }
+            ivy.left = Math.min(1, Math.max(0, value))
+            found.ivy = ivy
+          })
+        }
+      />
+      <NumberField
+        label="Ivy right"
+        value={wall.ivy?.right ?? 0}
+        step={0.05}
+        onCommit={(value) =>
+          patchLevel('Ivy', (draft) => {
+            const found = draft.walls.find((item) => item.id === id)
+            if (!found) return
+            const ivy = { left: found.ivy?.left ?? 0, right: found.ivy?.right ?? 0 }
+            ivy.right = Math.min(1, Math.max(0, value))
+            found.ivy = ivy
+          })
+        }
+      />
       <button type="button" className="danger" onClick={deleteSelection}>
         Delete
       </button>
