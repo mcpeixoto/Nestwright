@@ -5,6 +5,17 @@ import type { Budget, Level, Project, Terrain, Variant } from './types'
 
 export const BEFORE_SWITCH_NAME = 'Before switching…'
 
+/** Saved options are lettered: Option A, Option B, … Option Z, Option AA. */
+export function optionLabel(index: number): string {
+  let value = Number.isFinite(index) ? Math.max(0, Math.floor(index)) : 0
+  let letters = ''
+  do {
+    letters = String.fromCharCode(65 + (value % 26)) + letters
+    value = Math.floor(value / 26) - 1
+  } while (value >= 0)
+  return `Option ${letters}`
+}
+
 export function variantFrom(project: Project, name: string, id: string, createdAt: number): Variant {
   return {
     id,

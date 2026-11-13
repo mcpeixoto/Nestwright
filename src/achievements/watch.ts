@@ -1,5 +1,7 @@
+import { fill, translate } from '../i18n'
 import { getPlatform } from '../platform'
-import { useStore, type StoreState } from '../store'
+import { useSettings } from '../settings'
+import { subscribeLocalApplies, useStore, type StoreState } from '../store'
 import { ACHIEVEMENTS, changedPaintSurfaces, type AchievementContext } from './evaluate'
 import { liveFeatures } from './features'
 import { loadProgress, mergeProgress, saveProgress, type AchievementProgress } from './progress'
@@ -77,14 +79,18 @@ export function installAchievementWatch(): void {
     publish(result.next)
     for (const id of result.fresh) {
       void forwardSteam(id)
-      if (announced) showToast(`Unlocked: ${achievementName(id)}`)
+      if (announced) {
+        const language = useSettings.getState().language
+        showToast(fill(language, 'Unlocked: {name}', { name: translate(language, achievementName(id)) }))
+      }
     }
     announced = true
   }
 
-  sync([])
+  announced = true
   cleanups.push(
-    useStore.subscribe((state) => {
+    subscribeLocalApplies(() => {
+      const state = useStore.getState()
       const painted =
         state.project !== previous && state.past[state.past.length - 1]?.label === 'Paint'
           ? changedPaintSurfaces(previous, state.project)

@@ -53,6 +53,7 @@ function Slider({
       <span className="field-label">{tr(label)}</span>
       <input
         type="range"
+        aria-label={tr(label)}
         min={min}
         max={max}
         step={step}

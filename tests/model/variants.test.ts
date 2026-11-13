@@ -8,6 +8,7 @@ import {
   duplicateVariant,
   planSwitch,
   renameVariant,
+  optionLabel,
   summariseDiff,
   variantFrom,
 } from '../../src/model/variants'
@@ -86,5 +87,12 @@ describe('variants', () => {
     expect(diff.costChange).toBeGreaterThan(100)
     expect(summariseDiff(diff)).toContain('Living 1')
     expect(summariseDiff(diff)).toContain('+1 items')
+  })
+
+  it('letters saved options A, B, then AA', () => {
+    expect(optionLabel(0)).toBe('Option A')
+    expect(optionLabel(1)).toBe('Option B')
+    expect(optionLabel(25)).toBe('Option Z')
+    expect(optionLabel(26)).toBe('Option AA')
   })
 })

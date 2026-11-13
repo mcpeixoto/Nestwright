@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { noteCatMode } from '../../achievements/signals'
 import { getEntry } from '../../catalog/registry'
 import { isPassableOpening, levelObstacles, rectFootprint, type Footprint } from '../../model/collision'
+import { walkSpawn } from '../../model/walkSpawn'
 import { integrateWalk } from '../../model/walkMove'
 import { pointInPolygon } from '../../model/geometry'
 import type { Item, Level, Project, Stair } from '../../model/types'
@@ -318,12 +319,12 @@ registerRig({
     next.near = 0.08
     next.updateProjectionMatrix()
     const state = useStore.getState()
-    feetX = next.position.x
-    feetZ = next.position.z
-    yaw = next.rotation.y
-    pitch = THREE.MathUtils.clamp(next.rotation.x, -1.2, 1.2)
-    const support = supportAt(state.project, feetX, feetZ, next.position.y, false, cat)
-    feetY = support.y
+    const spawn = walkSpawn(state.project)
+    feetX = spawn.x
+    feetZ = spawn.z
+    yaw = spawn.yaw
+    pitch = 0
+    feetY = spawn.y - eyeHeight()
     vy = 0
     grounded = true
     applyCamera()

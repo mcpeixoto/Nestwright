@@ -12,7 +12,8 @@ import { createPrecip, driftPrecip } from './precip'
 import { createStars } from './stars'
 import { attachWeather, setWeatherMix } from './weather'
 
-const ENV_INTENSITY = 0.6
+const ENV_INTENSITY = 0.48
+const SUNSET = (-6 * Math.PI) / 180
 
 function smoothstep(edge0: number, edge1: number, value: number): number {
   const t = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0 || 1)))
@@ -71,17 +72,6 @@ function boundsOf(project: Project, state: SceneViewState): THREE.Box3 {
   return box
 }
 
-function lampsShouldGlow(project: Project, night: boolean): boolean {
-  for (const level of project.levels) {
-    for (const item of level.items) {
-      if (!getEntry(item.catalogId)?.light) continue
-      if (item.lightOn !== false) return true
-      if (night && project.environment.autoLights) return true
-    }
-  }
-  return false
-}
-
 export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   const scene = ctx.scene
   scene.environmentIntensity = ENV_INTENSITY
@@ -92,7 +82,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   if (ctx.renderer) {
     ctx.renderer.outputColorSpace = THREE.SRGBColorSpace
     ctx.renderer.toneMapping = THREE.ACESFilmicToneMapping
-    ctx.renderer.toneMappingExposure = 0.62
+    ctx.renderer.toneMappingExposure = 0.5
     ctx.renderer.shadowMap.enabled = true
     ctx.renderer.shadowMap.type = THREE.PCFShadowMap
   }
@@ -108,7 +98,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   const envScene = new THREE.Scene()
   envScene.add(envSky)
 
-  const sun = new THREE.DirectionalLight('#fff4e0', 3)
+  const sun = new THREE.DirectionalLight('#fff4e0', 2.5)
   sun.castShadow = true
   sun.shadow.mapSize.set(2048, 2048)
   sun.shadow.radius = 3
@@ -124,7 +114,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   scene.add(moon)
   scene.add(moon.target)
 
-  const hemi = new THREE.HemisphereLight('#d7e7f6', '#6d7a58', 0.5)
+  const hemi = new THREE.HemisphereLight('#c5d7ea', '#8a7d6a', 0.4)
   scene.add(hemi)
 
   const clouds = createClouds()
@@ -146,7 +136,6 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   let view: SceneViewState | null = null
   let quality = useSettings.getState().graphicsQuality
   const unit = new THREE.Vector3(0.35, 0.78, 0.25).normalize()
-  let glowKey = ''
   let autoKey = ''
   let envTimer = 0
   let pendingKey = ''
@@ -179,7 +168,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
         if (!mat?.isMeshStandardMaterial || !mat.userData.windowGlass) continue
         if (glow) {
           mat.emissive.set('#ffb15a')
-          mat.emissiveIntensity = 1.15
+          mat.emissiveIntensity = 2.4
         } else {
           mat.emissive.set('#000000')
           mat.emissiveIntensity = 0
@@ -198,7 +187,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
         if (item.lightOn !== false) continue
         const entry = getEntry(item.catalogId)
         if (!entry?.light) continue
-        const light = new THREE.PointLight(entry.light.color, entry.light.intensity, entry.light.distance, 2)
+        const light = new THREE.PointLight(entry.light.color, entry.light.intensity * 22, Math.max(6, entry.light.distance), 2)
         const scaleY = entry.defaultSize.h > 1e-4 ? item.size.h / entry.defaultSize.h : 1
         light.position.set(
           item.position.x,
@@ -229,19 +218,21 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     unit.set(vec.x, vec.y, vec.z)
     if (unit.lengthSq() < 1e-8) unit.set(0.2, 0.4, 0.2)
     unit.normalize()
-    const look = sunLook(Math.asin(THREE.MathUtils.clamp(unit.y, -1, 1)))
+    const alt = Math.asin(THREE.MathUtils.clamp(unit.y, -1, 1))
+    const look = sunLook(alt)
     sun.color.setRGB(look.r, look.g, look.b)
     sun.intensity = look.intensity
     moon.color.set('#c6d4ff')
-    moon.intensity = look.moon
-    const night = 1 - smoothstep(-0.22, 0.12, Math.asin(THREE.MathUtils.clamp(unit.y, -1, 1)))
-    hemi.color.set(night > 0.55 ? '#243044' : '#d7e7f6')
-    hemi.groundColor.set(night > 0.55 ? '#1c2218' : '#6d7a58')
-    hemi.intensity = 0.16 + (1 - night) * 0.34
+    moon.intensity = Math.max(look.moon, alt < SUNSET ? 0.55 : 0)
+    const night = 1 - smoothstep(-0.22, 0.12, alt)
+    const dark = alt < SUNSET
+    hemi.color.set(dark ? '#1a2744' : '#c5d7ea')
+    hemi.groundColor.set(dark ? '#161410' : '#8a7d6a')
+    hemi.intensity = dark ? 0.28 : 0.4
     background.setRGB(
-      0.56 + (0.02 - 0.56) * night,
-      0.74 + (0.03 - 0.74) * night,
-      0.87 + (0.1 - 0.87) * night,
+      0.42 + (0.015 - 0.42) * night,
+      0.58 + (0.03 - 0.58) * night,
+      0.74 + (0.1 - 0.74) * night,
     )
     scene.background = background
     const skyMat = sky.material as THREE.ShaderMaterial
@@ -251,7 +242,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     sky.renderOrder = -2
     if (ctx.renderer) {
       const exposure = look.exposure * photoExposure()
-      ctx.renderer.toneMappingExposure = Number.isFinite(exposure) ? exposure : 0.52
+      ctx.renderer.toneMappingExposure = Number.isFinite(exposure) ? exposure : 0.5
       ctx.renderer.setClearColor(background)
     }
     paintSky(sky, unit, env, look.intensity > 0.05 && night < 0.85)
@@ -264,7 +255,6 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     const density =
       weather === 'clear' ? 0.15 + cloudiness * 0.45 : weather === 'fog' ? 0.15 : 0.45 + cloudiness * 0.5
     const cover = weather === 'clear' ? 0.62 - cloudiness * 0.2 : 0.42 - cloudiness * 0.12
-    const dark = night > 0.62
     clouds.set(density, cover, dark ? '#8d97a3' : '#f3f5f7')
     const nextQuality = useSettings.getState().graphicsQuality
     precip.set(weather, weather === 'clear' ? cloudiness : 0.7, nextQuality)
@@ -294,17 +284,13 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     moon.target.position.copy(center)
     moon.position.copy(center).addScaledVector(unit, -(span + 14))
 
-    const fogColor = night > 0.55 ? '#07101c' : weather === 'fog' ? '#c5ced6' : weather === 'snow' ? '#e4eaf0' : '#c5d5e4'
-    const fogNear = 160
-    const fogFar = weather === 'fog' ? 520 : weather === 'rain' || weather === 'snow' ? 700 : 980
+    const fogColor = dark ? '#07101c' : weather === 'fog' ? '#b7c3ce' : weather === 'snow' ? '#d5dde6' : '#7f9aaf'
+    const fogNear = weather === 'fog' ? 36 : 280
+    const fogFar = weather === 'fog' ? 260 : dark ? 980 : 1500
     scene.fog = new THREE.Fog(fogColor, fogNear, fogFar)
 
-    const glow = dark && lampsShouldGlow(project, dark)
-    const nextGlow = glow ? 'on' : 'off'
-    if (nextGlow !== glowKey) {
-      glowKey = nextGlow
-      paintWindows(glow)
-    }
+    const glow = dark && project.environment.autoLights !== false
+    paintWindows(glow)
     const autoSig = `${dark ? 1 : 0}|${env.autoLights ? 1 : 0}|${project.updatedAt}`
     if (autoSig !== autoKey) {
       autoKey = autoSig

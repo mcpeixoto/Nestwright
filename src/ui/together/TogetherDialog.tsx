@@ -1,17 +1,31 @@
 import { useState } from 'react'
 import { getPlatform } from '../../platform'
 import { useSettings } from '../../settings'
+import { T } from '../../i18n/T'
+import { useTranslate } from '../../i18n'
+import { Modal } from '../Modal'
 import { registerTopBarAction } from '../topbar/registry'
 import { joinSession, lastAddress, leaveSession, notify, startHosting, useLive } from '../../net/live'
 
 function TogetherButton() {
   const [open, setOpen] = useState(false)
   const live = useLive()
+  const tr = useTranslate()
   const on = open || live.role !== 'idle'
   return (
     <>
-      <button type="button" className={on ? 'on' : ''} onClick={() => setOpen((value) => !value)}>
-        Together
+      <button
+        type="button"
+        className={on ? 'icon-btn on' : 'icon-btn'}
+        title={tr('Together')}
+        aria-label={tr('Together')}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7">
+          <circle cx="8" cy="9" r="2.2" />
+          <circle cx="16" cy="9" r="2.2" />
+          <path d="M4.5 18c.6-2.2 2.2-3.2 3.5-3.2S11 15.8 11.6 18M12.4 18c.6-2.2 2.2-3.2 3.5-3.2s2.9 1 3.5 3.2" />
+        </svg>
       </button>
       {open && <TogetherDialog onClose={() => setOpen(false)} />}
     </>
@@ -23,6 +37,7 @@ function TogetherDialog({ onClose }: { onClose: () => void }) {
   const electron = getPlatform().isElectron
   const name = useSettings((s) => s.playerName)
   const colour = useSettings((s) => s.playerColor)
+  const tr = useTranslate()
   const [address, setAddress] = useState(lastAddress)
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
@@ -30,12 +45,15 @@ function TogetherDialog({ onClose }: { onClose: () => void }) {
   const share = live.addresses.map((host) => `${host}:${live.port}`)
 
   return (
-    <div className="modal-back" onClick={onClose}>
-      <div className="modal" role="dialog" aria-label="Together" onClick={(event) => event.stopPropagation()}>
-        <h2>Together</h2>
-        <p className="hint">Set your name so your partner can tell your pins and cursor apart. It is saved with the other settings.</p>
+    <Modal label={tr('Together')} onClose={onClose}>
+        <h2>
+          <T k="Together" />
+        </h2>
+        <p className="hint">
+          <T k="Set your name so your partner can tell your pins and cursor apart. It is saved with the other settings." />
+        </p>
         <label className="field">
-          Your name
+          <T k="Your name" />
           <input
             value={name}
             maxLength={40}
@@ -43,27 +61,31 @@ function TogetherDialog({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="field">
-          Your colour
+          <T k="Your colour" />
           <input
             type="color"
-            aria-label="Your colour"
+            aria-label={tr('Your colour')}
             value={colour || '#3FB8AF'}
             onChange={(event) => useSettings.getState().setSettings({ playerColor: event.target.value })}
           />
         </label>
         {!electron && (
           <p className="hint">
-            Hosting runs inside the Nestwright app, so this browser tab cannot start a session. Ask your partner to host, then join with their address and code.
+            <T k="Hosting runs inside the Nestwright app, so this browser tab cannot start a session. Ask your partner to host, then join with their address and code." />
           </p>
         )}
         {live.role === 'host' && (
           <>
-            <p className="coop-code" aria-label="Session code">
+            <p className="coop-code" aria-label={tr('Session code')}>
               {live.code}
             </p>
-            <p className="hint">Read the code out. Your partner types the address and the code.</p>
+            <p className="hint">
+              <T k="Read the code out. Your partner types the address and the code." />
+            </p>
             {live.addresses.length === 1 && live.addresses[0] === '127.0.0.1' && (
-              <p className="hint">No other network address — your partner needs to be on this computer.</p>
+              <p className="hint">
+                <T k="No other network address — your partner needs to be on this computer." />
+              </p>
             )}
             <ul className="shortcut-list">
               {share.map((item) => (
@@ -74,13 +96,13 @@ function TogetherDialog({ onClose }: { onClose: () => void }) {
                     onClick={() => {
                       const clip = navigator.clipboard
                       if (!clip) {
-                        notify('Select the address and copy it.')
+                        notify(tr('Select the address and copy it.'))
                         return
                       }
-                      void clip.writeText(item).then(() => notify('Copied')).catch(() => notify('Select the address and copy it.'))
+                      void clip.writeText(item).then(() => notify(tr('Copied'))).catch(() => notify(tr('Select the address and copy it.')))
                     }}
                   >
-                    Copy
+                    <T k="Copy" />
                   </button>
                 </li>
               ))}
@@ -90,7 +112,7 @@ function TogetherDialog({ onClose }: { onClose: () => void }) {
         {live.role !== 'host' && (
           <>
             <label className="field">
-              Address
+              <T k="Address" />
               <input
                 value={address}
                 placeholder="192.168.1.20"
@@ -98,7 +120,7 @@ function TogetherDialog({ onClose }: { onClose: () => void }) {
               />
             </label>
             <label className="field">
-              Code
+              <T k="Code" />
               <input
                 value={code}
                 maxLength={4}
@@ -118,7 +140,7 @@ function TogetherDialog({ onClose }: { onClose: () => void }) {
               void startHosting().finally(() => setBusy(false))
             }}
           >
-            Host
+            <T k="Host" />
           </button>
           {live.role !== 'host' && (
             <button
@@ -129,7 +151,7 @@ function TogetherDialog({ onClose }: { onClose: () => void }) {
                 void joinSession(address, code).finally(() => setBusy(false))
               }}
             >
-              Join
+              <T k="Join" />
             </button>
           )}
           {live.role !== 'idle' && (
@@ -140,25 +162,38 @@ function TogetherDialog({ onClose }: { onClose: () => void }) {
                 void leaveSession().finally(() => setBusy(false))
               }}
             >
-              Leave
+              <T k="Leave" />
             </button>
           )}
         </div>
-        <h3>Here now</h3>
-        {live.peers.length === 0 && <p className="hint">Nobody is connected.</p>}
+        <h3>
+          <T k="Here now" />
+        </h3>
+        {live.peers.length === 0 && (
+          <p className="hint">
+            <T k="Nobody is connected." />
+          </p>
+        )}
         {live.peers.map((peer) => (
           <div className="peer-row" key={peer.id}>
             <span className="peer-dot" style={{ background: peer.colour }} />
             <span>
               {peer.name}
-              {peer.id === live.selfId ? ' (you)' : ''}
+              {peer.id === live.selfId ? ` (${tr('you')})` : ''}
             </span>
           </div>
         ))}
-        {live.role === 'host' && live.peers.length < 2 && <p className="hint">Waiting for your partner.</p>}
-        {live.role === 'idle' && <p className="hint">Joining replaces the open design with the host&apos;s.</p>}
-      </div>
-    </div>
+        {live.role === 'host' && live.peers.length < 2 && (
+          <p className="hint">
+            <T k="Waiting for your partner." />
+          </p>
+        )}
+        {live.role === 'idle' && (
+          <p className="hint">
+            <T k="Joining replaces the open design with the host's." />
+          </p>
+        )}
+    </Modal>
   )
 }
 

@@ -1,5 +1,8 @@
 import { duplicateLevel, insertLevel, removeLevel } from '../model/levels'
 import { selectActiveLevel, useStore } from '../store'
+import { confirmIfNeeded } from './confirm'
+import { translate } from '../i18n'
+import { useSettings } from '../settings'
 import { fitVisible } from './fit'
 
 export function addLevelBelow(): void {
@@ -35,12 +38,14 @@ export function deleteActiveLevel(): void {
   const active = selectActiveLevel(state)
   if (!active) return
   const name = active.name || 'this level'
-  if (typeof window !== 'undefined' && !window.confirm(`Delete ${name}? Walls on it are removed.`)) return
   const fallback = state.project.levels.find((level) => level.id !== active.id)
-  state.apply('Delete level', (draft) => {
-    removeLevel(draft.levels, active.id)
+  const message = translate(useSettings.getState().language, 'Delete {name}? Walls on it are removed.').replace('{name}', name)
+  confirmIfNeeded(message, () => {
+    state.apply('Delete level', (draft) => {
+      removeLevel(draft.levels, active.id)
+    })
+    if (fallback && useStore.getState().activeLevelId === active.id) {
+      useStore.getState().setActiveLevel(fallback.id)
+    }
   })
-  if (fallback && useStore.getState().activeLevelId === active.id) {
-    useStore.getState().setActiveLevel(fallback.id)
-  }
 }

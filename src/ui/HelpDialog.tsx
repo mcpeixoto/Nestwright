@@ -6,6 +6,7 @@ import { T } from '../i18n/T'
 import { listTools } from '../tools/registry'
 import { replayTour } from './onboarding/Tour'
 import { formatShortcut, isHelpOpen, listShortcuts, setHelpOpen, subscribeHelp } from './shortcuts'
+import { Modal } from './Modal'
 import { registerTopBarAction } from './topbar/registry'
 
 function useHelpOpen(): boolean {
@@ -23,13 +24,15 @@ export function ShortcutsButton() {
   return (
     <button
       type="button"
-      className={open ? 'on' : ''}
+      className={open ? 'icon-btn on' : 'icon-btn'}
+      title={tr('Help')}
+      aria-label={tr('Help')}
       onClick={() => {
         if (!open) setHelpPage('shortcuts')
         setHelpOpen(!open)
       }}
     >
-      {tr('Shortcuts')}
+      ?
     </button>
   )
 }
@@ -80,8 +83,7 @@ export function HelpDialog() {
   const tr = useTranslate()
   if (!open) return null
   return (
-    <div className="modal-back" onClick={() => setHelpOpen(false)}>
-      <div className="modal help-modal" role="dialog" aria-label={tr('Help')} onClick={(event) => event.stopPropagation()}>
+    <Modal className="help-modal" label={tr('Help')} onClose={() => setHelpOpen(false)}>
         <div className="modal-switch" role="tablist" aria-label={tr('Help')}>
           <button
             type="button"
@@ -103,14 +105,13 @@ export function HelpDialog() {
           </button>
         </div>
         {page === 'achievements' ? <AchievementsPage /> : <ShortcutsPage />}
-      </div>
-    </div>
+    </Modal>
   )
 }
 
 registerTopBarAction({
   id: 'shortcuts',
-  label: 'Shortcuts',
+  label: 'Help',
   order: 80,
   Component: ShortcutsButton,
 })

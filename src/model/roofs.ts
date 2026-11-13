@@ -597,3 +597,15 @@ function unionBoundary(rings: Vec2[][]): Vec2[] {
   }
   return best
 }
+
+/** A roof already drawn on this level with the same outline, within a few centimetres. */
+export function roofOnOutline(level: Level, outline: readonly Vec2[]): Roof | undefined {
+  if (!level || !Array.isArray(level.roofs) || outline.length < 3) return undefined
+  return level.roofs.find((roof) => sameRing(roof.outline ?? [], outline))
+}
+
+function sameRing(a: readonly Vec2[], b: readonly Vec2[]): boolean {
+  if (a.length < 3 || b.length < 3) return false
+  const near = (point: Vec2, ring: readonly Vec2[]) => ring.some((other) => dist(point, other) <= 0.4)
+  return a.every((point) => near(point, b)) && b.every((point) => near(point, a))
+}

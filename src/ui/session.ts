@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { loadAutosave } from '../io/autosave'
 import { useSettings } from '../settings'
 import { useStore, type ViewMode } from '../store'
+import { presentProject } from './presentProject'
 import { studioApartment } from '../templates'
 import type { Project } from '../model/types'
 
@@ -87,7 +88,7 @@ export function enterEditor(): void {
 export function beginProject(project: Project): void {
   const units = useSettings.getState().units
   project.units = units
-  useStore.getState().setProject(project)
+  presentProject(project)
   returnView = 'split'
   useStore.getState().setView('split')
   canContinue = true

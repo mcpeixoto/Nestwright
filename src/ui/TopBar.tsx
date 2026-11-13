@@ -1,10 +1,15 @@
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store'
 import { noteReturnView } from '../view3d/rigs/walk'
 import { useOpenPanelIds, usePanelList, togglePanel } from './panels/registry'
-import { listTopBarActions } from './topbar/registry'
+import { listTopBarActions, type TopBarAction } from './topbar/registry'
 import './topbar/builtins'
 import { T } from '../i18n/T'
 import { useTranslate } from '../i18n'
+import type { PanelDef } from './panels/registry'
+
+const IN_MENU = new Set(['export-json', 'export', 'together', 'settings', 'photo'])
+const MENU_PANELS = new Set(['budget', 'wishes', 'variants'])
 
 const VIEWS = [
   { id: '2d', label: '2D' },
@@ -12,6 +17,53 @@ const VIEWS = [
   { id: 'split', label: 'Split' },
   { id: 'walk', label: 'Walk' },
 ] as const
+
+function OverflowMenu({ actions, panels }: { actions: TopBarAction[]; panels: PanelDef[] }) {
+  const tr = useTranslate()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const openIds = useOpenPanelIds()
+  useEffect(() => {
+    if (!open) return
+    const onPointer = (event: PointerEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false)
+    }
+    window.addEventListener('pointerdown', onPointer)
+    return () => window.removeEventListener('pointerdown', onPointer)
+  }, [open])
+  if (actions.length === 0 && panels.length === 0) return null
+  return (
+    <div className="menu" ref={ref}>
+      <button type="button" className="icon-btn" aria-expanded={open} aria-label={tr('More')} title={tr('More')} onClick={() => setOpen((value) => !value)}>
+        ⋯
+      </button>
+      <div className={open ? 'menu-pop' : 'menu-pop closed'} role="menu">
+        {actions.map((action) =>
+          action.Component ? (
+            <action.Component key={action.id} />
+          ) : (
+            <button
+              type="button"
+              key={action.id}
+              role="menuitem"
+              onClick={() => {
+                action.run?.()
+                setOpen(false)
+              }}
+            >
+              {tr(action.label)}
+            </button>
+          ),
+        )}
+        {panels.map((panel) => (
+          <button type="button" key={panel.id} role="menuitem" className={openIds.includes(panel.id) ? 'on' : ''} onClick={() => togglePanel(panel.id)}>
+            {tr(panel.title)}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function TopBar() {
   const tr = useTranslate()
@@ -21,6 +73,11 @@ export function TopBar() {
   const canRedo = useStore((s) => s.canRedo)
   const panels = usePanelList().filter((panel) => panel.placement === 'bottom' || panel.placement === 'floating')
   const open = useOpenPanelIds()
+  const actions = listTopBarActions()
+  const inline = actions.filter((action) => !IN_MENU.has(action.id))
+  const menuActions = actions.filter((action) => IN_MENU.has(action.id))
+  const iconPanels = panels.filter((panel) => !MENU_PANELS.has(panel.id))
+  const menuPanels = panels.filter((panel) => MENU_PANELS.has(panel.id))
 
   return (
     <header className="topbar">
@@ -58,7 +115,7 @@ export function TopBar() {
         <button type="button" disabled={!canRedo} onClick={() => useStore.getState().redo()}>
           <T k="Redo" />
         </button>
-        {listTopBarActions().map((action) =>
+        {inline.map((action) =>
           action.Component ? (
             <action.Component key={action.id} />
           ) : (
@@ -67,7 +124,7 @@ export function TopBar() {
             </button>
           ),
         )}
-        {panels.map((panel) =>
+        {iconPanels.map((panel) =>
           panel.icon ? (
             <button
               type="button"
@@ -89,6 +146,7 @@ export function TopBar() {
             </button>
           ),
         )}
+        <OverflowMenu actions={menuActions} panels={menuPanels} />
       </div>
     </header>
   )

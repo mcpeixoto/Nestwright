@@ -24,13 +24,15 @@ import { installShortcuts } from './installShortcuts'
 import { TopBar } from './TopBar'
 import { ToolRail } from './ToolRail'
 import { TogetherChrome } from './together/chrome'
+import { ConfirmHost } from './confirm'
 import { useCompareVariant } from './together/compare'
+import { CompareBanner } from './together/CompareBanner'
 import { VariantPane } from './together/VariantPane'
 import { Tour } from './onboarding/Tour'
 import { useScreen } from './session'
 import { StartScreen } from './start/StartScreen'
 import './start/home'
-import { captureThumb } from './start/thumbs'
+import { scheduleThumb } from './start/thumbs'
 import { rememberProject } from './start/recent'
 
 const OUTSIDE_PANELS = new Set(['outside', 'brush'])
@@ -60,13 +62,16 @@ function EditorShell() {
           <PanelSlot key={panel.id} panel={panel} />
         ))}
         <main className={compareId ? 'stage compare' : view === 'split' ? 'stage split' : 'stage'}>
-          <div className={showPlan ? 'pane' : 'pane hidden'}>
-            <PlanCanvas />
+          {compareId && <CompareBanner />}
+          <div className="compare-row">
+            <div className={showPlan ? 'pane' : 'pane hidden'}>
+              <PlanCanvas />
+            </div>
+            <div className={show3d ? 'pane' : 'pane hidden'}>
+              <Viewport3D />
+            </div>
+            {compareId && <VariantPane />}
           </div>
-          <div className={show3d ? 'pane' : 'pane hidden'}>
-            <Viewport3D />
-          </div>
-          {compareId && <VariantPane />}
           {floating.length > 0 && (
             <div className="float-stack">
               {floating.map((panel) => (
@@ -123,7 +128,7 @@ export function App() {
       timer = setTimeout(() => {
         const project = useStore.getState().project
         saveAutosave(project)
-        rememberProject(project, captureThumb())
+        scheduleThumb((thumb) => rememberProject(project, thumb))
       }, seconds * 1000)
     })
   }, [])
@@ -137,6 +142,7 @@ export function App() {
       {screen === 'editor' ? <EditorShell /> : <StartScreen />}
       <HelpDialog />
       <SettingsDialog />
+      <ConfirmHost />
     </div>
   )
 }

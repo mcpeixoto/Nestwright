@@ -11,6 +11,7 @@ import { beginProject, canContinueProject, enterEditor, showGallery, showStart, 
 import { setSettingsOpen } from '../settingsDialogState'
 import { coopJoinAvailable, openCoopJoin } from './coop'
 import { loadRecent, projectFromRecent, rememberProject, subscribeRecent } from './recent'
+import { relativeTime } from './recentList'
 
 function useRecent() {
   return useSyncExternalStore(subscribeRecent, loadRecent, () => [])
@@ -75,7 +76,10 @@ export function StartScreen() {
     }
     project.name = tr(info.nameKey)
     beginProject(project)
-    rememberProject(project, thumbs[id] ?? planThumb(project))
+    const cached = thumbs[id]
+    const remember = () => rememberProject(project, cached || planThumb(project))
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(remember)
+    else setTimeout(remember, 1)
   }
 
   return (
@@ -134,14 +138,20 @@ export function StartScreen() {
                 </p>
               )}
               <ul className="recent-list">
-                {recent.map((item) => (
+                {recent.map((item) => {
+                  const when = relativeTime(item.updatedAt)
+                  return (
                   <li key={item.id}>
                     <button type="button" onClick={() => openRecent(item.id)} disabled={!item.data}>
                       {item.thumb ? <img src={item.thumb} alt="" /> : <span className="thumb-fallback">{item.name.slice(0, 1)}</span>}
-                      <span>{item.name}</span>
+                      <span className="recent-meta">
+                        <span>{item.name}</span>
+                        <span className="hint">{tr(when.key, when.n != null ? { n: when.n } : undefined)}</span>
+                      </span>
                     </button>
                   </li>
-                ))}
+                  )
+                })}
               </ul>
             </div>
             {join && (

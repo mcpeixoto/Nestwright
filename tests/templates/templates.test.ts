@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import '../../src/catalog'
 import { getEntry } from '../../src/catalog/registry'
+import { pointInPolygon } from '../../src/model/geometry'
 import { detectRooms } from '../../src/model/rooms'
 import { decodeSplat, dominantLayer, splatLength } from '../../src/model/terrain'
 import { GROUND_LAYERS, type Project } from '../../src/model/types'
@@ -111,6 +112,22 @@ describe('templates', () => {
     expect(areaOf(project)).toBeGreaterThan(80)
     expect(project.terrain.plants.some((plant) => plant.species === 'olive')).toBe(true)
     expect(names(project).length).toBeGreaterThan(1)
+    const patio = { x: 0, y: -2 }
+    const level = project.levels[0]
+    expect(level).toBeTruthy()
+    if (!level) return
+    for (const room of detectRooms(level)) {
+      expect(pointInPolygon(patio, room.polygon)).toBe(false)
+    }
+    for (const roof of level.roofs) {
+      expect(pointInPolygon(patio, roof.outline)).toBe(false)
+    }
+    const olive = project.terrain.plants.find((plant) => plant.species === 'olive')
+    expect(olive).toBeTruthy()
+    if (!olive) return
+    for (const room of detectRooms(level)) {
+      expect(pointInPolygon(olive.position, room.polygon)).toBe(false)
+    }
   })
 
   it('skips catalog ids that are not registered', () => {

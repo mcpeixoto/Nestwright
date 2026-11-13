@@ -66,6 +66,18 @@ export function saveProgress(storage: Bin, progress: AchievementProgress): void 
   }
 }
 
+export type AchievementCause = 'apply' | 'load' | 'remote'
+
+/** Template loads, file opens, and remote patches must not unlock anything. */
+export function progressForCause(
+  prev: AchievementProgress,
+  ctx: AchievementContext,
+  cause: AchievementCause,
+): { next: AchievementProgress; fresh: string[] } {
+  if (cause !== 'apply') return { next: prev, fresh: [] }
+  return mergeProgress(prev, ctx)
+}
+
 export function mergeProgress(
   prev: AchievementProgress,
   ctx: AchievementContext,

@@ -91,6 +91,12 @@ export class PlanRenderer {
   }
 
   fit(): void {
+    this.fitCamera()
+    this.fittedFor = useStore.getState().project.id
+    this.paint()
+  }
+
+  private fitCamera(): void {
     const state = useStore.getState()
     const level = selectActiveLevel(state)
     const { width, height } = this.size()
@@ -123,7 +129,6 @@ export class PlanRenderer {
     this.fittedZoom = this.cam.zoom
     this.cam.x = (minX + maxX) / 2
     this.cam.y = (minY + maxY) / 2
-    this.requestDraw()
   }
 
   centerOn(p: { x: number; y: number }): void {
@@ -138,7 +143,7 @@ export class PlanRenderer {
     this.pending = true
     const run = () => {
       this.pending = false
-      if (!this.disposed) this.draw()
+      if (!this.disposed) this.paint()
     }
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run)
     else run()
@@ -148,16 +153,20 @@ export class PlanRenderer {
     return { width: this.canvas.clientWidth, height: this.canvas.clientHeight }
   }
 
+  /** Paint now. A project change must not wait for a later frame behind 3D work. */
   draw(): void {
+    this.paint()
+  }
+
+  private paint(): void {
     const ctx = this.ctx
     const { width, height } = this.size()
     if (!ctx || width < 1 || height < 1) return
     const state = useStore.getState()
     const level = selectActiveLevel(state)
-    if (level && this.fittedFor !== state.project.id && level.walls.length > 0 && width > 2 && height > 2) {
+    if (level && this.fittedFor !== state.project.id && width > 2 && height > 2) {
       this.fittedFor = state.project.id
-      this.fit()
-      return
+      this.fitCamera()
     }
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
     const bw = Math.max(1, Math.floor(width * dpr))

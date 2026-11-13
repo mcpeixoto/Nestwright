@@ -110,11 +110,11 @@ export function EnvironmentPanel() {
 
   return (
     <div className="props env-panel">
-      <h2><T k="Daylight" /></h2>
       <label className="field">
         <span className="field-label"><T k="Date" /></span>
         <input
           type="range"
+          aria-label={tr('Date')}
           min={1}
           max={365}
           step={1}
@@ -133,6 +133,7 @@ export function EnvironmentPanel() {
         <div className="time-row">
           <input
             type="range"
+            aria-label={tr('Time')}
             min={0}
             max={24}
             step={0.01}
@@ -142,7 +143,7 @@ export function EnvironmentPanel() {
           <button
             type="button"
             className={isTimePlaying() ? 'on' : ''}
-            aria-label={clock.playing ? 'Pause time' : 'Play time'}
+            aria-label={clock.playing ? tr('Pause time') : tr('Play time')}
             onClick={() => {
               if (isTimePlaying()) {
                 const value = stopTime()
@@ -157,7 +158,7 @@ export function EnvironmentPanel() {
               playTime(env?.time ?? 12)
             }}
           >
-            {clock.playing ? 'Pause' : 'Play'}
+            {clock.playing ? tr('Pause') : tr('Play')}
           </button>
         </div>
         <span className="readout">{formatClock(time)}</span>
@@ -234,6 +235,7 @@ export function EnvironmentPanel() {
         <T k="Cloudiness" />
         <input
           type="range"
+          aria-label={tr('Cloudiness')}
           min={0}
           max={1}
           step={0.01}
@@ -278,18 +280,19 @@ export function EnvironmentPanel() {
         <span className="readout">{tr('Plant density {n}%', { n: plants })}</span>
       </label>
       <label className="field">
-        Your name
+        <T k="Your name" />
         <input
+          aria-label={tr('Your name')}
           value={playerName}
           maxLength={40}
           onChange={(event) => useSettings.getState().setSettings({ playerName: event.target.value })}
         />
       </label>
       <label className="field">
-        Your colour
+        <T k="Your colour" />
         <input
           type="color"
-          aria-label="Your colour"
+          aria-label={tr('Your colour')}
           value={playerColor || '#3FB8AF'}
           onChange={(event) => useSettings.getState().setSettings({ playerColor: event.target.value })}
         />
@@ -300,7 +303,7 @@ export function EnvironmentPanel() {
 
 registerPanel({
   id: 'environment',
-  title: 'Sun',
+  title: 'Daylight',
   placement: 'floating',
   icon: icon('<circle cx="12" cy="12" r="3.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>'),
   Component: EnvironmentPanel,

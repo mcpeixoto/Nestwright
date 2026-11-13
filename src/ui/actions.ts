@@ -4,11 +4,13 @@ import { createProject } from '../model/defaults'
 import { insertLevel } from '../model/levels'
 import { deleteEntities, duplicateItems, rotateItems } from '../model/ops'
 import { selectActiveLevel, useStore } from '../store'
+import { confirmIfNeeded } from './confirm'
 import { fitVisible } from './fit'
+import { presentProject } from './presentProject'
 import { getPlatform } from '../platform'
 import { useSettings } from '../settings'
 import { rememberProject } from './start/recent'
-import { captureThumb } from './start/thumbs'
+import { scheduleThumb } from './start/thumbs'
 
 function say(key: string): void {
   useStore.getState().setMessage(translate(useSettings.getState().language, key))
@@ -22,7 +24,7 @@ function fileName(name: string, ext: string): string {
 export async function saveProject(): Promise<void> {
   const project = useStore.getState().project
   const ok = await getPlatform().saveFile(fileName(project.name, 'nest'), serialize(project))
-  if (ok) rememberProject(project, captureThumb())
+  if (ok) scheduleThumb((thumb) => rememberProject(project, thumb))
   say(ok ? 'Saved' : 'Save cancelled')
 }
 
@@ -37,8 +39,8 @@ export async function openProject(): Promise<boolean> {
   if (!file) return false
   try {
     const project = deserialize(file.data)
-    useStore.getState().setProject(project)
-    rememberProject(project, captureThumb())
+    presentProject(project)
+    scheduleThumb((thumb) => rememberProject(project, thumb))
     useStore.getState().setMessage(`${translate(useSettings.getState().language, 'Open')} ${file.name}`)
     return true
   } catch (err) {
@@ -49,11 +51,12 @@ export async function openProject(): Promise<boolean> {
 
 export function newProject(): void {
   const language = useSettings.getState().language
-  if (typeof window !== 'undefined' && !window.confirm(translate(language, 'Start a new empty project?'))) return
-  const project = createProject('Untitled', 'house')
-  project.units = useSettings.getState().units
-  useStore.getState().setProject(project)
-  say('New project')
+  confirmIfNeeded(translate(language, 'Start a new empty project?'), () => {
+    const project = createProject('Untitled', 'house')
+    project.units = useSettings.getState().units
+    presentProject(project)
+    say('New project')
+  })
 }
 
 export function deleteSelection(): void {

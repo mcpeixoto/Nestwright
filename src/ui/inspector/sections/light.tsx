@@ -6,8 +6,10 @@ import { selectionFacts } from '../facts'
 import { patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
 import { T } from '../../../i18n/T'
+import { useTranslate } from '../../../i18n'
 
 function LightSection() {
+  const tr = useTranslate()
   const id = useStore((s) => s.selection[0] ?? '')
   const level = useStore(selectActiveLevel)
   const item = level?.items.find((entry) => entry.id === id)
@@ -40,7 +42,7 @@ function LightSection() {
           max={6500}
           step={50}
           value={kelvin}
-          aria-label="Colour temperature"
+          aria-label={tr('Colour temperature')}
           onChange={(event) => {
             const next = clampKelvin(Number(event.target.value))
             set('Light', (found) => {
@@ -60,7 +62,7 @@ function LightSection() {
           max={80}
           step={1}
           value={intensity}
-          aria-label="Light intensity"
+          aria-label={tr('Light intensity')}
           onChange={(event) => {
             const next = Number(event.target.value)
             set('Light', (found) => {

@@ -89,7 +89,7 @@ function tuneLamp(built: THREE.Object3D, item: Item, entry: CatalogEntry): void 
   })
   if (!on) return
   const scaleY = entry.defaultSize.h > 1e-4 ? item.size.h / entry.defaultSize.h : 1
-  const intensity = lampIntensity(item, entry)
+  const intensity = lampIntensity(item, entry) * 22
   if (spec.spot) {
     const spot = new THREE.SpotLight(color, intensity, spec.distance, spec.angle ?? Math.PI / 5, 0.45, 2)
     spot.position.y = spec.offsetY * scaleY

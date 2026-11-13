@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { earnedNow, type FeatureSet } from '../../src/achievements/evaluate'
-import { loadProgress, mergeProgress, saveProgress, type AchievementProgress } from '../../src/achievements/progress'
+import { liveFeatures } from '../../src/achievements/features'
+import { emptyProgress, loadProgress, mergeProgress, progressForCause, saveProgress, type AchievementProgress } from '../../src/achievements/progress'
 import { createProject } from '../../src/model/defaults'
+import { familyHouse } from '../../src/templates/family'
 import type { Project } from '../../src/model/types'
 
 const FEATURES: FeatureSet = {
@@ -103,5 +105,24 @@ describe('achievement progress', () => {
     })
     expect(merged.fresh).not.toContain('together')
     expect(merged.next.coopSession).toBe(true)
+  })
+
+  it('loading the family-house template unlocks nothing', () => {
+    const project = familyHouse()
+    const ctx = {
+      project,
+      view: '2d' as const,
+      features: liveFeatures(project),
+      paintedSurfaces: [] as string[],
+      photoExported: false,
+      catMode: false,
+      coopSession: false,
+      walkedAtNight: false,
+    }
+    const loaded = progressForCause(emptyProgress(), ctx, 'load')
+    expect(loaded.fresh).toEqual([])
+    expect(loaded.next.unlocked).toEqual([])
+    const remote = progressForCause(emptyProgress(), ctx, 'remote')
+    expect(remote.fresh).toEqual([])
   })
 })

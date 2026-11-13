@@ -97,7 +97,7 @@ export class SceneController {
     this.primary = options?.primary !== false
     this.canvas = canvas
     this.scene = new THREE.Scene()
-    this.scene.environmentIntensity = 0.6
+    this.scene.environmentIntensity = 0.48
     this.camera = new THREE.PerspectiveCamera(48, 1, 0.2, 6000)
     this.camera.position.set(12, 10, 14)
     if (this.primary) bindController(this)
@@ -111,7 +111,7 @@ export class SceneController {
     if (renderer) {
       renderer.outputColorSpace = THREE.SRGBColorSpace
       renderer.toneMapping = THREE.ACESFilmicToneMapping
-      renderer.toneMappingExposure = 0.52
+      renderer.toneMappingExposure = 0.5
       renderer.shadowMap.enabled = true
       renderer.shadowMap.type = THREE.PCFShadowMap
       renderer.setClearColor('#9ec4e4')
@@ -424,7 +424,7 @@ export class SceneController {
     const vFov = THREE.MathUtils.degToRad(this.camera.fov)
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect)
     const dist = Math.max(sphere.radius / Math.sin(vFov / 2), sphere.radius / Math.sin(hFov / 2)) * 1.35
-    const pitch = Math.PI / 5
+    const pitch = 0.46
     const yaw = Math.PI / 4.2
     const horiz = Math.cos(pitch)
     this.controls.target.copy(sphere.center)
@@ -643,6 +643,24 @@ function visibleWallBounds(project: Project, state: SceneViewState | null): THRE
   if (filtered) return box
   const all = new THREE.Box3()
   if (expandWalls(all, project, () => true)) return all
+  const boundary = project.terrain?.boundary
+  if (Array.isArray(boundary) && boundary.length >= 3) {
+    const plot = new THREE.Box3()
+    for (const point of boundary) {
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) continue
+      plot.expandByPoint(new THREE.Vector3(point.x, 0, point.y))
+      plot.expandByPoint(new THREE.Vector3(point.x, 2, point.y))
+    }
+    if (!plot.isEmpty()) return plot
+  }
+  const width = project.terrain?.width
+  const depth = project.terrain?.depth
+  if (Number.isFinite(width) && Number.isFinite(depth) && (width ?? 0) > 1 && (depth ?? 0) > 1) {
+    const halfW = (width ?? 0) / 2
+    const halfD = (depth ?? 0) / 2
+    box.set(new THREE.Vector3(-halfW, 0, -halfD), new THREE.Vector3(halfW, 3, halfD))
+    return box
+  }
   box.set(new THREE.Vector3(-4, 0, -4), new THREE.Vector3(4, 3, 4))
   return box
 }

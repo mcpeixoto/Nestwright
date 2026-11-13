@@ -1,3 +1,4 @@
+import { T } from '../../../i18n/T'
 import { deleteSelection } from '../../actions'
 import { selectionFacts } from '../facts'
 import { registerInspectorSection } from '../registry'
@@ -6,7 +7,7 @@ function DeleteSection() {
   return (
     <div className="props">
       <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
+        <T k="Delete" />
       </button>
     </div>
   )

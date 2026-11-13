@@ -43,45 +43,83 @@ function paint(size: number, draw: (ctx: Ctx, size: number) => void): THREE.Text
   return tex
 }
 
-function speck(ctx: Ctx, size: number, base: string, colors: string[], count: number) {
-  ctx.fillStyle = base
-  ctx.fillRect(0, 0, size, size)
-  for (let i = 0; i < count; i++) {
-    ctx.fillStyle = colors[i % colors.length] ?? base
-    ctx.globalAlpha = 0.35 + hash(i + 4) * 0.55
-    const w = 1 + hash(i + 2) * 5
-    ctx.fillRect(hash(i) * size, hash(i + 9) * size, w, w)
+function valueNoise(x: number, y: number): number {
+  const ix = Math.floor(x)
+  const iy = Math.floor(y)
+  const fx = x - ix
+  const fy = y - iy
+  const sx = fx * fx * (3 - 2 * fx)
+  const sy = fy * fy * (3 - 2 * fy)
+  const n = (i: number, j: number) => hash(i * 73.13 + j * 19.73)
+  const a = n(ix, iy)
+  const b = n(ix + 1, iy)
+  const c = n(ix, iy + 1)
+  const d = n(ix + 1, iy + 1)
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy
+}
+
+function fbm(x: number, y: number): number {
+  let value = 0
+  let amplitude = 0.55
+  let frequency = 1
+  for (let octave = 0; octave < 4; octave++) {
+    value += amplitude * valueNoise(x * frequency, y * frequency)
+    amplitude *= 0.5
+    frequency *= 2
   }
-  ctx.globalAlpha = 1
+  return value
+}
+
+function field(ctx: Ctx, size: number, sample: (u: number, v: number) => [number, number, number]): void {
+  const image = ctx.createImageData(size, size)
+  const data = image.data
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const [r, g, b] = sample(x / size, y / size)
+      const i = (y * size + x) * 4
+      data[i] = r
+      data[i + 1] = g
+      data[i + 2] = b
+      data[i + 3] = 255
+    }
+  }
+  ctx.putImageData(image, 0, 0)
+}
+
+function clampByte(value: number): number {
+  return Math.max(0, Math.min(255, Math.round(value)))
 }
 
 function layerTexture(kind: string): THREE.Texture {
   const size = 128
   if (kind === 'lawn') {
-    return paint(size, (ctx) => speck(ctx, size, '#6f9a52', ['#87b465', '#5d8444', '#9dc56e', '#4f7338'], 2200))
+    return paint(size, (ctx) =>
+      field(ctx, size, (u, v) => {
+        const n = fbm(u * 5, v * 5)
+        const blade = Math.sin((u * 18 + v * 2.2) * Math.PI * 2) * 0.5 + 0.5
+        const mix = n * 0.65 + blade * 0.12
+        return [clampByte(72 + mix * 22), clampByte(108 + mix * 18), clampByte(48 + mix * 14)]
+      }),
+    )
   }
   if (kind === 'meadow') {
-    return paint(size, (ctx) => {
-      speck(ctx, size, '#8aaa4e', ['#c6d36a', '#6e8f3c', '#d7e28a', '#597833'], 1600)
-      ctx.globalAlpha = 0.8
-      for (let i = 0; i < 80; i++) {
-        ctx.fillStyle = hash(i) > 0.5 ? '#e6d56a' : '#f2f0c8'
-        ctx.fillRect(hash(i + 3) * size, hash(i + 8) * size, 2, 2)
-      }
-      ctx.globalAlpha = 1
-    })
+    return paint(size, (ctx) =>
+      field(ctx, size, (u, v) => {
+        const n = fbm(u * 4, v * 4)
+        const fleck = valueNoise(u * 22, v * 22) > 0.82 ? 18 : 0
+        return [clampByte(96 + n * 20 + fleck), clampByte(124 + n * 16), clampByte(52 + n * 12)]
+      }),
+    )
   }
   if (kind === 'gravel') {
-    return paint(size, (ctx) => {
-      ctx.fillStyle = '#b7b1a6'
-      ctx.fillRect(0, 0, size, size)
-      for (let i = 0; i < 420; i++) {
-        ctx.fillStyle = ['#d9d3c6', '#8e877c', '#c4beb2', '#6f6a62'][i % 4] ?? '#aaa'
-        ctx.beginPath()
-        ctx.ellipse(hash(i) * size, hash(i + 5) * size, 1.2 + hash(i + 2) * 3.5, 1 + hash(i + 7) * 2.4, hash(i) * 6, 0, Math.PI * 2)
-        ctx.fill()
-      }
-    })
+    return paint(size, (ctx) =>
+      field(ctx, size, (u, v) => {
+        const n = fbm(u * 9, v * 9)
+        const pebble = valueNoise(u * 28, v * 26)
+        const shade = n * 0.55 + pebble * 0.2
+        return [clampByte(150 + shade * 28), clampByte(146 + shade * 24), clampByte(136 + shade * 20)]
+      }),
+    )
   }
   if (kind === 'paving') {
     return paint(size, (ctx) => {
@@ -100,11 +138,29 @@ function layerTexture(kind: string): THREE.Texture {
       }
     })
   }
-  if (kind === 'sand') return paint(size, (ctx) => speck(ctx, size, '#e4d2a4', ['#f0e2bb', '#d2bc88', '#c8b48a', '#efe6cf'], 1800))
-  if (kind === 'soil') return paint(size, (ctx) => speck(ctx, size, '#7a4e34', ['#8d5b3c', '#5e3a26', '#a06a48', '#4a2e1e'], 1400))
+  if (kind === 'sand') {
+    return paint(size, (ctx) =>
+      field(ctx, size, (u, v) => {
+        const n = fbm(u * 6, v * 6)
+        return [clampByte(176 + n * 16), clampByte(154 + n * 14), clampByte(112 + n * 12)]
+      }),
+    )
+  }
+  if (kind === 'soil') {
+    return paint(size, (ctx) =>
+      field(ctx, size, (u, v) => {
+        const n = fbm(u * 5, v * 5)
+        return [clampByte(92 + n * 18), clampByte(58 + n * 12), clampByte(36 + n * 10)]
+      }),
+    )
+  }
   if (kind === 'path') {
     return paint(size, (ctx) => {
-      speck(ctx, size, '#a68462', ['#8d6b4a', '#c4a07a', '#6e5338', '#b89570'], 1500)
+      field(ctx, size, (u, v) => {
+        const n = fbm(u * 7, v * 4)
+        const streak = Math.sin(v * Math.PI * 10) * 6
+        return [clampByte(138 + n * 16 + streak), clampByte(104 + n * 12), clampByte(72 + n * 10)]
+      })
       ctx.strokeStyle = 'rgba(70,48,30,0.25)'
       ctx.lineWidth = 2
       for (let y = 8; y < size; y += 14) {
@@ -115,17 +171,12 @@ function layerTexture(kind: string): THREE.Texture {
       }
     })
   }
-  return paint(size, (ctx) => {
-    speck(ctx, size, '#3e4a32', ['#2c3824', '#5a6844', '#6e5438', '#24301c'], 1200)
-    ctx.globalAlpha = 0.7
-    for (let i = 0; i < 40; i++) {
-      ctx.fillStyle = hash(i) > 0.6 ? '#8d5b3c' : '#6a8f4a'
-      ctx.beginPath()
-      ctx.ellipse(hash(i + 2) * size, hash(i + 6) * size, 4 + hash(i) * 7, 2 + hash(i + 3) * 3, hash(i) * 3, 0, Math.PI * 2)
-      ctx.fill()
-    }
-    ctx.globalAlpha = 1
-  })
+  return paint(size, (ctx) =>
+    field(ctx, size, (u, v) => {
+      const n = fbm(u * 5, v * 5)
+      return [clampByte(48 + n * 16), clampByte(62 + n * 14), clampByte(36 + n * 10)]
+    }),
+  )
 }
 
 const LAYER_KINDS = ['lawn', 'meadow', 'gravel', 'paving', 'sand', 'soil', 'path', 'forest-floor'] as const
@@ -209,7 +260,7 @@ export function createSplatMaterial(): SplatMaterial {
          vec4 sw1 = texture2D(splat1, vSplatUv);
          float wsum = sw0.r + sw0.g + sw0.b + sw0.a + sw1.r + sw1.g + sw1.b + sw1.a;
          wsum = max(wsum, 0.0001);
-         vec2 tuv = vWorld.xz * 0.23;
+         vec2 tuv = vWorld.xz * 0.07;
          vec3 col = texture2D(layer0, tuv).rgb * sw0.r
            + texture2D(layer1, tuv * 1.05).rgb * sw0.g
            + texture2D(layer2, tuv * 1.45).rgb * sw0.b

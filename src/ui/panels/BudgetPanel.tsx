@@ -1,6 +1,11 @@
 import { estimateBudget, type BudgetCategory } from '../../model/budget'
+import { formatMoney } from '../../model/money'
+import { useSettings } from '../../settings'
 import { useStore } from '../../store'
-import { registerPanel } from './registry'
+import { T } from '../../i18n/T'
+import { useTranslate } from '../../i18n'
+import { icon } from '../../tools/icons'
+import { registerPanel, setPanelOpen } from './registry'
 
 const CATS: { id: BudgetCategory; label: string; color: string }[] = [
   { id: 'construction', label: 'Construction', color: '#e8b86d' },
@@ -10,12 +15,9 @@ const CATS: { id: BudgetCategory; label: string; color: string }[] = [
   { id: 'terrain', label: 'Outside', color: '#8aaa72' },
 ]
 
-function money(amount: number, currency: string): string {
-  const value = Number.isFinite(amount) ? Math.round(amount) : 0
-  return `${currency} ${value}`
-}
-
 export function BudgetPanel() {
+  const tr = useTranslate()
+  const locale = useSettings((s) => s.language)
   const project = useStore((s) => s.project)
   const budget = project.budget ?? { currency: 'EUR', buildCostPerM2: 1600, finishCostPerM2: {} }
   let estimate = estimateBudget(project)
@@ -23,14 +25,24 @@ export function BudgetPanel() {
     estimate = { ...estimate, total: 0, delta: null }
   }
   const max = Math.max(...CATS.map((cat) => estimate.byCategory[cat.id]), 0)
+  const money = (amount: number) => formatMoney(amount, estimate.currency, locale)
 
   return (
     <div className="props together-panel">
-      <h2>Budget</h2>
-      <p className="budget-total">{money(estimate.total, estimate.currency)}</p>
+      <div className="panel-head">
+        <h2>
+          <T k="Budget" />
+        </h2>
+        <button type="button" className="icon-btn" aria-label={tr('Close')} onClick={() => setPanelOpen('budget', false)}>
+          ×
+        </button>
+      </div>
+      <p className="budget-total">{money(estimate.total)}</p>
       {estimate.delta != null && (
         <p className={estimate.delta >= 0 ? 'under' : 'over'}>
-          {estimate.delta >= 0 ? `Under by ${money(estimate.delta, estimate.currency)}` : `Over by ${money(-estimate.delta, estimate.currency)}`}
+          {estimate.delta >= 0
+            ? tr('Under by {amount}', { amount: money(estimate.delta) })
+            : tr('Over by {amount}', { amount: money(-estimate.delta) })}
         </p>
       )}
       <svg viewBox={`0 0 100 ${CATS.length * 10}`} width="100%" role="img" aria-label="Budget by category">
@@ -47,13 +59,13 @@ export function BudgetPanel() {
       </svg>
       {CATS.map((cat) => (
         <div className="bar-label" key={cat.id}>
-          <span>{cat.label}</span>
+          <span>{tr(cat.label)}</span>
           <span />
-          <span>{money(estimate.byCategory[cat.id], estimate.currency)}</span>
+          <span>{money(estimate.byCategory[cat.id])}</span>
         </div>
       ))}
       <label className="field">
-        Build cost per m²
+        <T k="Build cost per m²" />
         <input
           type="number"
           min={0}
@@ -69,7 +81,7 @@ export function BudgetPanel() {
         />
       </label>
       <label className="field">
-        Currency
+        <T k="Currency" />
         <input
           value={budget.currency}
           maxLength={8}
@@ -82,13 +94,14 @@ export function BudgetPanel() {
         />
       </label>
       <label className="field">
-        Budget target
+        <T k="Budget target" />
         <input
           type="number"
           min={0}
           step={100}
           value={budget.target ?? ''}
-          placeholder="No target"
+          placeholder={tr('No target')}
+          aria-label={tr('Budget target')}
           onChange={(event) => {
             const raw = event.target.value
             useStore.getState().apply('Budget target', (draft) => {
@@ -106,14 +119,16 @@ export function BudgetPanel() {
         <tbody>
           {estimate.byRoom.length === 0 && (
             <tr>
-              <td>No rooms yet</td>
-              <td>{money(0, estimate.currency)}</td>
+              <td>
+                <T k="No rooms yet" />
+              </td>
+              <td>{money(0)}</td>
             </tr>
           )}
           {estimate.byRoom.map((room) => (
             <tr key={room.key || 'outside'}>
               <td>{room.name}</td>
-              <td>{money(room.total, estimate.currency)}</td>
+              <td>{money(room.total)}</td>
             </tr>
           ))}
         </tbody>
@@ -125,6 +140,7 @@ export function BudgetPanel() {
 registerPanel({
   id: 'budget',
   title: 'Budget',
-  placement: 'bottom',
+  placement: 'right',
+  icon: icon('<path d="M6 6h12v12H6z"/><path d="M9 10h6M9 14h4"/>'),
   Component: BudgetPanel,
 })
