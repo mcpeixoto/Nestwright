@@ -1,5 +1,6 @@
 import { deserialize, serialize } from '../io/project'
-import { createLevel, createProject } from '../model/defaults'
+import { createProject } from '../model/defaults'
+import { insertLevel } from '../model/levels'
 import { deleteEntities, duplicateItems, rotateItems } from '../model/ops'
 import { selectActiveLevel, useStore } from '../store'
 import { getPlatform } from '../platform'
@@ -81,16 +82,8 @@ export function addLevelAbove(): void {
   if (!active) return
   let created = ''
   state.apply('Add level', (draft) => {
-    const base = draft.levels.find((l) => l.id === active.id)
-    if (!base) return
-    const elevation = base.elevation + base.height
-    for (const level of draft.levels) {
-      if (level.elevation >= elevation - 1e-6) level.elevation += base.height
-    }
-    const next = createLevel(`Level ${draft.levels.length + 1}`, elevation)
-    created = next.id
-    draft.levels.push(next)
-    draft.levels.sort((a, b) => a.elevation - b.elevation)
+    const next = insertLevel(draft.levels, active.id, 'above')
+    created = next?.id ?? ''
   })
   if (created) useStore.getState().setActiveLevel(created)
 }

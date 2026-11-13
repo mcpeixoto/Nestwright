@@ -10,6 +10,7 @@ import type { ToolContext } from '../../tools/types'
 import { itemCorners } from '../snap'
 import { fillPoly, paperLabel, strokeLine, strokePoly } from '../draw'
 import { registerPlanLayer, type PlanDrawContext } from '../layers'
+import './structure'
 
 const labelAt = new WeakMap<Vec2[], Vec2>()
 

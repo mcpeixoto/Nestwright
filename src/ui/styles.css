@@ -101,6 +101,7 @@ input, select {
   flex: none;
   padding: 8px;
   border-width: 0 1px 0 0;
+  overflow: auto;
 }
 
 .rail-group { display: flex; flex-direction: column; gap: 4px; }
@@ -173,6 +174,7 @@ input, select {
 .field, .check { display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
 .check { flex-direction: row; align-items: center; }
 .check input { width: auto; }
+.field input[type='range'] { padding: 0; }
 .hint, .readout { color: var(--muted); margin: 8px 0; }
 .hint { line-height: 1.4; }
 
@@ -205,7 +207,7 @@ input, select {
   padding: 0 10px;
   border-width: 1px 0 0;
 }
-.levelbar { height: 44px; }
+.levelbar { height: auto; min-height: 44px; flex-wrap: wrap; padding-top: 4px; padding-bottom: 4px; }
 .statusbar { height: 30px; }
 
 .levels { display: flex; gap: 6px; overflow: auto; }

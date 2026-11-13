@@ -3,6 +3,7 @@ import { roomAt } from '../model/rooms'
 import type { Level, Vec2 } from '../model/types'
 import { findWallAt, locateOnWall, openingInterval } from '../model/walls'
 import { pointInItem, screenTol } from './snap'
+import { structureAt } from './structureHit'
 
 export function entityAt(level: Level, point: Vec2, zoom: number): string | null {
   const itemTol = screenTol(zoom, 4)
@@ -34,5 +35,5 @@ export function entityAt(level: Level, point: Vec2, zoom: number): string | null
     const closest = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
     if (dist(point, closest) < screenTol(zoom, 8)) return dim.id
   }
-  return roomAt(level, point)?.key ?? null
+  return structureAt(level, point, zoom) ?? roomAt(level, point)?.key ?? null
 }

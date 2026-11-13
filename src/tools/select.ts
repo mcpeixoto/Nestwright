@@ -1,9 +1,11 @@
+import { bulgeDelta, clampBulge, curveHandle } from '../model/curve'
 import { add, dist, len, sub } from '../model/geometry'
 import { moveItems, moveWall, moveWallEndpoint } from '../model/ops'
 import { roomAt } from '../model/rooms'
 import type { Item, Level, Opening, Vec2, Wall } from '../model/types'
 import { findWallAt, locateOnWall, openingInterval, pointAlongWall } from '../model/walls'
 import { pointInItem, screenTol } from '../plan2d/snap'
+import { structureAt } from '../plan2d/structureHit'
 import { selectActiveLevel, useStore } from '../store'
 import { icon } from './icons'
 import { registerTool } from './registry'
@@ -12,6 +14,7 @@ type Drag =
   | { kind: 'items'; ids: string[]; origins: { id: string; position: Vec2 }[]; start: Vec2 }
   | { kind: 'end'; wallId: string; end: 'a' | 'b'; origin: Vec2; start: Vec2 }
   | { kind: 'wall'; wallId: string; originA: Vec2; start: Vec2 }
+  | { kind: 'bulge'; wallId: string; origin: number; start: Vec2 }
   | { kind: 'marquee'; x0: number; y0: number; x1: number; y1: number; additive: boolean }
 
 let drag: Drag | null = null
@@ -138,10 +141,21 @@ registerTool({
       state.select([opening.id], ctx.shift)
       return
     }
+    const curved = hitBulge(level, ctx.point, state.selection, ctx.transform.zoom)
+    if (curved) {
+      state.select([curved.id], ctx.shift)
+      drag = { kind: 'bulge', wallId: curved.id, origin: curved.bulge, start: { ...ctx.point } }
+      return
+    }
     const wall = findWallAt(level, ctx.point, 0.08)
     if (wall) {
       state.select([wall.id], ctx.shift)
       drag = { kind: 'wall', wallId: wall.id, originA: { ...wall.a }, start: { ...ctx.point } }
+      return
+    }
+    const structure = structureAt(level, ctx.point, ctx.transform.zoom)
+    if (structure) {
+      state.select([structure], ctx.shift)
       return
     }
     const room = roomAt(level, ctx.point)
@@ -179,6 +193,18 @@ registerTool({
       const end = drag.end
       const target = add(drag.origin, sub(ctx.point, drag.start))
       applyMove('Move wall', (draft) => moveWallEndpoint(draft, wallId, end, target))
+      return
+    }
+    if (drag.kind === 'bulge') {
+      const wallId = drag.wallId
+      const origin = drag.origin
+      const start = drag.start
+      const point = ctx.point
+      applyMove('Curve wall', (draft) => {
+        const wall = draft.walls.find((item) => item.id === wallId)
+        if (!wall) return
+        wall.bulge = clampBulge(wall, origin + bulgeDelta(wall, start, point))
+      })
       return
     }
     if (drag.kind === 'wall') {
@@ -224,6 +250,15 @@ registerTool({
     ctx2d.restore()
   },
 })
+
+function hitBulge(level: Level, point: Vec2, selection: readonly string[], zoom: number): Wall | null {
+  const tol = screenTol(zoom, 10)
+  for (const wall of level.walls) {
+    if (!selection.includes(wall.id) || wall.kind === 'railing') continue
+    if (dist(point, curveHandle(wall)) <= tol) return wall
+  }
+  return null
+}
 
 export function selectedWalls(level: Level, selection: readonly string[]): Wall[] {
   return level.walls.filter((wall) => selection.includes(wall.id))

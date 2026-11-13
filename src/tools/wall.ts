@@ -6,6 +6,7 @@ import { useStore } from '../store'
 import { icon } from './icons'
 import { registerTool } from './registry'
 import { chainExtend, chainFinish, chainPointerDown, initialChain, type ChainState } from './wallChain'
+import { wallDrawProps } from './wallOptions'
 
 let chain: ChainState = initialChain()
 let hover: Vec2 | null = null
@@ -21,7 +22,7 @@ function commitAt(time: number) {
   useStore.getState().apply('Draw walls', (draft) => {
     const level = draft.levels.find((l) => l.id === id)
     if (!level) return
-    addWallChain(level, points)
+    addWallChain(level, points, wallDrawProps())
   })
 }
 
@@ -66,7 +67,7 @@ registerTool({
     useStore.getState().apply('Draw walls', (draft) => {
       const level = draft.levels.find((l) => l.id === id)
       if (!level) return
-      addWallChain(level, points)
+      addWallChain(level, points, wallDrawProps())
     })
   },
   onPointerUp(ctx) {
