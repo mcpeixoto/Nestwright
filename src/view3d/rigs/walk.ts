@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { noteCatMode } from '../../achievements/signals'
 import { getEntry } from '../../catalog/registry'
 import { isPassableOpening, levelObstacles, rectFootprint, type Footprint } from '../../model/collision'
 import { integrateWalk } from '../../model/walkMove'
@@ -237,6 +238,7 @@ function onKeyDown(event: KeyboardEvent): void {
   }
   if (event.code === 'KeyC') {
     cat = !cat
+    if (cat) noteCatMode()
     event.preventDefault()
     return
   }

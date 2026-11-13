@@ -4,6 +4,8 @@ import { PlanCanvas } from '../plan2d/PlanCanvas'
 import { useSettings } from '../settings'
 import { useStore } from '../store'
 import { Viewport3D } from '../view3d/Viewport3D'
+import '../achievements/boot'
+import { ToastHost } from '../achievements/toast'
 import { HelpDialog } from './HelpDialog'
 import { PhotoMode } from './PhotoMode'
 import { usePhotoSession } from './photoSession'
@@ -88,6 +90,7 @@ function EditorShell() {
       <LevelBar />
       <StatusBar />
       <TogetherChrome />
+      <ToastHost />
       {photo && <PhotoMode />}
       <Tour />
     </>

@@ -1,3 +1,4 @@
+import { steamFromBridge } from './steam'
 import type { Platform } from './types'
 
 export function electronPlatform(): Platform {
@@ -16,5 +17,6 @@ export function electronPlatform(): Platform {
     onCoopMessage: (cb) => bridge.onCoopMessage?.(cb) ?? (() => {}),
     onCoopClose: (cb) => bridge.onCoopClose?.(cb) ?? (() => {}),
     quit: () => bridge.quit?.() ?? Promise.resolve(),
+    steam: steamFromBridge(bridge.steam),
   }
 }
