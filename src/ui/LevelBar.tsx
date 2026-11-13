@@ -1,10 +1,13 @@
 import { useStore } from '../store'
 import { addLevelAbove } from './actions'
+import { addLevelBelow, deleteActiveLevel, duplicateActiveLevel } from './levelActions'
 
 export function LevelBar() {
   const levels = useStore((s) => s.project.levels)
   const activeId = useStore((s) => s.activeLevelId)
   const display = useStore((s) => s.levelDisplay)
+  const showRoofs = useStore((s) => s.showRoofs)
+  const last = levels.length <= 1
 
   return (
     <footer className="levelbar">
@@ -35,6 +38,23 @@ export function LevelBar() {
       <button type="button" onClick={addLevelAbove}>
         Add level above
       </button>
+      <button type="button" onClick={addLevelBelow}>
+        Add level below
+      </button>
+      <button type="button" onClick={duplicateActiveLevel}>
+        Duplicate
+      </button>
+      <button type="button" onClick={deleteActiveLevel} disabled={last}>
+        Delete level
+      </button>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={showRoofs}
+          onChange={(event) => useStore.getState().setShowRoofs(event.target.checked)}
+        />
+        Roof
+      </label>
       <label className="display-mode">
         Show
         <select value={display} onChange={(event) => useStore.getState().setLevelDisplay(event.target.value as typeof display)}>

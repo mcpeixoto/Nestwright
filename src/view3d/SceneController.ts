@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { buildFloors } from '../builders/floors'
+import { stairHoleOutline } from '../model/stairs'
 import { buildItem } from '../builders/items'
 import { buildOpening } from '../builders/openings'
 import { buildWall } from '../builders/walls'
@@ -40,6 +41,8 @@ interface Bucket {
   walls: Level['walls']
   openings: Level['openings']
   rooms: Level['rooms']
+  belowStairs: Level['stairs'] | undefined
+  roofs: Level['roofs']
   elevation: number
   height: number
   slab: number
@@ -229,25 +232,37 @@ export class SceneController {
         this.levels.set(level.id, bucket)
         this.root.add(bucket.group)
       }
+      const below = levelBelow(project, level)
+      const belowStairs = below?.stairs
       const same =
         bucket.walls === level.walls &&
         bucket.openings === level.openings &&
         bucket.rooms === level.rooms &&
         bucket.elevation === level.elevation &&
         bucket.height === level.height &&
-        bucket.slab === level.slabThickness
+        bucket.slab === level.slabThickness &&
+        bucket.belowStairs === belowStairs &&
+        bucket.roofs === level.roofs
       if (!same) {
         disposeTree(bucket.structural)
         bucket.structural.clear()
         for (const wall of level.walls) {
-          if (wall.kind === 'railing') continue
           bucket.structural.add(buildWall(wall, level, level.walls))
+          if (wall.kind === 'railing') continue
           for (const opening of level.openings) {
             if (opening.wallId === wall.id) bucket.structural.add(buildOpening(opening, wall, level.elevation))
           }
         }
-        bucket.structural.add(buildFloors(level, roomsFor(level)))
+        bucket.structural.add(
+          buildFloors(level, roomsFor(level), {
+            holes: (belowStairs ?? []).map((stair) => stairHoleOutline(stair)),
+            upper: !!below,
+            skipCeiling: level.roofs.length > 0,
+          }),
+        )
         bucket.walls = level.walls
+        bucket.belowStairs = belowStairs
+        bucket.roofs = level.roofs
         bucket.openings = level.openings
         bucket.rooms = level.rooms
         bucket.elevation = level.elevation
@@ -511,11 +526,22 @@ function emptyBucket(): Bucket {
     walls: [],
     openings: [],
     rooms: [],
+    belowStairs: undefined,
+    roofs: [],
     elevation: Number.NaN,
     height: Number.NaN,
     slab: Number.NaN,
     itemMap: new Map(),
   }
+}
+
+function levelBelow(project: Project, level: Level): Level | null {
+  let below: Level | null = null
+  for (const other of project.levels) {
+    if (other.id === level.id) continue
+    if (other.elevation < level.elevation - 1e-4 && (!below || other.elevation > below.elevation)) below = other
+  }
+  return below
 }
 
 function visibleWallBounds(project: Project, state: SceneViewState | null): THREE.Box3 {

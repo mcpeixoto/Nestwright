@@ -40,6 +40,8 @@ export interface StoreState {
   tool: string
   view: ViewMode
   levelDisplay: LevelDisplay
+  /** 2D roof overlay and 3D roof meshes. Not part of the save file. */
+  showRoofs: boolean
   hover: string | null
   past: HistoryEntry[]
   future: HistoryEntry[]
@@ -59,6 +61,7 @@ export interface StoreState {
   setTool: (tool: string) => void
   setView: (view: ViewMode) => void
   setLevelDisplay: (mode: LevelDisplay) => void
+  setShowRoofs: (show: boolean) => void
   setHover: (id: string | null) => void
   setActiveLevel: (id: string) => void
   setOpeningSubtype: (type: OpeningType) => void
@@ -82,6 +85,7 @@ export const useStore = create<StoreState>((set, get) => ({
   tool: 'select',
   view: 'split',
   levelDisplay: 'current',
+  showRoofs: true,
   hover: null,
   past: [],
   future: [],
@@ -201,6 +205,10 @@ export const useStore = create<StoreState>((set, get) => ({
 
   setLevelDisplay(levelDisplay) {
     set({ levelDisplay })
+  },
+
+  setShowRoofs(showRoofs) {
+    set({ showRoofs })
   },
 
   setHover(hover) {

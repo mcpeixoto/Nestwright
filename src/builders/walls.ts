@@ -3,6 +3,7 @@ import { getMaterial } from '../materials/materialCache'
 import { add, dist, dot, lerp, normalize, perp, scale, sub } from '../model/geometry'
 import type { Level, Vec2, Wall } from '../model/types'
 import { openingInterval, sampleFrame, wallFrame, wallLength, mitrePoint, type WallFrame } from '../model/walls'
+import { buildRailing } from './railings'
 
 /** Scratch geometry. Indices are chosen so the geometric normal matches the outward vector. */
 class Bucket {
@@ -147,6 +148,7 @@ function tag(mesh: THREE.Mesh, id: string) {
  * Left, right and top/end faces are separate materials; ends use the left one.
  */
 export function buildWall(wall: Wall, level: Level, neighbours: readonly Wall[]): THREE.Group {
+  if (wall.kind === 'railing') return buildRailing(wall, level)
   const group = new THREE.Group()
   group.userData.entityId = wall.id
   group.userData.kind = 'wall'
