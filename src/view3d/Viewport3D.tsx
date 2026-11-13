@@ -1,10 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { useStore } from '../store'
 import { fitVisible } from '../ui/fit'
+import { FrameGuide } from '../ui/PhotoMode'
+import { usePhotoSession } from '../ui/photoSession'
+import { WalkHud } from '../ui/WalkHud'
 import { SceneController } from './SceneController'
 
 export function Viewport3D() {
   const ref = useRef<HTMLCanvasElement>(null)
+  const view = useStore((s) => s.view)
+  const photo = usePhotoSession().photo
 
   useEffect(() => {
     const canvas = ref.current
@@ -29,8 +34,10 @@ export function Viewport3D() {
   }, [])
 
   return (
-    <div className="view3d-wrap">
+    <div className={view === 'walk' || photo ? 'view3d-wrap quiet' : 'view3d-wrap'}>
       <canvas ref={ref} className="view3d-canvas" />
+      {view === 'walk' && !photo && <WalkHud />}
+      <FrameGuide />
       <button type="button" className="fit-btn" onClick={() => fitVisible()}>
         Fit
       </button>

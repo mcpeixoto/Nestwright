@@ -1,4 +1,5 @@
 import { useStore } from '../store'
+import { noteReturnView } from '../view3d/rigs/walk'
 import { useOpenPanelIds, usePanelList, togglePanel } from './panels/registry'
 import { listTopBarActions } from './topbar/registry'
 import './topbar/builtins'
@@ -7,6 +8,7 @@ const VIEWS = [
   { id: '2d', label: '2D' },
   { id: '3d', label: '3D' },
   { id: 'split', label: 'Split' },
+  { id: 'walk', label: 'Walk' },
 ] as const
 
 export function TopBar() {
@@ -37,7 +39,10 @@ export function TopBar() {
             type="button"
             key={item.id}
             className={view === item.id ? 'on' : ''}
-            onClick={() => useStore.getState().setView(item.id)}
+            onClick={() => {
+              if (item.id === 'walk') noteReturnView(useStore.getState().view)
+              useStore.getState().setView(item.id)
+            }}
           >
             {item.label}
           </button>
@@ -59,16 +64,28 @@ export function TopBar() {
             </button>
           ),
         )}
-        {panels.map((panel) => (
-          <button
-            type="button"
-            key={panel.id}
-            className={open.includes(panel.id) ? 'on' : ''}
-            onClick={() => togglePanel(panel.id)}
-          >
-            {panel.title}
-          </button>
-        ))}
+        {panels.map((panel) =>
+          panel.icon ? (
+            <button
+              type="button"
+              key={panel.id}
+              className={open.includes(panel.id) ? 'icon-btn on' : 'icon-btn'}
+              aria-label={panel.title}
+              title={panel.title}
+              onClick={() => togglePanel(panel.id)}
+              dangerouslySetInnerHTML={{ __html: panel.icon }}
+            />
+          ) : (
+            <button
+              type="button"
+              key={panel.id}
+              className={open.includes(panel.id) ? 'on' : ''}
+              onClick={() => togglePanel(panel.id)}
+            >
+              {panel.title}
+            </button>
+          ),
+        )}
       </div>
     </header>
   )

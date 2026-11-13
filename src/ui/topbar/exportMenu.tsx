@@ -1,0 +1,49 @@
+import { useEffect, useRef, useState } from 'react'
+import { exportHouseGlb } from '../../io/export/glb'
+import { exportPlanPdf, exportPlanPng, exportViewImage } from '../../io/export/images'
+import { registerTopBarAction } from './registry'
+
+function ExportMenu() {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onPointer = (event: PointerEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false)
+    }
+    window.addEventListener('pointerdown', onPointer)
+    return () => window.removeEventListener('pointerdown', onPointer)
+  }, [open])
+
+  const run = (fn: () => Promise<void>) => {
+    setOpen(false)
+    void fn()
+  }
+
+  return (
+    <div className="menu" ref={ref}>
+      <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+        Export
+      </button>
+      {open && (
+        <div className="menu-pop" role="menu">
+          <button type="button" role="menuitem" onClick={() => run(() => exportViewImage(1920, 1080))}>
+            Image
+          </button>
+          <button type="button" role="menuitem" onClick={() => run(() => exportPlanPdf())}>
+            Floor plan PDF
+          </button>
+          <button type="button" role="menuitem" onClick={() => run(() => exportPlanPng())}>
+            Plan PNG
+          </button>
+          <button type="button" role="menuitem" onClick={() => run(() => exportHouseGlb())}>
+            GLB
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+registerTopBarAction({ id: 'export', label: 'Export', order: 45, Component: ExportMenu })
