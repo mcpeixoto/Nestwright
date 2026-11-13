@@ -1,3 +1,4 @@
+import { steamFromBridge } from './steam'
 import type { Platform } from './types'
 
 export function electronPlatform(): Platform {
@@ -7,5 +8,6 @@ export function electronPlatform(): Platform {
     isElectron: true,
     openFile: (accept) => bridge.openFile(accept),
     saveFile: (name, data) => bridge.saveFile(name, data),
+    steam: steamFromBridge(bridge.steam),
   }
 }

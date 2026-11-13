@@ -3,6 +3,8 @@ import { saveAutosave } from '../io/autosave'
 import { PlanCanvas } from '../plan2d/PlanCanvas'
 import { useStore } from '../store'
 import { Viewport3D } from '../view3d/Viewport3D'
+import '../achievements/boot'
+import { ToastHost } from '../achievements/toast'
 import { HelpDialog } from './HelpDialog'
 import { PhotoMode } from './PhotoMode'
 import { usePhotoSession } from './photoSession'
@@ -77,6 +79,7 @@ export function App() {
       <LevelBar />
       <StatusBar />
       <HelpDialog />
+      <ToastHost />
       {photo && <PhotoMode />}
     </div>
   )

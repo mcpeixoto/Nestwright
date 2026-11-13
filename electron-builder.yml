@@ -2,17 +2,31 @@ appId: com.peixotolabs.nestwright
 productName: Nestwright
 directories:
   output: release
+asar: true
 files:
   - dist/**
   - dist-electron/**
   - package.json
+asarUnpack:
+  - node_modules/steamworks.js/**
+extraResources:
+  - from: dist-electron/steam-resources
+    to: .
+    filter:
+      - steam_appid.txt
 mac:
+  hardenedRuntime: false
   identity: null
   category: public.app-category.games
   target:
     - target: dmg
       arch:
         - arm64
-    - target: dir
+    - target: zip
       arch:
         - arm64
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64

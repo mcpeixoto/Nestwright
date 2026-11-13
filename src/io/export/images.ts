@@ -1,3 +1,4 @@
+import { notePhotoExported } from '../../achievements/signals'
 import { getPlatform } from '../../platform'
 import { useStore } from '../../store'
 import type { Level, Project } from '../../model/types'
@@ -15,13 +16,14 @@ function fileName(name: string, ext: string): string {
   return `${clean}.${ext}`
 }
 
-async function save(name: string, data: string): Promise<void> {
+async function save(name: string, data: string): Promise<boolean> {
   if (!data) {
     useStore.getState().setMessage('Nothing to export')
-    return
+    return false
   }
   const ok = await getPlatform().saveFile(name, data)
   useStore.getState().setMessage(ok ? `Saved ${name}` : 'Export cancelled')
+  return ok
 }
 
 export async function exportViewImage(width: number, height: number): Promise<void> {
@@ -68,7 +70,8 @@ export async function exportViewImage(width: number, height: number): Promise<vo
       renderer.render(controller.scene, camera)
     }
   }
-  await save(fileName(useStore.getState().project.name, 'png'), url)
+  const saved = await save(fileName(useStore.getState().project.name, 'png'), url)
+  if (saved) notePhotoExported()
 }
 
 function bounds(level: Level): { minX: number; minY: number; maxX: number; maxY: number } {

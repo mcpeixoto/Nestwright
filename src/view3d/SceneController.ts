@@ -99,7 +99,8 @@ export class SceneController {
     this.camera.position.set(12, 10, 14)
     bindController(this)
     try {
-      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false })
+      // Keep the drawing buffer so a later pixel read (photo export, smoke test) is not blank.
+      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true })
     } catch {
       this.renderer = null
     }

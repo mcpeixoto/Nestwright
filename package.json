@@ -18,6 +18,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "electron:dev": "npm run build:electron && concurrently -k \"vite --strictPort\" \"wait-on tcp:5173 && cross-env NESTWRIGHT_DEV_URL=http://localhost:5173 electron .\"",
     "dist:mac": "npm run build && electron-builder --mac --arm64"
   },
