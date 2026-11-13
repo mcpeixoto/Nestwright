@@ -47,6 +47,18 @@ export function deleteSelection(): void {
   state.apply('Delete', (draft) => {
     const level = draft.levels.find((l) => l.id === levelId)
     if (level) deleteEntities(level, ids)
+    const drop = new Set(ids)
+    const terrain = draft.terrain
+    if (!terrain) return
+    if (terrain.plants.some((plant) => drop.has(plant.id))) {
+      terrain.plants = terrain.plants.filter((plant) => !drop.has(plant.id))
+    }
+    if (terrain.water.some((body) => drop.has(body.id))) {
+      terrain.water = terrain.water.filter((body) => !drop.has(body.id))
+    }
+    if (terrain.fences.some((fence) => drop.has(fence.id))) {
+      terrain.fences = terrain.fences.filter((fence) => !drop.has(fence.id))
+    }
   })
   useStore.getState().select([])
 }

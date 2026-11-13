@@ -10,6 +10,7 @@ import './entries/decor'
 import './entries/plants'
 import './entries/outdoor'
 import './entries/structure'
+import './entries/garden'
 
 export { CATEGORIES, getEntry, listEntries, registerEntries, unregisterEntry } from './registry'
 export { getThumb, requestThumb, subscribeThumbs } from './thumbnails'

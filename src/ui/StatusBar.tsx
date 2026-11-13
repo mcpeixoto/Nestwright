@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { getPlanCursor, subscribePlanCursor } from '../plan2d/cursor'
-import { formatLength } from '../model/units'
+import { polygonArea } from '../model/geometry'
+import { formatArea, formatLength } from '../model/units'
 import { useStore } from '../store'
 
 export function StatusBar() {
@@ -9,6 +10,8 @@ export function StatusBar() {
   const snapEnds = useStore((s) => s.snapEnds)
   const snapAngles = useStore((s) => s.snapAngles)
   const message = useStore((s) => s.message)
+  const boundary = useStore((s) => s.project.terrain?.boundary)
+  const plotArea = formatArea(Math.abs(polygonArea(boundary ?? [])), units)
   const cursor = useSyncExternalStore(subscribePlanCursor, getPlanCursor, () => null)
 
   return (
@@ -36,6 +39,7 @@ export function StatusBar() {
       >
         {units === 'metric' ? 'Metric' : 'Imperial'}
       </button>
+      <span>{plotArea}</span>
       <span className="status-msg">{message}</span>
     </footer>
   )

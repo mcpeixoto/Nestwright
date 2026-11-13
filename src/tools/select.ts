@@ -3,6 +3,7 @@ import { add, dist, len, sub } from '../model/geometry'
 import { moveItems, moveWall, moveWallEndpoint } from '../model/ops'
 import { roomAt } from '../model/rooms'
 import type { Item, Level, Opening, Vec2, Wall } from '../model/types'
+import { pickOutside } from '../model/terrain'
 import { findWallAt, locateOnWall, openingInterval, pointAlongWall } from '../model/walls'
 import { pointInItem, screenTol } from '../plan2d/snap'
 import { structureAt } from '../plan2d/structureHit'
@@ -156,6 +157,12 @@ registerTool({
     const structure = structureAt(level, ctx.point, ctx.transform.zoom)
     if (structure) {
       state.select([structure], ctx.shift)
+      return
+    }
+    const terrain = state.project.terrain
+    const outside = terrain ? pickOutside(terrain, ctx.point, screenTol(ctx.transform.zoom, 8)) : null
+    if (outside) {
+      state.select([outside], ctx.shift)
       return
     }
     const room = roomAt(level, ctx.point)
