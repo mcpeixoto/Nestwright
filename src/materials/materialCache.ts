@@ -58,6 +58,12 @@ export function getMaterial(ref: MaterialRef | undefined): THREE.MeshStandardMat
     mat.bumpMap = null
     mat.bumpScale = 0
   }
+  if (id === 'roof-tiles') {
+    mat.metalness = 0
+    mat.roughness = Math.max(mat.roughness, 0.82)
+    mat.envMapIntensity = 0.15
+    mat.bumpScale = 0.04
+  }
   if (id === 'mirror') {
     mat.roughness = 0.02
     mat.metalness = 1

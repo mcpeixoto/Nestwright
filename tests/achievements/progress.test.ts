@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { earnedNow, type FeatureSet } from '../../src/achievements/evaluate'
 import { liveFeatures } from '../../src/achievements/features'
+import { achievementProgress, installAchievementWatch, resetAchievementWatchForTests } from '../../src/achievements/watch'
 import { emptyProgress, loadProgress, mergeProgress, progressForCause, saveProgress, type AchievementProgress } from '../../src/achievements/progress'
 import { createProject } from '../../src/model/defaults'
 import { familyHouse } from '../../src/templates/family'
+import { useStore } from '../../src/store'
 import type { Project } from '../../src/model/types'
 
 const FEATURES: FeatureSet = {
@@ -124,5 +126,24 @@ describe('achievement progress', () => {
     expect(loaded.next.unlocked).toEqual([])
     const remote = progressForCause(emptyProgress(), ctx, 'remote')
     expect(remote.fresh).toEqual([])
+  })
+
+  it('does not unlock a loaded template on the next unrelated edit', () => {
+    resetAchievementWatchForTests()
+    installAchievementWatch()
+    try {
+      useStore.getState().setProject(familyHouse())
+      useStore.getState().apply('Rename level', (project) => {
+        const level = project.levels[0]
+        if (level) level.name = 'Renamed storey'
+      })
+      expect(achievementProgress().unlocked).toEqual([])
+      useStore.getState().apply('Set budget', (project) => {
+        project.budget.target = 1_000_000_000
+      })
+      expect(achievementProgress().unlocked).toEqual(['budget-master'])
+    } finally {
+      resetAchievementWatchForTests()
+    }
   })
 })

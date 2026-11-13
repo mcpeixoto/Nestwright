@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { sampleHeight } from '../../model/terrain'
 import type { Terrain } from '../../model/types'
+import { srgbByteToLinear } from '../colorLinear'
 
 interface Scratch {
   pos: number[]
@@ -10,9 +11,9 @@ interface Scratch {
 }
 
 function tone(hex: number, salt: number): [number, number, number] {
-  const shift = ((Math.abs(salt) % 5) - 2) * 0.04
-  const channel = (value: number, scale: number) => Math.min(1, Math.max(0, value / 255 + shift * scale))
-  return [channel((hex >> 16) & 255, 1), channel((hex >> 8) & 255, 0.7), channel(hex & 255, 0.4)]
+  const shift = ((Math.abs(Math.floor(salt)) % 5) - 2) * 8
+  const channel = (value: number) => srgbByteToLinear(Math.min(255, Math.max(0, value + shift)))
+  return [channel((hex >> 16) & 255), channel((hex >> 8) & 255), channel(hex & 255)]
 }
 
 function tri(s: Scratch, a: number[], b: number[], c: number[], color: [number, number, number], sway: number) {
@@ -29,10 +30,11 @@ function tri(s: Scratch, a: number[], b: number[], c: number[], color: [number, 
   nx /= length
   ny /= length
   nz /= length
+  const shade = 0.78 + 0.22 * Math.max(0, Math.min(1, ny))
   for (const p of [a, b, c]) {
     s.pos.push(p[0] ?? 0, p[1] ?? 0, p[2] ?? 0)
     s.nrm.push(nx, ny, nz)
-    s.col.push(color[0], color[1], color[2])
+    s.col.push(color[0] * shade, color[1] * shade, color[2] * shade)
     s.sway.push(sway)
   }
 }
@@ -51,11 +53,30 @@ function addCone(s: Scratch, y0: number, y1: number, r0: number, r1: number, sid
   }
 }
 
-function addBall(s: Scratch, cx: number, cy: number, cz: number, radius: number, hex: number, sway: number, lat = 4, lon = 6) {
+function addBall(
+  s: Scratch,
+  cx: number,
+  cy: number,
+  cz: number,
+  radius: number,
+  hex: number,
+  sway: number,
+  lat = 6,
+  lon = 9,
+  jitter = 0,
+  rx = radius,
+  ry = radius,
+  rz = radius,
+) {
   const at = (i: number, j: number) => {
     const v = (i / lat) * Math.PI
     const u = (j / lon) * Math.PI * 2
-    return [cx + Math.sin(v) * Math.cos(u) * radius, cy + Math.cos(v) * radius, cz + Math.sin(v) * Math.sin(u) * radius]
+    const n = 1 + jitter * Math.sin(u * 3 + v * 2) * Math.cos(u * 2 - v * 3)
+    return [
+      cx + Math.sin(v) * Math.cos(u) * rx * n,
+      cy + Math.cos(v) * ry * n,
+      cz + Math.sin(v) * Math.sin(u) * rz * n,
+    ]
   }
   for (let i = 0; i < lat; i++) {
     for (let j = 0; j < lon; j++) {
@@ -103,8 +124,37 @@ function scratch(): Scratch {
   return { pos: [], nrm: [], col: [], sway: [] }
 }
 
+function smoothNormals(s: Scratch): void {
+  const count = s.pos.length / 3
+  const acc = new Map<string, { x: number; y: number; z: number; n: number }>()
+  const keyOf = (i: number) => {
+    const x = Math.round((s.pos[i * 3] ?? 0) * 80)
+    const y = Math.round((s.pos[i * 3 + 1] ?? 0) * 80)
+    const z = Math.round((s.pos[i * 3 + 2] ?? 0) * 80)
+    return `${x}:${y}:${z}`
+  }
+  for (let i = 0; i < count; i++) {
+    const key = keyOf(i)
+    const hit = acc.get(key) ?? { x: 0, y: 0, z: 0, n: 0 }
+    hit.x += s.nrm[i * 3] ?? 0
+    hit.y += s.nrm[i * 3 + 1] ?? 0
+    hit.z += s.nrm[i * 3 + 2] ?? 0
+    hit.n += 1
+    acc.set(key, hit)
+  }
+  for (let i = 0; i < count; i++) {
+    const hit = acc.get(keyOf(i))
+    if (!hit || hit.n < 1) continue
+    const len = Math.hypot(hit.x, hit.y, hit.z) || 1
+    s.nrm[i * 3] = hit.x / len
+    s.nrm[i * 3 + 1] = hit.y / len
+    s.nrm[i * 3 + 2] = hit.z / len
+  }
+}
+
 function geometry(s: Scratch): THREE.BufferGeometry {
   if (s.pos.length < 9) addBox(s, 0, 0.2, 0, 0.2, 0.4, 0.2, 0x668844, 0)
+  smoothNormals(s)
   const geo = new THREE.BufferGeometry()
   geo.setAttribute('position', new THREE.Float32BufferAttribute(s.pos, 3))
   geo.setAttribute('normal', new THREE.Float32BufferAttribute(s.nrm, 3))
@@ -121,7 +171,7 @@ function tree(trunk: number, leaf: number, leaf2: number, kind: string): Scratch
     const tiers = kind === 'cypress' ? 5 : 3
     for (let i = 0; i < tiers; i++) {
       const y = 1 + i * (kind === 'cypress' ? 1.05 : 1.15)
-      addCone(s, y, y + (kind === 'cypress' ? 1.35 : 1.7), kind === 'cypress' ? 0.42 - i * 0.05 : 1.15 - i * 0.28, 0.02, 7, i % 2 ? leaf2 : leaf, 1)
+      addCone(s, y, y + (kind === 'cypress' ? 1.35 : 1.7), kind === 'cypress' ? 0.42 - i * 0.05 : 1.15 - i * 0.28, 0.02, kind === 'cypress' ? 10 : 7, i % 2 ? leaf2 : leaf, 1)
     }
     return s
   }
@@ -138,9 +188,10 @@ function tree(trunk: number, leaf: number, leaf2: number, kind: string): Scratch
   const height = kind === 'birch' ? 2.3 : kind === 'olive' ? 1.15 : kind === 'fruit-tree' ? 1.25 : 1.7
   const radius = kind === 'birch' ? 0.11 : 0.18
   addCone(s, 0, height, radius, radius * 0.72, 6, trunk, 0)
-  addBall(s, 0, height + 0.85, 0, kind === 'olive' ? 0.95 : 1.15, leaf, 1)
-  addBall(s, 0.45, height + 0.45, 0.2, 0.72, leaf2, 1)
-  addBall(s, -0.4, height + 0.55, -0.15, 0.66, leaf, 1)
+  const crown = kind === 'olive' ? 0.95 : 1.15
+  addBall(s, 0, height + 0.85, 0, crown, leaf, 1, 6, 10, 0.12)
+  addBall(s, 0.5, height + 0.48, 0.22, crown * 0.62, leaf2, 1, 5, 8, 0.14)
+  addBall(s, -0.42, height + 0.58, -0.16, crown * 0.58, leaf, 1, 5, 8, 0.1)
   if (kind === 'fruit-tree') {
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2
@@ -152,19 +203,19 @@ function tree(trunk: number, leaf: number, leaf2: number, kind: string): Scratch
 
 function buildSpecies(species: string): THREE.BufferGeometry {
   const s = scratch()
-  if (species === 'oak') return geometry(tree(0x6b4a30, 0x3f6b34, 0x6a8f3e, 'oak'))
-  if (species === 'birch') return geometry(tree(0xd8d0c0, 0x5e8a48, 0x7aa45c, 'birch'))
-  if (species === 'pine') return geometry(tree(0x5a4030, 0x1f4a32, 0x2f6a42, 'pine'))
-  if (species === 'cypress') return geometry(tree(0x6a5340, 0x24543a, 0x1c4030, 'cypress'))
-  if (species === 'palm') return geometry(tree(0x8a6a42, 0x2f7a40, 0x3e8a48, 'palm'))
-  if (species === 'olive') return geometry(tree(0x6a5a42, 0x4f6234, 0x62743e, 'olive'))
+  if (species === 'oak') return geometry(tree(0x6b4a30, 0x4f7a38, 0x7a9a46, 'oak'))
+  if (species === 'birch') return geometry(tree(0xc4b49a, 0x6e9a4e, 0x8aaa58, 'birch'))
+  if (species === 'pine') return geometry(tree(0x5a4030, 0x1e4a32, 0x245c3c, 'pine'))
+  if (species === 'cypress') return geometry(tree(0x6a5340, 0x2e7a44, 0x246838, 'cypress'))
+  if (species === 'palm') return geometry(tree(0x8a6a42, 0x2a7040, 0x3e8848, 'palm'))
+  if (species === 'olive') return geometry(tree(0x6a5a42, 0x667044, 0x7a8052, 'olive'))
   if (species === 'fruit-tree') return geometry(tree(0x6d4c32, 0x4e7a3c, 0x6e9448, 'fruit-tree'))
   if (species === 'bush-round') {
-    addBall(s, 0, 0.45, 0, 0.48, 0x3f6b34, 1)
+    addBall(s, 0, 0.45, 0, 0.48, 0x3d6e36, 1)
     return geometry(s)
   }
   if (species === 'bush-flowering') {
-    addBall(s, 0, 0.42, 0, 0.46, 0x3f6b34, 1)
+    addBall(s, 0, 0.42, 0, 0.46, 0x3d6e36, 1)
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2
       addBall(s, Math.cos(a) * 0.28, 0.62, Math.sin(a) * 0.28, 0.1, i % 2 ? 0xd46a8a : 0xf2d2dc, 0.4, 2, 3)
@@ -172,7 +223,11 @@ function buildSpecies(species: string): THREE.BufferGeometry {
     return geometry(s)
   }
   if (species === 'hedge-segment') {
-    addBox(s, 0, 0.55, 0, 1.15, 1.05, 0.55, 0x2f6b3c, 0.35)
+    addBox(s, 0, 0.32, 0, 1.78, 0.64, 0.58, 0x356838, 0.15)
+    addBox(s, 0, 0.7, 0, 1.7, 0.4, 0.62, 0x4c8c46, 0.2)
+    addBall(s, 0, 0.92, 0, 0.34, 0x5a9a4c, 0.25, 5, 8, 0.08, 0.86, 0.22, 0.32)
+    addBall(s, 0.38, 0.98, 0.04, 0.16, 0x68a858, 0.2, 4, 6, 0.1, 0.28, 0.12, 0.16)
+    addBall(s, -0.42, 0.96, -0.03, 0.14, 0x3f7a40, 0.2, 4, 6, 0.08, 0.26, 0.11, 0.15)
     return geometry(s)
   }
   if (species === 'flowers-mixed' || species === 'lavender') {
@@ -206,7 +261,7 @@ function buildSpecies(species: string): THREE.BufferGeometry {
     addBall(s, r * 0.35, r * 0.45, r * 0.1, r * 0.55, 0x6e6a64, 0, 3, 4)
     return geometry(s)
   }
-  addBall(s, 0, 0.4, 0, 0.4, 0x3f6b34, 1)
+  addBall(s, 0, 0.4, 0, 0.4, 0x3d6e36, 1)
   return geometry(s)
 }
 
@@ -231,7 +286,15 @@ export class PlantField {
 
   constructor() {
     this.group.name = 'plants'
-    this.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0, side: THREE.DoubleSide })
+    this.material = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.92,
+      metalness: 0,
+      envMapIntensity: 0.4,
+      emissive: new THREE.Color(0x000000),
+      emissiveIntensity: 0,
+      side: THREE.DoubleSide,
+    })
     this.material.customProgramCacheKey = () => 'nestwright-plant-wind'
     const time = this.time
     this.material.onBeforeCompile = (shader) => {

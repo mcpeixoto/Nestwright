@@ -26,6 +26,7 @@ import {
 } from '../../src/model/terrain'
 import { GROUND_LAYERS } from '../../src/model/types'
 import { dist } from '../../src/model/geometry'
+import { familyHouse } from '../../src/templates/family'
 
 function sum(values: readonly number[]): number {
   return values.reduce((acc, value) => acc + value, 0)
@@ -272,11 +273,29 @@ describe('ivy and gardens', () => {
     const ix = Math.round(path.x)
     const iy = Math.round(path.y)
     expect(dominantLayer(weights, gridIndex(ix, iy, first.terrain.resolution))).toBe(GROUND_LAYERS.indexOf('gravel'))
+    const edge = worldToGrid(first.terrain, 0, -14.9)
+    expect(dominantLayer(weights, gridIndex(Math.round(edge.x), Math.round(edge.y), first.terrain.resolution))).toBe(
+      GROUND_LAYERS.indexOf('gravel'),
+    )
     const lawn = worldToGrid(first.terrain, 8, 8)
     expect(dominantLayer(weights, gridIndex(Math.round(lawn.x), Math.round(lawn.y), first.terrain.resolution))).toBe(
       GROUND_LAYERS.indexOf('lawn'),
     )
     expect(first.terrain.plants.some((plant) => plant.species === 'hedge-segment')).toBe(true)
     expect(first.terrain.plants.some((plant) => plant.id.startsWith('tree_'))).toBe(true)
+  })
+
+  it('keeps the family-house path at the front door, not across the pool', () => {
+    const project = familyHouse()
+    const weights = decodeSplat(project.terrain.splat, (project.terrain.resolution + 1) ** 2 * 8)
+    const layerAt = (x: number, y: number) => {
+      const g = worldToGrid(project.terrain, x, y)
+      return dominantLayer(weights, gridIndex(Math.round(g.x), Math.round(g.y), project.terrain.resolution))
+    }
+    const gravel = GROUND_LAYERS.indexOf('gravel')
+    const lawn = GROUND_LAYERS.indexOf('lawn')
+    expect(layerAt(1.2, -10)).toBe(gravel)
+    expect(layerAt(16, 1)).toBe(lawn)
+    expect(layerAt(14, 2.4)).toBe(lawn)
   })
 })

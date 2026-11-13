@@ -26,4 +26,17 @@ describe('sunLook', () => {
     expect(night.exposure).toBeLessThan(day.exposure)
     expect(day.daylight).toBeGreaterThan(0.9)
   })
+
+  it('keeps a low afternoon sun and civil twilight bright enough to read', () => {
+    const afternoon = sunLook((5 * Math.PI) / 180)
+    const horizon = sunLook(0)
+    const twilight = sunLook((-3 * Math.PI) / 180)
+    const night = sunLook(-0.4)
+    expect(afternoon.intensity).toBeGreaterThan(0.8)
+    expect(afternoon.intensity).toBeLessThan(sunLook(0.5).intensity + 1e-6)
+    expect(twilight.intensity).toBeGreaterThan(0.15)
+    expect(twilight.intensity).toBeLessThan(horizon.intensity)
+    expect(night.intensity).toBeLessThan(0.05)
+    expect(afternoon.exposure).toBeCloseTo(0.42 + afternoon.daylight * 0.63, 6)
+  })
 })

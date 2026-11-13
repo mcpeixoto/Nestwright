@@ -7,6 +7,7 @@ export type PatternKind =
   | 'herringbone'
   | 'bricks'
   | 'tiles'
+  | 'courses'
   | 'hex'
   | 'terrazzo'
   | 'marble'
@@ -62,7 +63,8 @@ export const MATERIALS: MaterialDef[] = [
   { id: 'glass', name: 'Glass', category: 'Glass', color: '#d5e4ea', roughness: 0.05, metalness: 0, tileSize: 1, pattern: { kind: 'none' } },
   { id: 'grass', name: 'Lawn', category: 'Ground', color: '#6f8f4e', roughness: 0.95, metalness: 0, tileSize: 1.2, pattern: { kind: 'noise', colors: ['#7ea258', '#5d7a40'] } },
   { id: 'gravel', name: 'Gravel', category: 'Ground', color: '#b5aa9c', roughness: 0.98, metalness: 0, tileSize: 0.6, pattern: { kind: 'terrazzo', colors: ['#cfc4b4', '#a89884', '#8d8274', '#ddd4c6'] } },
-  { id: 'roof-tiles', name: 'Roof tiles', category: 'Roof', color: '#8e4638', roughness: 0.8, metalness: 0, tileSize: 0.7, pattern: { kind: 'tiles', colors: ['#9a5142', '#7a3b30'], grout: '#5c2e26' }, costPerM2: 42 },
+  // Albedo, not the lit colour. Noon sun should read near sRGB (165, 85, 60).
+  { id: 'roof-tiles', name: 'Roof tiles', category: 'Roof', color: '#b85a3c', roughness: 0.86, metalness: 0, tileSize: 1.8, pattern: { kind: 'courses', colors: ['#c4623e', '#a34b32'], grout: '#6a3428' }, costPerM2: 42 },
   { id: 'roof-metal', name: 'Standing seam', category: 'Roof', color: '#8d9290', roughness: 0.32, metalness: 0.7, tileSize: 0.8, pattern: { kind: 'planks', colors: ['#9aa09d', '#7e8482'] }, costPerM2: 38 },
   { id: 'wood-cladding', name: 'Wood cladding', category: 'Wood', color: '#b08968', roughness: 0.7, metalness: 0, tileSize: 1, pattern: { kind: 'planks', colors: ['#c29a74', '#9a7450', '#d0ae86'] }, costPerM2: 50 },
   { id: 'wallpaper-floral', name: 'Floral wallpaper', category: 'Paper', color: '#f3e6d8', roughness: 0.8, metalness: 0, tileSize: 0.6, pattern: { kind: 'floral', colors: ['#f7efe4', '#c47a5a', '#3d6b66', '#e8b86d'] }, costPerM2: 22 },

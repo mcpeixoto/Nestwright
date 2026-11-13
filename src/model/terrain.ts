@@ -2,6 +2,7 @@ import {
   add,
   closestPointOnSegment,
   dist,
+  dot,
   len,
   normalize,
   perp,
@@ -940,10 +941,15 @@ function frontDoor(level: Level): { point: Vec2; out: Vec2 } | null {
     const wall = level.walls.find((item) => item.id === opening.wallId)
     if (!wall) continue
     const point = pointAlongWall(wall, opening.offset)
-    let out = sub(point, centroid)
-    if (len(out) < 0.25) out = { x: 0, y: -1 }
-    else out = normalize(out)
-    const score = len(sub(point, centroid))
+    const tangent = normalize(sub(wall.b, wall.a))
+    if (len(tangent) < 1e-6) continue
+    // Leave through the wall, away from the middle of the plan. Scoring by
+    // distance alone picks an interior door and shoots the path sideways
+    // across the garden (through the family-house pool).
+    let out = perp(tangent)
+    const away = sub(point, centroid)
+    if (dot(out, away) < 0) out = { x: -out.x, y: -out.y }
+    const score = dot(out, away)
     if (!best || score > best.score) best = { point, out, score }
   }
   return best ? { point: best.point, out: best.out } : null
@@ -951,7 +957,9 @@ function frontDoor(level: Level): { point: Vec2; out: Vec2 } | null {
 
 function rayToRing(origin: Vec2, dir: Vec2, ring: readonly Vec2[]): Vec2 | null {
   if (len(dir) < 1e-6 || ring.length < 2) return null
-  const far = add(origin, scale(dir, 10000))
+  // Parameter t is a fraction of this reach, so the near-miss epsilon has to be in metres.
+  const reach = 10000
+  const far = add(origin, scale(dir, reach))
   let best = Infinity
   let hit: Vec2 | null = null
   for (let i = 0; i < ring.length; i++) {
@@ -959,8 +967,10 @@ function rayToRing(origin: Vec2, dir: Vec2, ring: readonly Vec2[]): Vec2 | null 
     const b = ring[(i + 1) % ring.length]
     if (!a || !b) continue
     const found = segmentIntersection(origin, far, a, b)
-    if (!found || found.t <= 0.002 || found.t >= best) continue
-    best = found.t
+    if (!found) continue
+    const distance = found.t * reach
+    if (distance <= 0.05 || distance >= best) continue
+    best = distance
     hit = found.point
   }
   return hit

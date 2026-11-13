@@ -108,6 +108,30 @@ function drawPattern(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingCon
     }
     return
   }
+  if (spec.kind === 'courses') {
+    const rows = 4
+    const bh = size / rows
+    const bw = size / 6
+    const gap = Math.max(8, Math.round(bh * 0.16))
+    if (rough) {
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, size, size)
+      ctx.fillStyle = '#f0f0f0'
+      for (let row = 0; row < rows; row++) ctx.fillRect(0, row * bh, size, gap)
+      return
+    }
+    const grout = spec.grout ?? '#6a3428'
+    ctx.fillStyle = grout
+    ctx.fillRect(0, 0, size, size)
+    for (let row = 0; row < rows; row++) {
+      const off = row % 2 === 0 ? 0 : bw / 2
+      for (let col = -1; col < 10; col++) {
+        ctx.fillStyle = ink(row * 3 + col)
+        ctx.fillRect(col * bw + off + 2, row * bh + gap, bw - 4, bh - gap * 1.4)
+      }
+    }
+    return
+  }
   if (spec.kind === 'hex') {
     const r = size / 9
     const grout = rough ? '#666' : (spec.grout ?? '#bbb')

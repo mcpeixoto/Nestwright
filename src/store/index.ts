@@ -31,10 +31,17 @@ type EditListener = (patches: Patch[], inverse: Patch[]) => void
 const patchListeners = new Set<PatchListener>()
 const editListeners = new Set<EditListener>()
 const localApplyListeners = new Set<() => void>()
+const beforeLocalApplyListeners = new Set<() => void>()
 
 export function subscribeLocalApplies(listener: () => void): () => void {
   localApplyListeners.add(listener)
   return () => localApplyListeners.delete(listener)
+}
+
+/** Fires after a recipe produces patches, before the store swaps the project. */
+export function subscribeBeforeLocalApply(listener: () => void): () => void {
+  beforeLocalApplyListeners.add(listener)
+  return () => beforeLocalApplyListeners.delete(listener)
 }
 
 function emitEdit(patches: Patch[], inverse: Patch[]): void {
@@ -153,6 +160,13 @@ export const useStore = create<StoreState>((set, get) => ({
       draft.updatedAt = now
     })
     if (patches.length === 0) return
+    for (const listener of beforeLocalApplyListeners) {
+      try {
+        listener()
+      } catch {
+        /* a listener must not block the edit */
+      }
+    }
     const { past, stroke } = get()
     const last = past[past.length - 1]
     let history: HistoryEntry[]
