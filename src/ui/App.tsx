@@ -4,6 +4,10 @@ import { PlanCanvas } from '../plan2d/PlanCanvas'
 import { useStore } from '../store'
 import { Viewport3D } from '../view3d/Viewport3D'
 import { HelpDialog } from './HelpDialog'
+import { PhotoMode } from './PhotoMode'
+import { usePhotoSession } from './photoSession'
+import './panels/EnvironmentPanel'
+import './topbar/exportMenu'
 import { Inspector } from './Inspector'
 import { LevelBar } from './LevelBar'
 import { PanelSlot } from './panels/PanelSlot'
@@ -17,11 +21,12 @@ import { ToolRail } from './ToolRail'
 
 export function App() {
   const view = useStore((s) => s.view)
+  const photo = usePhotoSession().photo
   const panels = usePanelList()
   const openIds = useOpenPanelIds()
   const open = new Set(openIds)
-  const showPlan = view === '2d' || view === 'split'
-  const show3d = view === '3d' || view === 'split' || view === 'walk'
+  const showPlan = !photo && (view === '2d' || view === 'split')
+  const show3d = photo || view === '3d' || view === 'split' || view === 'walk'
   const left = panels.filter((panel) => panel.placement === 'left' && open.has(panel.id))
   const right = panels.filter((panel) => panel.placement === 'right' && open.has(panel.id))
   const bottom = panels.filter((panel) => panel.placement === 'bottom' && open.has(panel.id))
@@ -39,7 +44,7 @@ export function App() {
   }, [])
 
   return (
-    <div className="app">
+    <div className={photo ? 'app photo-mode' : 'app'}>
       <TopBar />
       <div className="workspace">
         <ToolRail />
@@ -72,6 +77,7 @@ export function App() {
       <LevelBar />
       <StatusBar />
       <HelpDialog />
+      {photo && <PhotoMode />}
     </div>
   )
 }

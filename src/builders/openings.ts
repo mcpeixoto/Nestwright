@@ -3,10 +3,22 @@ import { getMaterial } from '../materials/materialCache'
 import type { Opening, Wall } from '../model/types'
 import { sampleFrame, wallFrame } from '../model/walls'
 
-function tag(obj: THREE.Object3D, id: string) {
+let windowGlassMat: THREE.MeshStandardMaterial | null = null
+
+function windowGlass(): THREE.MeshStandardMaterial {
+  if (!windowGlassMat) {
+    windowGlassMat = getMaterial({ id: 'glass' }).clone()
+    windowGlassMat.userData.windowGlass = true
+    windowGlassMat.emissive = new THREE.Color('#000000')
+  }
+  return windowGlassMat
+}
+
+function tag(obj: THREE.Object3D, opening: Opening) {
   obj.traverse((child) => {
-    child.userData.entityId = id
+    child.userData.entityId = opening.id
     child.userData.kind = 'opening'
+    child.userData.openingType = opening.type
     const mesh = child as THREE.Mesh
     if (mesh.isMesh) {
       mesh.castShadow = mesh.material !== undefined && !(mesh.material as THREE.Material).transparent
@@ -22,7 +34,7 @@ function box(mat: THREE.Material, w: number, h: number, d: number, x: number, y:
 }
 
 function glassPane(w: number, h: number, d: number, x: number, y: number, z: number): THREE.Mesh {
-  return box(getMaterial({ id: 'glass' }), w, h, d, x, y, z)
+  return box(windowGlass(), w, h, d, x, y, z)
 }
 
 /**
@@ -80,7 +92,7 @@ export function buildOpening(opening: Opening, wall: Wall, elevation: number): T
     const ring = new THREE.Mesh(new THREE.TorusGeometry(radius - border / 2, border / 2, 8, 24), frameMat)
     ring.position.set(0, h / 2, 0)
     group.add(ring)
-    const disk = new THREE.Mesh(new THREE.CircleGeometry(Math.max(0.05, radius - border), 24), getMaterial({ id: 'glass' }))
+    const disk = new THREE.Mesh(new THREE.CircleGeometry(Math.max(0.05, radius - border), 24), windowGlass())
     disk.position.set(0, h / 2, 0)
     group.add(disk)
   } else if (kind === 'sliding-door') {
@@ -126,14 +138,20 @@ export function buildOpening(opening: Opening, wall: Wall, elevation: number): T
     const leafH = h - border - 0.01
     const leafD = 0.04
     for (let i = 0; i < leaves; i++) {
-      const x = leaves === 1 ? hinge * 0.01 : (i === 0 ? -leafW / 2 - 0.005 : leafW / 2 + 0.005)
-      group.add(box(leafMat, leafW, leafH, leafD, x, leafH / 2 + 0.005, side * 0.012))
-      group.add(box(leafMat, leafW * 0.72, leafH * 0.55, 0.012, x, leafH * 0.42, side * (0.012 + leafD / 2)))
+      const hingeSign = leaves === 1 ? hinge : i === 0 ? -1 : 1
+      const hingeX = hingeSign * (w / 2 - border)
+      const pivot = new THREE.Group()
+      pivot.position.set(hingeX, 0, 0)
+      pivot.userData.doorLeaf = opening.id
+      pivot.userData.hingeSign = hingeSign
+      const leafCenter = -hingeSign * (leafW / 2)
+      pivot.add(box(leafMat, leafW, leafH, leafD, leafCenter, leafH / 2 + 0.005, side * 0.012))
+      pivot.add(box(leafMat, leafW * 0.72, leafH * 0.55, 0.012, leafCenter, leafH * 0.42, side * (0.012 + leafD / 2)))
+      pivot.add(box(brass, 0.02, 0.12, 0.04, leafCenter * 1.4, h * 0.48, side * 0.05))
+      group.add(pivot)
     }
-    const handleX = -hinge * (w / 2 - border - 0.08)
-    group.add(box(brass, 0.02, 0.12, 0.04, handleX, h * 0.48, side * 0.04))
   }
 
-  tag(group, opening.id)
+  tag(group, opening)
   return group
 }

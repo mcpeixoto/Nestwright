@@ -92,3 +92,11 @@ export function pixelRatioCap(quality: GraphicsQuality): number {
   if (quality === 'medium') return 1.5
   return 2
 }
+
+/** Scatter budgets read this. Placed furniture is unaffected. */
+export function plantDensityMultiplier(quality: GraphicsQuality): number {
+  if (quality === 'low') return 0.35
+  if (quality === 'medium') return 0.65
+  if (quality === 'ultra') return 1.35
+  return 1
+}

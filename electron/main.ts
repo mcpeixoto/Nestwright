@@ -70,14 +70,28 @@ function registerIpc() {
   })
 
   ipcMain.handle('nestwright:save-file', async (_event, name: string, data: string) => {
-    const ext = name.endsWith('.json') ? 'json' : 'nest'
+    const ext = name.includes('.') ? (name.split('.').pop() ?? 'nest') : 'nest'
+    const labels: Record<string, string> = {
+      json: 'JSON',
+      nest: 'Nestwright',
+      png: 'PNG',
+      pdf: 'PDF',
+      webm: 'WebM',
+      glb: 'GLB',
+    }
     const result = await dialog.showSaveDialog({
-      title: 'Save project',
+      title: ext === 'nest' || ext === 'json' ? 'Save project' : 'Export',
       defaultPath: name,
-      filters: [{ name: ext === 'json' ? 'JSON' : 'Nestwright', extensions: [ext] }],
+      filters: [{ name: labels[ext] ?? 'File', extensions: [ext] }],
     })
     if (result.canceled || !result.filePath) return false
-    await fs.writeFile(result.filePath, data, 'utf8')
+    if (data.startsWith('data:')) {
+      const comma = data.indexOf(',')
+      const payload = comma >= 0 ? data.slice(comma + 1) : ''
+      await fs.writeFile(result.filePath, Buffer.from(payload, 'base64'))
+    } else {
+      await fs.writeFile(result.filePath, data, 'utf8')
+    }
     return true
   })
 }

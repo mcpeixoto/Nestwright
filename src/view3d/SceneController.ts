@@ -10,7 +10,10 @@ import { gizmoOwnsPointer } from './layers/gizmo'
 import { paintFromHits, type ViewHit } from './paintPick'
 import { pixelRatioCap, useSettings } from '../settings'
 import { roomsFor, useStore } from '../store'
+import { isPhotoMode } from '../ui/photoSession'
 import { getRig, type CameraRig } from './rigs'
+import { bindWalkScene } from './rigs/walk'
+import { renderFrame } from './post/pipeline'
 import {
   bindSceneHost,
   listSceneLayers,
@@ -19,6 +22,7 @@ import {
   type SceneViewState,
 } from './layers'
 import './layers/builtin'
+import './atmosphere'
 
 export type { SceneViewState as ViewState } from './layers'
 
@@ -52,6 +56,13 @@ function bindController(controller: SceneController | null): void {
 
 export function getController(): SceneController | null {
   return current
+}
+
+let beforeRender: (() => boolean) | null = null
+
+/** A flight (or similar) can own the camera for a frame by returning true. */
+export function setBeforeRender(fn: () => boolean): void {
+  beforeRender = fn
 }
 
 export class SceneController {
@@ -113,6 +124,7 @@ export class SceneController {
 
     this.scene.add(this.root)
     this.scene.add(this.helpers)
+    bindWalkScene(() => (this.disposed ? null : this.root))
     this.unbindHost = bindSceneHost(this)
     this.mountAll()
 
@@ -142,6 +154,39 @@ export class SceneController {
     this.clearLevels()
     this.renderer?.dispose()
     if (current === this) bindController(null)
+  }
+
+  exportRoot(): THREE.Object3D {
+    return this.root
+  }
+
+  /** Distance from the camera to the first solid hit. Used by photo focus. */
+  distanceAt(clientX: number, clientY: number): number | null {
+    const rect = this.canvas.getBoundingClientRect()
+    if (rect.width < 2 || rect.height < 2) return null
+    this.pointer.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1)
+    this.raycaster.setFromCamera(this.pointer, this.camera)
+    let hits: THREE.Intersection[]
+    try {
+      hits = this.raycaster.intersectObjects(this.scene.children, true)
+    } catch {
+      return null
+    }
+    for (const hit of hits) {
+      if (!hit.object.visible) continue
+      let skip = false
+      let obj: THREE.Object3D | null = hit.object
+      while (obj) {
+        if (obj.name === 'sky' || obj.name === 'stars' || obj.name === 'clouds' || obj.name === 'precip' || obj.name === 'rain' || obj.name === 'snow') {
+          skip = true
+          break
+        }
+        obj = obj.parent
+      }
+      if (skip) continue
+      return hit.distance
+    }
+    return null
   }
 
   /** Frame the visible levels' walls from a three-quarter elevated view. */
@@ -386,14 +431,17 @@ export class SceneController {
         this.camera.aspect = width / height
         this.camera.updateProjectionMatrix()
       }
-      if (this.rig) this.rig.update?.(dt)
-      else this.controls?.update()
+      const flightOwns = beforeRender?.() ?? false
+      if (!flightOwns) {
+        if (this.rig) this.rig.update?.(dt)
+        else this.controls?.update()
+      }
       for (const layer of this.eachLayer()) layer.update?.(dt, this.elapsed)
       for (const child of this.helpers.children) {
         const helper = child as THREE.BoxHelper
         helper.update()
       }
-      this.renderer.render(this.scene, this.camera)
+      renderFrame(this.renderer, this.scene, this.camera)
     } catch (err) {
       this.failed = true
       console.error(err)
@@ -401,6 +449,7 @@ export class SceneController {
   }
 
   private onDown = (e: PointerEvent) => {
+    if (isPhotoMode()) return
     if (e.button !== 0 || !this.renderer) return
     if (e.altKey) {
       this.paintPointer(e, true)

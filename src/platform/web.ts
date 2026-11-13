@@ -35,7 +35,23 @@ export function webPlatform(): Platform {
     },
     async saveFile(name, data) {
       if (typeof document === 'undefined') return false
-      const blob = new Blob([data], { type: 'application/json' })
+      let blob: Blob
+      if (data.startsWith('data:')) {
+        const comma = data.indexOf(',')
+        const meta = comma >= 0 ? data.slice(0, comma) : ''
+        const payload = comma >= 0 ? data.slice(comma + 1) : data
+        const mime = /data:([^;,]+)/.exec(meta)?.[1] ?? 'application/octet-stream'
+        try {
+          const binary = atob(payload)
+          const bytes = new Uint8Array(binary.length)
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+          blob = new Blob([bytes], { type: mime })
+        } catch {
+          return false
+        }
+      } else {
+        blob = new Blob([data], { type: 'application/json' })
+      }
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
