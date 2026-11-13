@@ -1,0 +1,18 @@
+appId: com.peixotolabs.nestwright
+productName: Nestwright
+directories:
+  output: release
+files:
+  - dist/**
+  - dist-electron/**
+  - package.json
+mac:
+  identity: null
+  category: public.app-category.games
+  target:
+    - target: dmg
+      arch:
+        - arm64
+    - target: dir
+      arch:
+        - arm64
