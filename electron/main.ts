@@ -25,6 +25,23 @@ function createWindow(): BrowserWindow {
   const devUrl = process.env.NESTWRIGHT_DEV_URL
   if (devUrl) void win.loadURL(devUrl)
   else void win.loadFile(path.join(here, '../dist/index.html'))
+  // `--capture=<file.png>`: render, save a PNG of the window and quit. Lets a release be
+  // checked from a script even when the Mac's screen is locked.
+  const capture = process.argv.find((a) => a.startsWith('--capture='))?.slice('--capture='.length)
+  if (capture) {
+    win.webContents.on('console-message', (details) => {
+      if (details.level === 'error') console.error(`[renderer] ${details.message}`)
+    })
+    win.webContents.once('did-finish-load', () => {
+      setTimeout(() => {
+        void win.webContents
+          .capturePage()
+          .then((image) => fs.writeFile(capture, image.toPNG()))
+          .catch((err: unknown) => console.error('capture failed', err))
+          .finally(() => app.quit())
+      }, 4000)
+    })
+  }
   return win
 }
 
