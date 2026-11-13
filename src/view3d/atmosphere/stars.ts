@@ -20,14 +20,14 @@ export function createStars(count = 700): StarField {
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
   const material = new THREE.PointsMaterial({
     color: '#f7f4ea',
-    size: 1.6,
+    size: 2.1,
     sizeAttenuation: false,
     depthWrite: false,
     fog: false,
   })
   const points = new THREE.Points(geometry, material)
   points.name = 'stars'
-  points.scale.setScalar(390)
+  points.scale.setScalar(560)
   points.frustumCulled = false
   points.visible = false
   return {

@@ -33,6 +33,7 @@ export function NumberField({
       {tr(label)}
       <input
         inputMode="decimal"
+        aria-label={tr(label)}
         step={step}
         value={shown}
         onFocus={() => setText(trimNumber(value))}

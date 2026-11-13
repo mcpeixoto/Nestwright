@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatArea, formatLength } from '../../src/model/units'
+import { formatArea, formatLength, parseLength } from '../../src/model/units'
 
 describe('units', () => {
   it('formats metric length and area', () => {
@@ -14,5 +14,12 @@ describe('units', () => {
     expect(formatLength(elevenFour, 'imperial')).toBe(`11' 4"`)
     const metres = 132 / 10.763910416709722
     expect(formatArea(metres, 'imperial')).toBe('132 ft²')
+  })
+
+  it('parses metric metres and imperial decimal feet back to metres', () => {
+    expect(parseLength('3.5', 'metric')).toBeCloseTo(3.5)
+    expect(parseLength('10', 'imperial')).toBeCloseTo(3.048)
+    expect(parseLength('0', 'metric')).toBeNull()
+    expect(parseLength('nope', 'imperial')).toBeNull()
   })
 })

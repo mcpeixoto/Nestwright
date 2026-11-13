@@ -216,12 +216,19 @@ export async function importModelFile(): Promise<void> {
 export function removeImportedModel(assetId: string): void {
   const asset = useStore.getState().project.assets.find((entry) => entry.id === assetId)
   const label = asset?.name ?? 'this model'
-  if (typeof window !== 'undefined' && !window.confirm(`Remove ${label}? Placed copies of it will be removed too.`)) return
-  useStore.getState().apply('Remove model', (draft) => {
-    draft.assets = draft.assets.filter((entry) => entry.id !== assetId)
-    const catalogId = catalogIdForAsset(assetId)
-    for (const level of draft.levels) {
-      level.items = level.items.filter((item) => item.catalogId !== catalogId)
-    }
-  })
+  const message = `Remove ${label}? Placed copies of it will be removed too.`
+  const run = () => {
+    useStore.getState().apply('Remove model', (draft) => {
+      draft.assets = draft.assets.filter((entry) => entry.id !== assetId)
+      const catalogId = catalogIdForAsset(assetId)
+      for (const level of draft.levels) {
+        level.items = level.items.filter((item) => item.catalogId !== catalogId)
+      }
+    })
+  }
+  if (typeof document === 'undefined') {
+    run()
+    return
+  }
+  void import('../ui/confirm').then(({ confirmIfNeeded }) => confirmIfNeeded(message, run))
 }

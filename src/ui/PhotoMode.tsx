@@ -142,33 +142,40 @@ export function PhotoMode() {
 
   return (
     <>
-      <button type="button" className="photo-exit" aria-label="Exit photo" onClick={leave}>
+      <button type="button" className="photo-exit" aria-label={tr('Exit photo')} onClick={leave}>
         ×
       </button>
-      <p className="photo-hint">Esc to exit</p>
+      <p className="photo-hint">
+        <T k="Esc to exit" />
+      </p>
       {flash && <div className="photo-flash" />}
-      {toast && <p className="photo-toast">Saved photo</p>}
+      {toast && (
+        <p className="photo-toast">
+          <T k="Saved photo" />
+        </p>
+      )}
       <div className="photo-strip">
       <label>
         <T k="FOV" />
-        <input type="range" min={20} max={80} step={1} defaultValue={getController()?.camera.fov ?? 48} onChange={(event) => setFov(Number(event.target.value))} />
+        <input type="range" aria-label={tr('FOV')} min={20} max={80} step={1} defaultValue={getController()?.camera.fov ?? 48} onChange={(event) => setFov(Number(event.target.value))} />
       </label>
       <label>
         <T k="Focus" />
-        <input type="range" min={0.4} max={40} step={0.1} value={photo.focus} onChange={(event) => setPhoto({ focus: Number(event.target.value) })} />
+        <input type="range" aria-label={tr('Focus')} min={0.4} max={40} step={0.1} value={photo.focus} onChange={(event) => setPhoto({ focus: Number(event.target.value) })} />
       </label>
       <label>
         <T k="Aperture" />
-        <input type="range" min={0} max={1} step={0.01} value={photo.aperture} onChange={(event) => setPhoto({ aperture: Number(event.target.value) })} />
+        <input type="range" aria-label={tr('Aperture')} min={0} max={1} step={0.01} value={photo.aperture} onChange={(event) => setPhoto({ aperture: Number(event.target.value) })} />
       </label>
       <label>
         <T k="Exposure" />
-        <input type="range" min={0.4} max={2} step={0.01} value={photo.exposure} onChange={(event) => setPhoto({ exposure: Number(event.target.value) })} />
+        <input type="range" aria-label={tr('Exposure')} min={0.4} max={2} step={0.01} value={photo.exposure} onChange={(event) => setPhoto({ exposure: Number(event.target.value) })} />
       </label>
       <label>
         <T k="Time" />
         <input
           type="range"
+          aria-label={tr('Time')}
           min={0}
           max={24}
           step={0.05}

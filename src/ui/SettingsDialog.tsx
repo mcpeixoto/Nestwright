@@ -3,6 +3,8 @@ import { coopJoinAvailable } from './start/coop'
 import { T } from '../i18n/T'
 import { useTranslate } from '../i18n'
 import { AUTOSAVE_CHOICES, useSettings, type AppLanguage, type GraphicsQuality } from '../settings'
+import { useStore } from '../store'
+import { Modal } from './Modal'
 import { isSettingsOpen, setSettingsOpen, subscribeSettings } from './settingsDialogState'
 import { registerTopBarAction } from './topbar/registry'
 
@@ -33,8 +35,7 @@ export function SettingsDialog() {
   const set = useSettings.getState().setSettings
   const showPlayer = coopJoinAvailable()
   return (
-    <div className="modal-back" onClick={() => setSettingsOpen(false)}>
-      <div className="modal settings-dialog" role="dialog" aria-label={tr('Settings')} onClick={(event) => event.stopPropagation()}>
+    <Modal className="settings-dialog" label={tr('Settings')} onClose={() => setSettingsOpen(false)}>
         <h2>
           <T k="Settings" />
         </h2>
@@ -49,7 +50,13 @@ export function SettingsDialog() {
           <T k="Units" />
           <select
             value={settings.units}
-            onChange={(event) => set({ units: event.target.value === 'imperial' ? 'imperial' : 'metric' })}
+            onChange={(event) => {
+              const units = event.target.value === 'imperial' ? 'imperial' : 'metric'
+              set({ units })
+              useStore.getState().apply('Units', (draft) => {
+                draft.units = units
+              })
+            }}
           >
             <option value="metric">{tr('Metric')}</option>
             <option value="imperial">{tr('Imperial')}</option>
@@ -75,6 +82,7 @@ export function SettingsDialog() {
             min={0.4}
             max={2}
             step={0.1}
+            aria-label={tr('Mouse sensitivity')}
             value={settings.mouseSensitivity}
             onChange={(event) => set({ mouseSensitivity: Number(event.target.value) })}
           />
@@ -107,6 +115,7 @@ export function SettingsDialog() {
             min={90}
             max={125}
             step={5}
+            aria-label={tr('UI scale')}
             value={Math.round(settings.uiScale * 100)}
             onChange={(event) => set({ uiScale: Number(event.target.value) / 100 })}
           />
@@ -131,7 +140,6 @@ export function SettingsDialog() {
             </label>
           </>
         )}
-      </div>
-    </div>
+    </Modal>
   )
 }

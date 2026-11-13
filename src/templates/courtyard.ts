@@ -7,15 +7,17 @@ export function courtyardHouse(): Project {
   const level = project.levels[0]
   if (!level) return project
   level.name = 'Ground'
-  shell(level, [
+  const shellRing = [
     { x: -7, y: -6 },
+    { x: -3, y: -6 },
+    { x: -3, y: 2 },
+    { x: 3, y: 2 },
+    { x: 3, y: -6 },
     { x: 7, y: -6 },
     { x: 7, y: 6 },
     { x: -7, y: 6 },
-  ])
-  wall(level, { x: -3, y: -6 }, { x: -3, y: 2 })
-  wall(level, { x: -3, y: 2 }, { x: 3, y: 2 })
-  wall(level, { x: 3, y: 2 }, { x: 3, y: -6 })
+  ]
+  shell(level, shellRing)
   wall(level, { x: -7, y: 2 }, { x: -3, y: 2 })
   wall(level, { x: 3, y: 2 }, { x: 7, y: 2 })
   wall(level, { x: 5, y: 2 }, { x: 5, y: 6 })
@@ -28,6 +30,8 @@ export function courtyardHouse(): Project {
   cut(level, { x: -7, y: 4 }, 'window')
   cut(level, { x: 7, y: -2 }, 'window')
   addRoof(level, 'flat')
+  const roof = level.roofs[level.roofs.length - 1]
+  if (roof) roof.outline = shellRing.map((point) => ({ x: point.x, y: point.y }))
   labelZones(level, [
     zone('Bedroom', 'bedroom', -7, -6, -3, 2),
     zone('Kitchen', 'kitchen', 3, -6, 7, 2, 'tile-white'),

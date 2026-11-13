@@ -44,16 +44,17 @@ registerPlanLayer({
     for (const room of roomsFor(level)) {
       if (!unmet.has(room.key) || !room.centroid) continue
       const at = ctx.worldToScreen(room.centroid)
+      const pin = { x: at.x + 34, y: at.y - 22 }
       ctx2d.save()
       ctx2d.fillStyle = '#d4655a'
       ctx2d.beginPath()
-      ctx2d.arc(at.x, at.y - 16, 8, 0, Math.PI * 2)
+      ctx2d.arc(pin.x, pin.y, 8, 0, Math.PI * 2)
       ctx2d.fill()
       ctx2d.fillStyle = '#fff'
       ctx2d.font = 'bold 11px ui-sans-serif, system-ui, sans-serif'
       ctx2d.textAlign = 'center'
       ctx2d.textBaseline = 'middle'
-      ctx2d.fillText('!', at.x, at.y - 16)
+      ctx2d.fillText('!', pin.x, pin.y)
       ctx2d.restore()
     }
   },
@@ -65,18 +66,23 @@ registerPlanLayer({
   draw(ctx2d, ctx) {
     if (!showWishPins() || !ctx.level) return
     const wishes = ctx.project.wishes ?? []
+    const stacks = new Map<string, number>()
     for (const wish of wishes) {
       const at = wishOnLevel(ctx.level, wish)
       if (!at) continue
       const screen = ctx.worldToScreen(at)
+      const key = `${Math.round(screen.x / 8)}:${Math.round(screen.y / 8)}`
+      const stack = stacks.get(key) ?? 0
+      stacks.set(key, stack + 1)
+      const pin = { x: screen.x - 36, y: screen.y - 18 - stack * 18 }
       const glyph = REACTION_GLYPH[wish.reaction] ?? '•'
       ctx2d.save()
       ctx2d.fillStyle = wish.reaction === 'no' ? '#8a847a' : wish.reaction === 'idea' ? '#e8b86d' : '#d4655a'
       ctx2d.beginPath()
-      ctx2d.arc(screen.x, screen.y, 9, 0, Math.PI * 2)
+      ctx2d.arc(pin.x, pin.y, 9, 0, Math.PI * 2)
       ctx2d.fill()
       ctx2d.restore()
-      paperLabel(ctx2d, screen.x, screen.y - 18, [
+      paperLabel(ctx2d, pin.x, pin.y - 16, [
         { text: glyph, font: '14px ui-sans-serif, system-ui, sans-serif', color: '#2a241c' },
       ])
     }

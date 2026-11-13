@@ -1,23 +1,12 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import type { Project } from '../../model/types'
-import { diffVariants, summariseDiff, variantFrom } from '../../model/variants'
 import { useStore } from '../../store'
 import { getController, SceneController } from '../../view3d/SceneController'
-import { getCompareVariant, setCompareVariant, useCompareVariant } from './compare'
+import { getCompareVariant, useCompareVariant } from './compare'
 
 export function VariantPane() {
   const variantId = useCompareVariant()
-  const project = useStore((s) => s.project)
   const ref = useRef<HTMLCanvasElement>(null)
-  const variant = project.variants?.find((item) => item.id === variantId) ?? null
-  const summary = useMemo(() => {
-    if (!variant) return ''
-    try {
-      return summariseDiff(diffVariants(variantFrom(project, 'Current', 'current', 0), variant, project.budget))
-    } catch {
-      return ''
-    }
-  }, [project, variant])
 
   useEffect(() => {
     if (!variantId) return
@@ -84,15 +73,6 @@ export function VariantPane() {
   return (
     <div className="variant-pane">
       <canvas ref={ref} className="view3d-canvas" />
-      <div className="variant-caption">
-        <div className="together-row">
-          <strong>{variant?.name ?? 'That option is gone'}</strong>
-          <button type="button" onClick={() => setCompareVariant(null)}>
-            Close
-          </button>
-        </div>
-        <p>{summary || 'Nothing to compare yet.'}</p>
-      </div>
     </div>
   )
 }

@@ -145,6 +145,7 @@ function RoofSection({ selection }: InspectorSectionProps) {
         {tr('Pitch {n}°', { n: pitchDeg })}
         <input
           type="range"
+          aria-label={tr('Pitch')}
           min={5}
           max={60}
           step={1}
@@ -173,6 +174,7 @@ function RoofSection({ selection }: InspectorSectionProps) {
         {tr('Ridge {n}°', { n: ridgeDeg })}
         <input
           type="range"
+          aria-label={tr('Ridge')}
           min={-180}
           max={180}
           step={1}
@@ -350,6 +352,7 @@ function CurveSection({ selection }: InspectorSectionProps) {
         {tr('Curve {bulge} m', { bulge: wall.bulge.toFixed(2) })}
         <input
           type="range"
+          aria-label={tr('Curve')}
           min={-limit}
           max={limit}
           step={0.05}
@@ -393,6 +396,7 @@ function WallToolSection({ state }: InspectorSectionProps) {
           {tr('Half height {h} m', { h: height.toFixed(2) })}
           <input
             type="range"
+            aria-label={tr('Half height')}
             min={0.4}
             max={2.2}
             step={0.05}

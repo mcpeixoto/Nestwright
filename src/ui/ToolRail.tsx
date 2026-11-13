@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useTranslate } from '../i18n'
 import { useStore } from '../store'
 import { listTools } from '../tools/registry'
-import type { Tool } from '../tools/types'
 import { togglePanel, useOpenPanelIds, usePanelList } from './panels/registry'
+import { railIconTool } from './railDefaults'
 
 const GROUPS = [
   { id: 'build', label: 'Build' },
@@ -14,16 +14,14 @@ const GROUPS = [
 ] as const
 
 const lastToolByGroup: Record<string, string> = {}
+const chosenGroups = new Set<string>()
 
 useStore.subscribe((state, prev) => {
   if (state.tool === prev.tool) return
   const item = listTools().find((entry) => entry.id === state.tool)
-  if (item && item.id !== 'select') lastToolByGroup[item.group] = item.id
+  if (!item || item.id === 'select' || item.id === 'pan' || !chosenGroups.has(item.group)) return
+  lastToolByGroup[item.group] = item.id
 })
-
-function shownTool(tools: Tool[], groupId: string, activeId: string, remembered: string | undefined): Tool | undefined {
-  return tools.find((item) => item.id === activeId) ?? tools.find((item) => item.id === remembered) ?? tools.find((item) => item.group === groupId)
-}
 
 export function ToolRail() {
   const tool = useStore((s) => s.tool)
@@ -31,7 +29,7 @@ export function ToolRail() {
   const tr = useTranslate()
   const select = listTools().find((item) => item.id === 'select')
   const tools = listTools().filter((item) => {
-    if (item.id === 'place-item' || item.id === 'select') return false
+    if (item.id === 'place-item' || item.id === 'select' || item.id === 'pan') return false
     if (apartment && item.group === 'outside') return false
     if (!apartment && item.id === 'balcony') return false
     return true
@@ -56,7 +54,7 @@ export function ToolRail() {
       )}
       {GROUPS.map((group) => {
         const groupTools = tools.filter((item) => item.group === group.id)
-        const iconTool = shownTool(groupTools, group.id, tool, lastToolByGroup[group.id])
+        const iconTool = railIconTool(groupTools, group.id, tool, chosenGroups.has(group.id) ? lastToolByGroup[group.id] : undefined)
         if (!iconTool) return null
         const active = groupTools.some((item) => item.id === tool)
         return (
@@ -73,7 +71,10 @@ export function ToolRail() {
               aria-label={tr(group.label)}
               aria-expanded={openGroup === group.id}
               onClick={() => {
+                chosenGroups.add(group.id)
+                lastToolByGroup[group.id] = iconTool.id
                 useStore.getState().setTool(iconTool.id)
+                if (group.id === 'interior') useStore.getState().setLibraryOpen(true)
                 setOpenGroup(group.id)
               }}
               dangerouslySetInnerHTML={{ __html: iconTool.icon }}
@@ -86,7 +87,11 @@ export function ToolRail() {
                     key={item.id}
                     role="menuitem"
                     className={tool === item.id ? 'on' : ''}
-                    onClick={() => useStore.getState().setTool(item.id)}
+                    onClick={() => {
+                      chosenGroups.add(group.id)
+                      lastToolByGroup[group.id] = item.id
+                      useStore.getState().setTool(item.id)
+                    }}
                   >
                     <span className="flyout-icon" dangerouslySetInnerHTML={{ __html: item.icon }} />
                     <span>{tr(item.label)}</span>

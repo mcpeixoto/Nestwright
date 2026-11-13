@@ -3,6 +3,7 @@ import { getPlatform } from '../platform'
 import { useStore } from '../store'
 import { visibleAchievements } from './evaluate'
 import { liveFeatures } from './features'
+import { useTranslate } from '../i18n'
 import { achievementProgress, subscribeAchievements } from './watch'
 
 export function AchievementsPage() {
@@ -11,6 +12,7 @@ export function AchievementsPage() {
   const [player, setPlayer] = useState('')
   const rows = visibleAchievements(liveFeatures(project))
   const unlocked = new Set(progress.unlocked)
+  const tr = useTranslate()
 
   useEffect(() => {
     const steam = getPlatform().steam
@@ -31,18 +33,18 @@ export function AchievementsPage() {
 
   return (
     <div className="achievements">
-      {player ? <p className="readout">Playing as {player}</p> : null}
+      {player ? <p className="readout">{tr('Playing as {name}', { name: player })}</p> : null}
       {rows.length === 0 ? (
-        <p className="readout">No achievements in this build.</p>
+        <p className="readout">{tr('No achievements in this build.')}</p>
       ) : (
         <ul className="achieve-list">
           {rows.map((item) => {
             const earned = unlocked.has(item.id)
             return (
               <li key={item.id} className={earned ? 'earned' : ''}>
-                <strong>{item.name}</strong>
-                <span>{item.description}</span>
-                <em>{earned ? 'Unlocked' : 'Locked'}</em>
+                <strong>{tr(item.name)}</strong>
+                <span>{tr(item.description)}</span>
+                <em>{earned ? tr('Unlocked') : tr('Locked')}</em>
               </li>
             )
           })}

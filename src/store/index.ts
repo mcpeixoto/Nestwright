@@ -3,6 +3,7 @@ import { create } from 'zustand'
 import '../catalog'
 import { loadAutosave } from '../io/autosave'
 import { getTool } from '../tools/registry'
+import { levelToOpen } from '../model/openLevel'
 import { detectRooms, ensureRoomRecords } from '../model/rooms'
 import type { Level, OpeningType, Project, Room } from '../model/types'
 import { createSampleProject } from '../sample'
@@ -29,6 +30,12 @@ type PatchListener = (patches: Patch[]) => void
 type EditListener = (patches: Patch[], inverse: Patch[]) => void
 const patchListeners = new Set<PatchListener>()
 const editListeners = new Set<EditListener>()
+const localApplyListeners = new Set<() => void>()
+
+export function subscribeLocalApplies(listener: () => void): () => void {
+  localApplyListeners.add(listener)
+  return () => localApplyListeners.delete(listener)
+}
 
 function emitEdit(patches: Patch[], inverse: Patch[]): void {
   if (patches.length === 0) return
@@ -109,11 +116,11 @@ function unique(ids: string[]): string[] {
 
 export const useStore = create<StoreState>((set, get) => ({
   project: initial,
-  activeLevelId: initial.levels[0]?.id ?? '',
+  activeLevelId: levelToOpen(initial) || initial.levels[0]?.id || '',
   selection: [],
   tool: 'select',
   view: 'split',
-  levelDisplay: 'current',
+  levelDisplay: 'all',
   showRoofs: true,
   hover: null,
   past: [],
@@ -166,6 +173,13 @@ export const useStore = create<StoreState>((set, get) => ({
     }
     set({ project: next as Project, past: history, future: [], canUndo: true, canRedo: false })
     emitEdit(patches, inversePatches)
+    for (const listener of localApplyListeners) {
+      try {
+        listener()
+      } catch {
+        /* an achievement listener must not break the edit */
+      }
+    }
   },
 
   undo() {

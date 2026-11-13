@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { pointInPolygon, polygonArea } from '../../src/model/geometry'
 import { createLevel, createWall } from '../../src/model/defaults'
 import { distanceToBoundary } from '../../src/model/polygon'
-import { buildRoofModel, outerOutline, roofHeightAt } from '../../src/model/roofs'
+import { buildRoofModel, outerOutline, roofHeightAt, roofOnOutline } from '../../src/model/roofs'
 import type { Roof, RoofShape, Vec2 } from '../../src/model/types'
 
 function rect(w = 6, d = 4): Vec2[] {
@@ -146,5 +146,14 @@ describe('buildRoofModel', () => {
     const top = roofHeightAt(model, { x: 2, y: 2 })
     expect(top).toBeGreaterThan(2)
     expect(model.faces.some((face) => face.kind === 'dome')).toBe(true)
+  })
+
+  it('finds a roof that already covers the same outline', () => {
+    const level = createLevel('Ground', 0)
+    const outline = rect()
+    expect(roofOnOutline(level, outline)).toBeUndefined()
+    level.roofs.push(roof('gable', outline))
+    expect(roofOnOutline(level, outline.map((point) => ({ x: point.x + 0.1, y: point.y })))?.id).toBe('roof_test')
+    expect(roofOnOutline(level, [{ x: 20, y: 0 }, { x: 24, y: 0 }, { x: 24, y: 4 }])).toBeUndefined()
   })
 })

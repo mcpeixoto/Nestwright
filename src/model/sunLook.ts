@@ -35,11 +35,11 @@ export function sunLook(altitude: number): SunLook {
   const daylight = smooth(-0.1, 0.28, alt)
   const warmth = 1 - smooth(0, 0.5, Math.max(0, alt))
   const above = smooth(-0.04, 0.14, alt)
-  const intensity = (0.12 + smooth(0, 0.55, alt) * 2.63) * above
+  const intensity = (0.08 + smooth(0, 0.55, Math.max(0, alt)) * 2.42) * above
   const r = 1
   const g = 0.22 + (1 - warmth) * 0.7
   const b = 0.12 + (1 - warmth) * 0.7
-  const exposure = 0.42 + daylight * 0.14
+  const exposure = 0.36 + daylight * 0.14
   const moon = (1 - daylight) * 0.42
   return { r, g, b, warmth, intensity, moon, exposure, daylight }
 }

@@ -153,11 +153,11 @@ function tree(trunk: number, leaf: number, leaf2: number, kind: string): Scratch
 function buildSpecies(species: string): THREE.BufferGeometry {
   const s = scratch()
   if (species === 'oak') return geometry(tree(0x6b4a30, 0x3f6b34, 0x6a8f3e, 'oak'))
-  if (species === 'birch') return geometry(tree(0xe4dcc8, 0x7ea35a, 0xc5d48a, 'birch'))
+  if (species === 'birch') return geometry(tree(0xd8d0c0, 0x5e8a48, 0x7aa45c, 'birch'))
   if (species === 'pine') return geometry(tree(0x5a4030, 0x1f4a32, 0x2f6a42, 'pine'))
   if (species === 'cypress') return geometry(tree(0x6a5340, 0x24543a, 0x1c4030, 'cypress'))
   if (species === 'palm') return geometry(tree(0x8a6a42, 0x2f7a40, 0x3e8a48, 'palm'))
-  if (species === 'olive') return geometry(tree(0x7a6a52, 0x8a9360, 0xa8b07a, 'olive'))
+  if (species === 'olive') return geometry(tree(0x6a5a42, 0x4f6234, 0x62743e, 'olive'))
   if (species === 'fruit-tree') return geometry(tree(0x6d4c32, 0x4e7a3c, 0x6e9448, 'fruit-tree'))
   if (species === 'bush-round') {
     addBall(s, 0, 0.45, 0, 0.48, 0x3f6b34, 1)

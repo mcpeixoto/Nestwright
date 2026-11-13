@@ -8,6 +8,10 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
 import { useSettings, type GraphicsQuality } from '../../settings'
 import { getPhotoSnapshot, isPhotoMode } from '../../ui/photoSession'
 
+// Linear HDR luminance before tone mapping. Sunlit white plaster reaches ~2–3, so a lower
+// threshold makes every wall glow; lamps and fire are emissive well above this.
+const BLOOM_THRESHOLD = 4
+
 interface Bundle {
   renderer: THREE.WebGLRenderer
   composer: EffectComposer
@@ -47,7 +51,7 @@ function build(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.
       composer.addPass(ssao)
     }
     if (flags.bloom) {
-      composer.addPass(new UnrealBloomPass(new THREE.Vector2(width, height), 0.15, 0.28, 0.95))
+      composer.addPass(new UnrealBloomPass(new THREE.Vector2(width, height), 0.18, 0.32, BLOOM_THRESHOLD))
     }
     const bokeh = new BokehPass(scene, camera, { focus: 8, aperture: 0.0008, maxblur: 0.008 })
     bokeh.enabled = false

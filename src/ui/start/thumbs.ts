@@ -1,5 +1,19 @@
 import { getController } from '../../view3d/SceneController'
 
+/** Capture after the plan has painted, so a template load is not blocked on a JPEG. */
+export function scheduleThumb(then: (thumb: string) => void): void {
+  const run = () => {
+    try {
+      then(captureThumb())
+    } catch {
+      then('')
+    }
+  }
+  const idle = globalThis.requestIdleCallback
+  if (typeof idle === 'function') idle(() => run())
+  else setTimeout(run, 1)
+}
+
 /** Small JPEG of the live 3D view. Returns '' when there is nothing to capture. */
 export function captureThumb(): string {
   try {

@@ -9,12 +9,15 @@ import { getPlanRenderer } from '../../plan2d/PlanRenderer'
 import { useSettings } from '../../settings'
 import { roomsFor, useStore } from '../../store'
 import { getEntry } from '../../catalog/registry'
+import { T } from '../../i18n/T'
+import { translate, useTranslate } from '../../i18n'
 import { registerPanel } from './registry'
 import { focusWish } from '../together/focus'
 import { setShowWishPins, showWishPins } from '../together/wishView'
 
 function authorName(): string {
-  return useSettings.getState().playerName.trim() || 'Player'
+  const language = useSettings.getState().language
+  return useSettings.getState().playerName.trim() || translate(language, 'Player')
 }
 
 function targetLabel(project: ReturnType<typeof useStore.getState>['project'], wish: Wish): string {
@@ -29,6 +32,7 @@ function targetLabel(project: ReturnType<typeof useStore.getState>['project'], w
 }
 
 export function WishesPanel() {
+  const tr = useTranslate()
   const project = useStore((s) => s.project)
   const selection = useStore((s) => s.selection)
   const levelId = useStore((s) => s.activeLevelId)
@@ -63,12 +67,12 @@ export function WishesPanel() {
     const cursor = mode === 'point' ? getPlanCursor() : null
     const target = targetFromSelection(level, found, state.selection, cursor, mode)
     if (!target) {
-      state.setMessage(mode === 'point' ? 'Move the pointer on the plan first.' : 'Select an item, or every wall of a room.')
+      state.setMessage(mode === 'point' ? tr('Move the pointer on the plan first.') : tr('Select an item, or every wall of a room.'))
       return
     }
     const text = note.trim().slice(0, 280)
     if (reaction === 'idea' && !text) {
-      state.setMessage('An idea needs a note.')
+      state.setMessage(tr('An idea needs a note.'))
       return
     }
     state.apply(reaction === 'love' ? 'Love' : reaction === 'no' ? 'No' : 'Idea', (draft) => {
@@ -87,17 +91,17 @@ export function WishesPanel() {
   const addRequirement = () => {
     const key = roomKey || rooms[0]?.room.key
     if (!key) {
-      useStore.getState().setMessage('Draw a closed room first.')
+      useStore.getState().setMessage(tr('Draw a closed room first.'))
       return
     }
     const chosen = catalog.find((entry) => entry.id === catalogId) ?? catalog[0]
     const min = Number(area)
     if (rule === 'min-area' && (!Number.isFinite(min) || min <= 0)) {
-      useStore.getState().setMessage('Enter a minimum area.')
+      useStore.getState().setMessage(tr('Enter a minimum area.'))
       return
     }
     if (rule === 'has-item' && !chosen) {
-      useStore.getState().setMessage('The catalog is empty.')
+      useStore.getState().setMessage(tr('The catalog is empty.'))
       return
     }
     const text =
@@ -119,49 +123,50 @@ export function WishesPanel() {
 
   return (
     <div className="props together-panel">
-      <h2>Wishes</h2>
       <div className="together-tabs" role="tablist">
         {(['wishes', 'disagreements', 'checklist'] as const).map((id) => (
           <button type="button" key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
-            {id === 'wishes' ? 'Board' : id === 'disagreements' ? `Clashes ${clashes.length}` : 'Checklist'}
+            {id === 'wishes' ? tr('Board') : id === 'disagreements' ? tr('Clashes {count}', { count: clashes.length }) : tr('Checklist')}
           </button>
         ))}
       </div>
       {tab === 'wishes' && (
         <>
           <label className="field">
-            Note
+            <T k="Note" />
             <input value={note} maxLength={280} onChange={(event) => setNote(event.target.value)} />
           </label>
           <div className="wish-actions">
             <button type="button" onClick={() => react('love', 'selection')}>
-              ❤ selection
+              ❤ <T k="selection" />
             </button>
             <button type="button" onClick={() => react('no', 'selection')}>
-              ✕ selection
+              ✕ <T k="selection" />
             </button>
             <button type="button" onClick={() => react('idea', 'selection')}>
-              💡 selection
+              💡 <T k="selection" />
             </button>
           </div>
           <div className="wish-actions">
             <button type="button" onClick={() => react('love', 'point')}>
-              ❤ plan point
+              ❤ <T k="plan point" />
             </button>
             <button type="button" onClick={() => react('no', 'point')}>
-              ✕ plan point
+              ✕ <T k="plan point" />
             </button>
             <button type="button" onClick={() => react('idea', 'point')}>
-              💡 plan point
+              💡 <T k="plan point" />
             </button>
           </div>
           <p className="hint">
-            {selection.length > 0 ? `${selection.length} selected` : 'Nothing selected'} on {activeRooms.length} rooms here.
+            {selection.length > 0
+              ? tr('{count} selected on this level ({rooms} rooms).', { count: selection.length, rooms: activeRooms.length })
+              : tr('Nothing selected on this level ({rooms} rooms).', { rooms: activeRooms.length })}
           </p>
           <label className="field">
-            Author
-            <select value={author} onChange={(event) => setAuthor(event.target.value)}>
-              <option value="all">Everyone</option>
+            <T k="Author" />
+            <select value={author} aria-label={tr('Author')} onChange={(event) => setAuthor(event.target.value)}>
+              <option value="all">{tr('Everyone')}</option>
               {authors.map((person) => (
                 <option key={person} value={person}>
                   {person}
@@ -179,13 +184,17 @@ export function WishesPanel() {
                 getPlanRenderer()?.requestDraw()
               }}
             />
-            Pins on the plan and in 3D
+            <T k="Pins on the plan and in 3D" />
           </label>
           <label className="check">
             <input type="checkbox" checked={showResolved} onChange={(event) => setShowResolved(event.target.checked)} />
-            Show settled
+            <T k="Show settled" />
           </label>
-          {groups.length === 0 && <p className="hint">No wishes yet. Mark the selection or a point on the plan.</p>}
+          {groups.length === 0 && (
+            <p className="hint">
+              <T k="No wishes yet. Mark the selection or a point on the plan." />
+            </p>
+          )}
           {groups.map((group) => (
             <section key={group.key || 'loose'}>
               <h3>{group.name}</h3>
@@ -204,7 +213,7 @@ export function WishesPanel() {
                       })
                     }
                   >
-                    Settle
+                    <T k="Settle" />
                   </button>
                   <button
                     type="button"
@@ -214,7 +223,7 @@ export function WishesPanel() {
                       })
                     }
                   >
-                    Delete
+                    <T k="Delete" />
                   </button>
                 </div>
               ))}
@@ -224,7 +233,11 @@ export function WishesPanel() {
       )}
       {tab === 'disagreements' && (
         <>
-          {clashes.length === 0 && <p className="hint">No clashes. A clash is a ❤ from one of you and a ✕ from the other on the same thing.</p>}
+          {clashes.length === 0 && (
+            <p className="hint">
+              <T k="No clashes. A clash is a love from one of you and a no from the other on the same thing." />
+            </p>
+          )}
           {clashes.map((clash) => (
             <div className="wish-row" key={clash.key}>
               <button type="button" className="link" onClick={() => clash.loves[0] && focusWish(clash.loves[0])}>
@@ -236,9 +249,13 @@ export function WishesPanel() {
       )}
       {tab === 'checklist' && (
         <>
-          {rooms.length === 0 && <p className="hint">Draw a closed room, then add what it must have.</p>}
+          {rooms.length === 0 && (
+            <p className="hint">
+              <T k="Draw a closed room, then add what it must have." />
+            </p>
+          )}
           <label className="field">
-            Room
+            <T k="Room" />
             <select value={roomKey || rooms[0]?.room.key || ''} onChange={(event) => setRoomKey(event.target.value)}>
               {rooms.map((item) => (
                 <option key={`${item.id}:${item.room.key}`} value={item.room.key}>
@@ -249,15 +266,15 @@ export function WishesPanel() {
           </label>
           <div className="together-tabs">
             <button type="button" className={rule === 'has-item' ? 'on' : ''} onClick={() => setRule('has-item')}>
-              Has item
+              <T k="Has item" />
             </button>
             <button type="button" className={rule === 'min-area' ? 'on' : ''} onClick={() => setRule('min-area')}>
-              Min area
+              <T k="Min area" />
             </button>
           </div>
           {rule === 'has-item' ? (
             <label className="field">
-              Item
+              <T k="Item" />
               <select value={catalogId || catalog[0]?.id || ''} onChange={(event) => setCatalogId(event.target.value)}>
                 {catalog.map((entry) => (
                   <option key={entry.id} value={entry.id}>
@@ -268,21 +285,25 @@ export function WishesPanel() {
             </label>
           ) : (
             <label className="field">
-              Minimum m²
-              <input type="number" min={0} step={0.5} value={area} onChange={(event) => setArea(event.target.value)} />
+              <T k="Minimum m²" />
+              <input type="number" aria-label={tr('Minimum m²')} min={0} step={0.5} value={area} onChange={(event) => setArea(event.target.value)} />
             </label>
           )}
           <label className="field">
-            Wording
-            <input value={reqText} placeholder="Bath must have a tub" onChange={(event) => setReqText(event.target.value)} />
+            <T k="Wording" />
+            <input value={reqText} aria-label={tr('Wording')} placeholder={tr('Bath must have a tub')} onChange={(event) => setReqText(event.target.value)} />
           </label>
           <button type="button" onClick={addRequirement} disabled={rooms.length === 0}>
-            Add requirement
+            <T k="Add requirement" />
           </button>
-          {requirements.length === 0 && <p className="hint">No requirements yet.</p>}
+          {requirements.length === 0 && (
+            <p className="hint">
+              <T k="No requirements yet." />
+            </p>
+          )}
           {requirements.map((status) => (
             <div className="req-row" key={status.requirement.id}>
-              <span aria-label={status.met ? 'Met' : 'Unmet'}>{status.met ? '✓' : '✕'}</span>
+              <span aria-label={status.met ? tr('Met') : tr('Unmet')}>{status.met ? '✓' : '✕'}</span>
               <span>
                 {status.roomName}: {status.requirement.text || status.detail}
               </span>
@@ -294,7 +315,7 @@ export function WishesPanel() {
                   })
                 }
               >
-                Delete
+                <T k="Delete" />
               </button>
             </div>
           ))}
