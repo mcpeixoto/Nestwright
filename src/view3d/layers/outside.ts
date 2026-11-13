@@ -234,7 +234,7 @@ function createOutsideGround(ctx: SceneLayerContext): SceneLayer {
   const applyProject = (current: Project, state: SceneViewState) => {
     const terrain = current.terrain
     if (!terrain) return
-    const enabled = terrain.enabled !== false && terrain.resolution >= 1
+    const enabled = current.kind !== 'apartment' && terrain.enabled !== false && terrain.resolution >= 1
     flat.mesh.visible = !enabled
     if (!enabled) {
       const plot = Math.max(terrain.width || 0, terrain.depth || 0, 16)

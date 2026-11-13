@@ -1,13 +1,19 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { CATEGORIES, listEntries } from '../catalog/registry'
 import { getThumb, requestThumb, subscribeThumbs, thumbRevision } from '../catalog/thumbnails'
+import { catalogName, categoryName } from '../i18n/catalog'
+import { useTranslate } from '../i18n'
+import { T } from '../i18n/T'
 import { bootImportedModels, catalogIdForAsset, importModelFile, removeImportedModel } from '../io/importModel'
+import { useSettings } from '../settings'
 import { useStore } from '../store'
 import { beginPlace } from '../tools/placeItem'
 
 const DRAWER_CATEGORIES = [...CATEGORIES.map((id) => ({ id, label: id })), { id: 'imported', label: 'My models' }]
 
 export function LibraryDrawer() {
+  const language = useSettings((s) => s.language)
+  const tr = useTranslate()
   const [category, setCategory] = useState<string>('living')
   const [query, setQuery] = useState('')
   const revision = useSyncExternalStore(subscribeThumbs, thumbRevision, () => 0)
@@ -15,7 +21,8 @@ export function LibraryDrawer() {
   const needle = query.trim().toLowerCase()
   const entries = listEntries(category).filter((entry) => {
     if (!needle) return true
-    return entry.name.toLowerCase().includes(needle) || entry.tags.some((tag) => tag.includes(needle))
+    const name = catalogName(language, entry.id, entry.name).toLowerCase()
+    return name.includes(needle) || entry.name.toLowerCase().includes(needle) || entry.tags.some((tag) => tag.includes(needle))
   })
 
   const thumbIds = entries.map((entry) => entry.id).join(',')
@@ -31,40 +38,45 @@ export function LibraryDrawer() {
     <aside className="library">
       <input
         className="search"
-        placeholder="Search furniture"
+        placeholder={tr('Search furniture')}
         value={query}
-        aria-label="Search furniture"
+        aria-label={tr('Search furniture')}
         onChange={(event) => setQuery(event.target.value)}
       />
       <button type="button" onClick={() => void importModelFile()}>
-        Import model
+        <T k="Import model" />
       </button>
       <div className="cats">
         {DRAWER_CATEGORIES.map((item) => (
           <button type="button" key={item.id} className={item.id === category ? 'on' : ''} onClick={() => setCategory(item.id)}>
-            {item.label}
+            {item.id === 'imported' ? tr('My models') : categoryName(language, item.id)}
           </button>
         ))}
       </div>
       <div className="thumbs">
         {entries.map((entry) => {
           const thumb = revision >= 0 ? getThumb(entry.id) : ''
+          const name = catalogName(language, entry.id, entry.name)
           const assetId = assets.find((asset) => catalogIdForAsset(asset.id) === entry.id)?.id
           return (
             <div key={entry.id} className="thumb">
               <button type="button" className="thumb-hit" onClick={() => beginPlace(entry.id)}>
-                {thumb ? <img src={thumb} alt="" /> : <span className="thumb-fallback">{entry.name.slice(0, 1)}</span>}
-                <span>{entry.name}</span>
+                {thumb ? <img src={thumb} alt="" /> : <span className="thumb-fallback">{name.slice(0, 1)}</span>}
+                <span>{name}</span>
               </button>
               {assetId && (
-                <button type="button" className="thumb-remove" aria-label={`Remove ${entry.name}`} onClick={() => removeImportedModel(assetId)}>
+                <button type="button" className="thumb-remove" aria-label={tr('Remove {name}', { name })} onClick={() => removeImportedModel(assetId)}>
                   ×
                 </button>
               )}
             </div>
           )
         })}
-        {entries.length === 0 && <p className="hint">Nothing in this category matches.</p>}
+        {entries.length === 0 && (
+          <p className="hint">
+            <T k="Nothing in this category matches." />
+          </p>
+        )}
       </div>
     </aside>
   )

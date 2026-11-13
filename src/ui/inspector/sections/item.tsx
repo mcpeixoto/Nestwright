@@ -1,12 +1,18 @@
 import { getEntry } from '../../../catalog/registry'
+import { catalogName } from '../../../i18n/catalog'
+import { useSettings } from '../../../settings'
 import { selectActiveLevel, useStore } from '../../../store'
 import { deleteSelection } from '../../actions'
 import { MaterialPicker } from '../../MaterialPicker'
 import { selectionFacts } from '../facts'
 import { labelOf, NumberField, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
+import { T } from '../../../i18n/T'
+import { useTranslate } from '../../../i18n'
 
 function ItemSection() {
+  const tr = useTranslate()
+  const language = useSettings((s) => s.language)
   const id = useStore((s) => s.selection[0] ?? '')
   const level = useStore(selectActiveLevel)
   const currency = useStore((s) => s.project.budget.currency)
@@ -16,7 +22,7 @@ function ItemSection() {
   const slots = entry ? Object.keys(entry.materialSlots) : Object.keys(item.materials)
   return (
     <div className="props">
-      <h2>{entry?.name ?? item.catalogId}</h2>
+      <h2>{entry ? catalogName(language, entry.id, entry.name) : item.catalogId}</h2>
       <NumberField
         label="Width"
         value={item.size.w}
@@ -74,7 +80,7 @@ function ItemSection() {
       />
       {slots.map((slot) => (
         <label className="field" key={slot}>
-          {labelOf(slot)}
+          {tr(labelOf(slot))}
           <MaterialPicker
             value={item.materials[slot] ?? entry?.materialSlots[slot] ?? { id: 'plaster-white' }}
             onChange={(next) =>
@@ -90,7 +96,7 @@ function ItemSection() {
         {currency} {(item.price ?? entry?.price ?? 0).toFixed(0)}
       </p>
       <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
+        <T k="Delete" />
       </button>
     </div>
   )

@@ -1,9 +1,17 @@
+import { translate } from '../i18n'
 import { deserialize, serialize } from '../io/project'
 import { createProject } from '../model/defaults'
 import { insertLevel } from '../model/levels'
 import { deleteEntities, duplicateItems, rotateItems } from '../model/ops'
-import { selectActiveLevel, useStore } from '../store'
 import { getPlatform } from '../platform'
+import { useSettings } from '../settings'
+import { selectActiveLevel, useStore } from '../store'
+import { rememberProject } from './start/recent'
+import { captureThumb } from './start/thumbs'
+
+function say(key: string): void {
+  useStore.getState().setMessage(translate(useSettings.getState().language, key))
+}
 
 function fileName(name: string, ext: string): string {
   const clean = name.replace(/[^\w\s-]+/g, '').trim().replace(/\s+/g, '-') || 'project'
@@ -13,30 +21,38 @@ function fileName(name: string, ext: string): string {
 export async function saveProject(): Promise<void> {
   const project = useStore.getState().project
   const ok = await getPlatform().saveFile(fileName(project.name, 'nest'), serialize(project))
-  useStore.getState().setMessage(ok ? 'Saved' : 'Save cancelled')
+  if (ok) rememberProject(project, captureThumb())
+  say(ok ? 'Saved' : 'Save cancelled')
 }
 
 export async function exportJson(): Promise<void> {
   const project = useStore.getState().project
   const ok = await getPlatform().saveFile(fileName(project.name, 'json'), serialize(project))
-  useStore.getState().setMessage(ok ? 'Exported JSON' : 'Export cancelled')
+  say(ok ? 'Exported JSON' : 'Export cancelled')
 }
 
-export async function openProject(): Promise<void> {
+export async function openProject(): Promise<boolean> {
   const file = await getPlatform().openFile('.nest,.json,application/json')
-  if (!file) return
+  if (!file) return false
   try {
-    useStore.getState().setProject(deserialize(file.data))
-    useStore.getState().setMessage(`Opened ${file.name}`)
+    const project = deserialize(file.data)
+    useStore.getState().setProject(project)
+    rememberProject(project, captureThumb())
+    useStore.getState().setMessage(`${translate(useSettings.getState().language, 'Open')} ${file.name}`)
+    return true
   } catch (err) {
-    useStore.getState().setMessage(err instanceof Error ? err.message : 'Could not open that file.')
+    useStore.getState().setMessage(err instanceof Error ? err.message : translate(useSettings.getState().language, 'Could not open that file.'))
+    return false
   }
 }
 
 export function newProject(): void {
-  if (typeof window !== 'undefined' && !window.confirm('Start a new empty project?')) return
-  useStore.getState().setProject(createProject('Untitled', 'house'))
-  useStore.getState().setMessage('New project')
+  const language = useSettings.getState().language
+  if (typeof window !== 'undefined' && !window.confirm(translate(language, 'Start a new empty project?'))) return
+  const project = createProject('Untitled', 'house')
+  project.units = useSettings.getState().units
+  useStore.getState().setProject(project)
+  say('New project')
 }
 
 export function deleteSelection(): void {

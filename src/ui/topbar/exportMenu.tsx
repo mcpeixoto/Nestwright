@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { exportHouseGlb } from '../../io/export/glb'
 import { exportPlanPdf, exportPlanPng, exportViewImage } from '../../io/export/images'
 import { registerTopBarAction } from './registry'
+import { T } from '../../i18n/T'
 
 function ExportMenu() {
   const [open, setOpen] = useState(false)
@@ -24,21 +25,21 @@ function ExportMenu() {
   return (
     <div className="menu" ref={ref}>
       <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-        Export
+        <T k="Export" />
       </button>
       {open && (
         <div className="menu-pop" role="menu">
           <button type="button" role="menuitem" onClick={() => run(() => exportViewImage(1920, 1080))}>
-            Image
+            <T k="Image" />
           </button>
           <button type="button" role="menuitem" onClick={() => run(() => exportPlanPdf())}>
-            Floor plan PDF
+            <T k="Floor plan PDF" />
           </button>
           <button type="button" role="menuitem" onClick={() => run(() => exportPlanPng())}>
-            Plan PNG
+            <T k="Plan PNG" />
           </button>
           <button type="button" role="menuitem" onClick={() => run(() => exportHouseGlb())}>
-            GLB
+            <T k="GLB" />
           </button>
         </div>
       )}

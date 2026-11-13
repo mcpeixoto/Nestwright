@@ -1,3 +1,4 @@
+import { useTranslate } from '../i18n'
 import { useStore } from '../store'
 import { listTools } from '../tools/registry'
 import { togglePanel, useOpenPanelIds, usePanelList } from './panels/registry'
@@ -12,28 +13,39 @@ const GROUPS = [
 
 export function ToolRail() {
   const tool = useStore((s) => s.tool)
-  const tools = listTools().filter((item) => item.id !== 'place-item')
-  const panels = usePanelList().filter((panel) => panel.placement === 'left' || panel.placement === 'right')
+  const apartment = useStore((s) => s.project.kind === 'apartment')
+  const tr = useTranslate()
+  const tools = listTools().filter((item) => {
+    if (item.id === 'place-item') return false
+    if (apartment && item.group === 'outside') return false
+    if (!apartment && item.id === 'balcony') return false
+    return true
+  })
+  const panels = usePanelList().filter(
+    (panel) => (panel.placement === 'left' || panel.placement === 'right') && !(apartment && panel.id === 'outside'),
+  )
   const open = useOpenPanelIds()
 
   return (
     <aside className="rail">
-      {GROUPS.map((group) => (
-        <div key={group.id} className="rail-group" aria-label={group.label}>
-          {tools
-            .filter((item) => item.group === group.id)
-            .map((item) => (
+      {GROUPS.map((group) => {
+        const items = tools.filter((item) => item.group === group.id)
+        if (items.length === 0) return null
+        return (
+          <div key={group.id} className="rail-group" aria-label={tr(group.label)}>
+            {items.map((item) => (
               <button
                 type="button"
                 key={item.id}
                 className={tool === item.id ? 'tool on' : 'tool'}
-                title={item.shortcut ? `${item.label} (${item.shortcut})` : item.label}
+                title={item.shortcut ? `${tr(item.label)} (${item.shortcut})` : tr(item.label)}
                 onClick={() => useStore.getState().setTool(item.id)}
                 dangerouslySetInnerHTML={{ __html: item.icon }}
               />
             ))}
-        </div>
-      ))}
+          </div>
+        )
+      })}
       <div className="rail-panels">
         {panels.map((panel) =>
           panel.icon ? (
@@ -41,7 +53,7 @@ export function ToolRail() {
               type="button"
               key={panel.id}
               className={open.includes(panel.id) ? 'tool on' : 'tool'}
-              title={panel.shortcut ? `${panel.title} (${panel.shortcut})` : panel.title}
+              title={panel.shortcut ? `${tr(panel.title)} (${panel.shortcut})` : tr(panel.title)}
               aria-pressed={open.includes(panel.id)}
               onClick={() => togglePanel(panel.id)}
               dangerouslySetInnerHTML={{ __html: panel.icon }}
@@ -51,11 +63,11 @@ export function ToolRail() {
               type="button"
               key={panel.id}
               className={open.includes(panel.id) ? 'tool on' : 'tool'}
-              title={panel.title}
+              title={tr(panel.title)}
               aria-pressed={open.includes(panel.id)}
               onClick={() => togglePanel(panel.id)}
             >
-              {panel.title.slice(0, 1)}
+              {tr(panel.title).slice(0, 1)}
             </button>
           ),
         )}

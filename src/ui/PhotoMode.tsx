@@ -24,17 +24,20 @@ import {
   type PhotoResolution,
 } from './photoSession'
 import { registerTopBarAction } from './topbar/registry'
+import { T } from '../i18n/T'
+import { useTranslate } from '../i18n'
 
 const ASPECTS: PhotoAspect[] = ['free', '16:9', '4:3', '1:1', '9:16']
 const RESOLUTIONS: PhotoResolution[] = ['1080p', '1440p', '4k']
 
 function PhotoButton() {
+  const tr = useTranslate()
   return (
     <button
       type="button"
       className="icon-btn"
-      aria-label="Photo"
-      title="Photo"
+      aria-label={tr('Photo')}
+      title={tr('Photo')}
       onClick={() => {
         const camera = getController()?.camera
         enterPhoto(camera?.fov ?? null)
@@ -47,6 +50,7 @@ function PhotoButton() {
 registerTopBarAction({ id: 'photo', label: 'Photo', order: 55, Component: PhotoButton })
 
 export function PhotoMode() {
+  const tr = useTranslate()
   const photo = usePhotoSession()
   const flight = useFlight()
   const time = useStore((s) => s.project.environment.time)
@@ -124,23 +128,23 @@ export function PhotoMode() {
   return (
     <div className="photo-strip">
       <label>
-        FOV
+        <T k="FOV" />
         <input type="range" min={20} max={80} step={1} defaultValue={getController()?.camera.fov ?? 48} onChange={(event) => setFov(Number(event.target.value))} />
       </label>
       <label>
-        Focus
+        <T k="Focus" />
         <input type="range" min={0.4} max={40} step={0.1} value={photo.focus} onChange={(event) => setPhoto({ focus: Number(event.target.value) })} />
       </label>
       <label>
-        Aperture
+        <T k="Aperture" />
         <input type="range" min={0} max={1} step={0.01} value={photo.aperture} onChange={(event) => setPhoto({ aperture: Number(event.target.value) })} />
       </label>
       <label>
-        Exposure
+        <T k="Exposure" />
         <input type="range" min={0.4} max={2} step={0.01} value={photo.exposure} onChange={(event) => setPhoto({ exposure: Number(event.target.value) })} />
       </label>
       <label>
-        Time
+        <T k="Time" />
         <input
           type="range"
           min={0}
@@ -156,7 +160,7 @@ export function PhotoMode() {
         />
       </label>
       <label>
-        Aspect
+        <T k="Aspect" />
         <select value={photo.aspect} onChange={(event) => setPhoto({ aspect: event.target.value as PhotoAspect })}>
           {ASPECTS.map((item) => (
             <option key={item} value={item}>
@@ -166,7 +170,7 @@ export function PhotoMode() {
         </select>
       </label>
       <label>
-        Size
+        <T k="Size" />
         <select value={photo.resolution} onChange={(event) => setPhoto({ resolution: event.target.value as PhotoResolution })}>
           {RESOLUTIONS.map((item) => (
             <option key={item} value={item}>
@@ -177,20 +181,20 @@ export function PhotoMode() {
       </label>
       <label className="check">
         <input type="checkbox" checked={photo.grid} onChange={(event) => setPhoto({ grid: event.target.checked })} />
-        Grid
+        <T k="Grid" />
       </label>
       <button type="button" onClick={capture}>
-        Capture
+        <T k="Capture" />
       </button>
       <div className="flight-box">
         <button type="button" onClick={() => addKeyframe()}>
-          Add keyframe
+          <T k="Add keyframe" />
         </button>
         <button type="button" disabled={flight.poses.length < 2 || flight.playing} onClick={() => void playFlight()}>
-          Play
+          <T k="Play" />
         </button>
         <button type="button" disabled={flight.poses.length < 2 || flight.playing} onClick={() => void recordFlight()}>
-          Record video
+          <T k="Record video" />
         </button>
         <ol className="flight-list">
           {flight.poses.map((pose, index) => (
@@ -198,14 +202,14 @@ export function PhotoMode() {
               <span>
                 {index + 1} · {pose.position.map((value) => value.toFixed(1)).join(', ')}
               </span>
-              <button type="button" aria-label="Move up" disabled={index === 0} onClick={() => moveKeyframe(index, -1)}>
-                Up
+              <button type="button" aria-label={tr('Move up')} disabled={index === 0} onClick={() => moveKeyframe(index, -1)}>
+                <T k="Up" />
               </button>
-              <button type="button" aria-label="Move down" disabled={index === flight.poses.length - 1} onClick={() => moveKeyframe(index, 1)}>
-                Down
+              <button type="button" aria-label={tr('Move down')} disabled={index === flight.poses.length - 1} onClick={() => moveKeyframe(index, 1)}>
+                <T k="Down" />
               </button>
-              <button type="button" aria-label="Delete keyframe" onClick={() => removeKeyframe(index)}>
-                Delete
+              <button type="button" aria-label={tr('Delete keyframe')} onClick={() => removeKeyframe(index)}>
+                <T k="Delete" />
               </button>
               {index < flight.poses.length - 1 && (
                 <label>

@@ -3,6 +3,7 @@ import { getEntry } from '../../catalog/registry'
 import { isPassableOpening, levelObstacles, moveCircle, rectFootprint, type Footprint } from '../../model/collision'
 import { pointInPolygon } from '../../model/geometry'
 import type { Item, Level, Project, Stair } from '../../model/types'
+import { useSettings } from '../../settings'
 import { roomsFor, useStore, type ViewMode } from '../../store'
 import { isPhotoMode } from '../../ui/photoSession'
 import { registerRig } from '../rigs'
@@ -252,8 +253,10 @@ function onKeyUp(event: KeyboardEvent): void {
 
 function onMouse(event: MouseEvent): void {
   if (!canvas || document.pointerLockElement !== canvas) return
-  yaw -= event.movementX * 0.0022
-  pitch -= event.movementY * 0.002
+  const sens = useSettings.getState().mouseSensitivity
+  const scale = Number.isFinite(sens) && sens > 0 ? sens : 1
+  yaw -= event.movementX * 0.0022 * scale
+  pitch += (useSettings.getState().invertY ? 1 : -1) * event.movementY * 0.002 * scale
   pitch = Math.max(-1.2, Math.min(1.2, pitch))
 }
 

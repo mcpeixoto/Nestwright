@@ -5,6 +5,8 @@ import { useStore } from '../../store'
 import { clearLiveTime, clockTime, getClockSnapshot, isTimePlaying, playTime, stopTime, subscribeClock } from '../../view3d/atmosphere/clock'
 import { icon } from '../../tools/icons'
 import { registerPanel } from './registry'
+import { T } from '../../i18n/T'
+import { useTranslate } from '../../i18n'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -53,6 +55,7 @@ function patchEnv(label: string, recipe: (env: { dayOfYear: number; time: number
 }
 
 function NorthDial({ radians, onChange }: { radians: number; onChange: (next: number) => void }) {
+  const tr = useTranslate()
   const setFromEvent = (event: ReactPointerEvent<HTMLDivElement>) => {
     const box = event.currentTarget.getBoundingClientRect()
     if (box.width < 2 || box.height < 2) return
@@ -66,7 +69,7 @@ function NorthDial({ radians, onChange }: { radians: number; onChange: (next: nu
     <div
       className="dial"
       role="slider"
-      aria-label="North"
+      aria-label={tr('North')}
       aria-valuemin={0}
       aria-valuemax={360}
       aria-valuenow={Math.round((radians * 180) / Math.PI)}
@@ -86,6 +89,7 @@ function NorthDial({ radians, onChange }: { radians: number; onChange: (next: nu
 }
 
 export function EnvironmentPanel() {
+  const tr = useTranslate()
   const env = useStore((s) => s.project.environment)
   const clock = useSyncExternalStore(subscribeClock, getClockSnapshot, getClockSnapshot)
   const quality = useSettings((s) => s.graphicsQuality)
@@ -104,9 +108,9 @@ export function EnvironmentPanel() {
 
   return (
     <div className="props env-panel">
-      <h2>Daylight</h2>
+      <h2><T k="Daylight" /></h2>
       <label className="field">
-        Date
+        <T k="Date" />
         <input
           type="range"
           min={1}
@@ -123,7 +127,7 @@ export function EnvironmentPanel() {
         <span className="readout">{formatDayOfYear(env?.dayOfYear ?? 1)}</span>
       </label>
       <label className="field">
-        Time
+        <T k="Time" />
         <div className="time-row">
           <input
             type="range"
@@ -157,7 +161,7 @@ export function EnvironmentPanel() {
         <span className="readout">{formatClock(time)}</span>
       </label>
       <label className="field">
-        Latitude
+        <T k="Latitude" />
         <select
           value={preset?.id ?? 'custom'}
           onChange={(event) => {
@@ -171,15 +175,15 @@ export function EnvironmentPanel() {
         >
           {PRESETS.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.label}
+              {tr(item.label)}
             </option>
           ))}
-          <option value="custom">Custom</option>
+          <option value="custom">{tr('Custom')}</option>
         </select>
         {!preset && (
           <input
             type="number"
-            aria-label="Custom latitude"
+            aria-label={tr('Custom latitude')}
             min={-90}
             max={90}
             step={0.1}
@@ -195,7 +199,7 @@ export function EnvironmentPanel() {
         )}
       </label>
       <div className="field">
-        North
+        <T k="North" />
         <NorthDial
           radians={env?.north ?? 0}
           onChange={(north) => {
@@ -206,7 +210,7 @@ export function EnvironmentPanel() {
         />
       </div>
       <div className="field">
-        Weather
+        <T k="Weather" />
         <div className="weather-row">
           {WEATHER.map((item) => (
             <button
@@ -219,13 +223,13 @@ export function EnvironmentPanel() {
                 })
               }}
             >
-              {item.label}
+              {tr(item.label)}
             </button>
           ))}
         </div>
       </div>
       <label className="field">
-        Cloudiness
+        <T k="Cloudiness" />
         <input
           type="range"
           min={0}
@@ -251,10 +255,10 @@ export function EnvironmentPanel() {
             })
           }}
         />
-        Auto lights after sunset
+        <T k="Auto lights after sunset" />
       </label>
       <label className="field">
-        Graphics
+        <T k="Graphics" />
         <select
           value={quality}
           onChange={(event) => {
@@ -265,11 +269,11 @@ export function EnvironmentPanel() {
         >
           {QUALITIES.map((item) => (
             <option key={item} value={item}>
-              {item}
+              {tr(item === 'low' ? 'Low' : item === 'medium' ? 'Medium' : item === 'high' ? 'High' : 'Ultra')}
             </option>
           ))}
         </select>
-        <span className="readout">Plant density {plants}%</span>
+        <span className="readout">{tr('Plant density {n}%', { n: plants })}</span>
       </label>
     </div>
   )

@@ -7,5 +7,6 @@ export function electronPlatform(): Platform {
     isElectron: true,
     openFile: (accept) => bridge.openFile(accept),
     saveFile: (name, data) => bridge.saveFile(name, data),
+    quit: () => bridge.quit?.() ?? Promise.resolve(),
   }
 }

@@ -4,6 +4,7 @@ import { MaterialPicker } from '../../MaterialPicker'
 import { selectionFacts } from '../facts'
 import { NumberField, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
+import { T } from '../../../i18n/T'
 
 function WallSection() {
   const id = useStore((s) => s.selection[0] ?? '')
@@ -12,7 +13,7 @@ function WallSection() {
   if (!wall) return null
   return (
     <div className="props">
-      <h2>Wall</h2>
+      <h2><T k="Wall" /></h2>
       <NumberField
         label="Thickness"
         value={wall.thickness}
@@ -36,7 +37,7 @@ function WallSection() {
         }
       />
       <label className="field">
-        Left side
+        <T k="Left side" />
         <MaterialPicker
           value={wall.left}
           onChange={(next) =>
@@ -48,7 +49,7 @@ function WallSection() {
         />
       </label>
       <label className="field">
-        Right side
+        <T k="Right side" />
         <MaterialPicker
           value={wall.right}
           onChange={(next) =>
@@ -88,7 +89,7 @@ function WallSection() {
         }
       />
       <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
+        <T k="Delete" />
       </button>
     </div>
   )

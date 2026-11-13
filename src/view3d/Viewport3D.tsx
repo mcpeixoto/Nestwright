@@ -5,6 +5,7 @@ import { FrameGuide } from '../ui/PhotoMode'
 import { usePhotoSession } from '../ui/photoSession'
 import { WalkHud } from '../ui/WalkHud'
 import { SceneController } from './SceneController'
+import { T } from '../i18n/T'
 
 export function Viewport3D() {
   const ref = useRef<HTMLCanvasElement>(null)
@@ -39,7 +40,7 @@ export function Viewport3D() {
       {view === 'walk' && !photo && <WalkHud />}
       <FrameGuide />
       <button type="button" className="fit-btn" onClick={() => fitVisible()}>
-        Fit
+        <T k="Fit" />
       </button>
     </div>
   )

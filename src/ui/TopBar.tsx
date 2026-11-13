@@ -3,6 +3,8 @@ import { noteReturnView } from '../view3d/rigs/walk'
 import { useOpenPanelIds, usePanelList, togglePanel } from './panels/registry'
 import { listTopBarActions } from './topbar/registry'
 import './topbar/builtins'
+import { T } from '../i18n/T'
+import { useTranslate } from '../i18n'
 
 const VIEWS = [
   { id: '2d', label: '2D' },
@@ -12,6 +14,7 @@ const VIEWS = [
 ] as const
 
 export function TopBar() {
+  const tr = useTranslate()
   const name = useStore((s) => s.project.name)
   const view = useStore((s) => s.view)
   const canUndo = useStore((s) => s.canUndo)
@@ -24,7 +27,7 @@ export function TopBar() {
       <div className="wordmark">Nestwright</div>
       <input
         className="project-name"
-        aria-label="Project name"
+        aria-label={tr('Project name')}
         value={name}
         onChange={(event) => {
           const next = event.target.value
@@ -33,7 +36,7 @@ export function TopBar() {
           })
         }}
       />
-      <div className="view-switch" role="group" aria-label="View">
+      <div className="view-switch" role="group" aria-label={tr('View')}>
         {VIEWS.map((item) => (
           <button
             type="button"
@@ -44,23 +47,23 @@ export function TopBar() {
               useStore.getState().setView(item.id)
             }}
           >
-            {item.label}
+            {tr(item.label)}
           </button>
         ))}
       </div>
       <div className="top-actions">
         <button type="button" disabled={!canUndo} onClick={() => useStore.getState().undo()}>
-          Undo
+          <T k="Undo" />
         </button>
         <button type="button" disabled={!canRedo} onClick={() => useStore.getState().redo()}>
-          Redo
+          <T k="Redo" />
         </button>
         {listTopBarActions().map((action) =>
           action.Component ? (
             <action.Component key={action.id} />
           ) : (
             <button type="button" key={action.id} onClick={() => action.run?.()}>
-              {action.label}
+              {tr(action.label)}
             </button>
           ),
         )}
@@ -70,8 +73,8 @@ export function TopBar() {
               type="button"
               key={panel.id}
               className={open.includes(panel.id) ? 'icon-btn on' : 'icon-btn'}
-              aria-label={panel.title}
-              title={panel.title}
+              aria-label={tr(panel.title)}
+              title={tr(panel.title)}
               onClick={() => togglePanel(panel.id)}
               dangerouslySetInnerHTML={{ __html: panel.icon }}
             />
@@ -82,7 +85,7 @@ export function TopBar() {
               className={open.includes(panel.id) ? 'on' : ''}
               onClick={() => togglePanel(panel.id)}
             >
-              {panel.title}
+              {tr(panel.title)}
             </button>
           ),
         )}

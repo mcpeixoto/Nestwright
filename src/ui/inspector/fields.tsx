@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslate } from '../../i18n'
 import { selectActiveLevel, useStore } from '../../store'
 
 export function patchLevel(label: string, recipe: (level: NonNullable<ReturnType<typeof selectActiveLevel>>) => void) {
@@ -25,10 +26,11 @@ export function NumberField({
   onCommit: (value: number) => void
 }) {
   const [text, setText] = useState<string | null>(null)
+  const tr = useTranslate()
   const shown = text ?? trimNumber(value)
   return (
     <label className="field">
-      {label}
+      {tr(label)}
       <input
         inputMode="decimal"
         step={step}

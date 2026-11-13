@@ -1,19 +1,28 @@
 import { create } from 'zustand'
 
 export type GraphicsQuality = 'low' | 'medium' | 'high' | 'ultra'
+export type AppLanguage = 'en' | 'pt-PT'
 
 export interface Settings {
   units: 'metric' | 'imperial'
   graphicsQuality: GraphicsQuality
-  language: string
+  language: AppLanguage
   showFps: boolean
   playerName: string
   playerColor: string
+  continueLast: boolean
+  mouseSensitivity: number
+  invertY: boolean
+  /** Seconds. 0 turns autosave off. */
+  autosaveInterval: number
+  /** 0.9–1.25, applied to the root font size. */
+  uiScale: number
 }
 
 const KEY = 'nestwright:settings'
 
 const QUALITIES: readonly GraphicsQuality[] = ['low', 'medium', 'high', 'ultra']
+export const AUTOSAVE_CHOICES = [0, 5, 15, 30, 60, 120] as const
 
 export const DEFAULT_SETTINGS: Settings = {
   units: 'metric',
@@ -22,6 +31,42 @@ export const DEFAULT_SETTINGS: Settings = {
   showFps: false,
   playerName: '',
   playerColor: '#3FB8AF',
+  continueLast: false,
+  mouseSensitivity: 1,
+  invertY: false,
+  autosaveInterval: 15,
+  uiScale: 1,
+}
+
+function clamp(value: number, min: number, max: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback
+  return Math.min(max, Math.max(min, value))
+}
+
+export function normalizeSettings(partial: Partial<Settings> | null | undefined): Settings {
+  const source = partial ?? {}
+  const graphicsQuality = QUALITIES.includes(source.graphicsQuality as GraphicsQuality)
+    ? (source.graphicsQuality as GraphicsQuality)
+    : DEFAULT_SETTINGS.graphicsQuality
+  const languageRaw = typeof (source as { language?: unknown }).language === 'string' ? String(source.language) : ''
+  const language: AppLanguage = languageRaw === 'pt-PT' || languageRaw === 'pt' ? 'pt-PT' : 'en'
+  const autosaveInterval = AUTOSAVE_CHOICES.includes(source.autosaveInterval as (typeof AUTOSAVE_CHOICES)[number])
+    ? (source.autosaveInterval as number)
+    : DEFAULT_SETTINGS.autosaveInterval
+  return {
+    units: source.units === 'imperial' ? 'imperial' : 'metric',
+    graphicsQuality,
+    language,
+    showFps: source.showFps === true,
+    playerName: typeof source.playerName === 'string' ? source.playerName : '',
+    playerColor:
+      typeof source.playerColor === 'string' && source.playerColor ? source.playerColor : DEFAULT_SETTINGS.playerColor,
+    continueLast: source.continueLast === true,
+    mouseSensitivity: clamp(source.mouseSensitivity ?? DEFAULT_SETTINGS.mouseSensitivity, 0.4, 2, 1),
+    invertY: source.invertY === true,
+    autosaveInterval,
+    uiScale: clamp(source.uiScale ?? 1, 0.9, 1.25, 1),
+  }
 }
 
 function load(): Settings {
@@ -29,21 +74,7 @@ function load(): Settings {
     if (typeof localStorage === 'undefined') return { ...DEFAULT_SETTINGS }
     const raw = localStorage.getItem(KEY)
     if (!raw) return { ...DEFAULT_SETTINGS }
-    const parsed = JSON.parse(raw) as Partial<Settings>
-    const graphicsQuality = QUALITIES.includes(parsed.graphicsQuality as GraphicsQuality)
-      ? (parsed.graphicsQuality as GraphicsQuality)
-      : DEFAULT_SETTINGS.graphicsQuality
-    const units = parsed.units === 'imperial' ? 'imperial' : 'metric'
-    return {
-      ...DEFAULT_SETTINGS,
-      ...parsed,
-      units,
-      graphicsQuality,
-      language: typeof parsed.language === 'string' && parsed.language ? parsed.language : DEFAULT_SETTINGS.language,
-      showFps: parsed.showFps === true,
-      playerName: typeof parsed.playerName === 'string' ? parsed.playerName : '',
-      playerColor: typeof parsed.playerColor === 'string' && parsed.playerColor ? parsed.playerColor : DEFAULT_SETTINGS.playerColor,
-    }
+    return normalizeSettings(JSON.parse(raw) as Partial<Settings>)
   } catch {
     return { ...DEFAULT_SETTINGS }
   }
@@ -52,15 +83,7 @@ function load(): Settings {
 function persist(settings: Settings): void {
   try {
     if (typeof localStorage === 'undefined') return
-    const stored: Settings = {
-      units: settings.units,
-      graphicsQuality: settings.graphicsQuality,
-      language: settings.language,
-      showFps: settings.showFps,
-      playerName: settings.playerName,
-      playerColor: settings.playerColor,
-    }
-    localStorage.setItem(KEY, JSON.stringify(stored))
+    localStorage.setItem(KEY, JSON.stringify(normalizeSettings(settings)))
   } catch {
     /* private mode or a full disk: the in-memory settings still apply */
   }
@@ -74,9 +97,9 @@ interface SettingsState extends Settings {
 export const useSettings = create<SettingsState>((set, get) => ({
   ...load(),
   setSettings(partial) {
-    set(partial)
-    const { units, graphicsQuality, language, showFps, playerName, playerColor } = get()
-    persist({ units, graphicsQuality, language, showFps, playerName, playerColor })
+    const next = normalizeSettings({ ...get(), ...partial })
+    set(next)
+    persist(next)
   },
 }))
 

@@ -7,5 +7,6 @@ export interface Platform {
   openFile(accept: string): Promise<OpenedFile | null>
   saveFile(name: string, data: string): Promise<boolean>
   isElectron: boolean
+  quit?: () => Promise<void>
   steam?: { available: boolean }
 }

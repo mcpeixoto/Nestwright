@@ -52,6 +52,9 @@ export function createGroundLayer(ctx: SceneLayerContext): SceneLayer {
 
   return {
     sync(project: Project) {
+      const apartment = project?.kind === 'apartment'
+      mesh.visible = !apartment
+      if (apartment || !project?.terrain) return
       const plot = Math.max(project.terrain.width, project.terrain.depth, 16)
       const next = Math.max(plot * 6, 120)
       if (Math.abs(next - size) > 0.5) resize(next)

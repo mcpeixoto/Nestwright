@@ -5,6 +5,7 @@ import { selectActiveLevel, useStore } from '../../../store'
 import { selectionFacts } from '../facts'
 import { patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
+import { T } from '../../../i18n/T'
 
 function LightSection() {
   const id = useStore((s) => s.selection[0] ?? '')
@@ -29,10 +30,10 @@ function LightSection() {
           checked={on}
           onChange={(event) => set('Light', (found) => { found.lightOn = event.target.checked })}
         />
-        Light on
+        <T k="Light on" />
       </label>
       <label className="field">
-        Colour temperature
+        <T k="Colour temperature" />
         <input
           type="range"
           min={2200}
@@ -52,7 +53,7 @@ function LightSection() {
         </span>
       </label>
       <label className="field">
-        Intensity
+        <T k="Intensity" />
         <input
           type="range"
           min={0}
