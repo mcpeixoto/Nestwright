@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, dialog, ipcMain } from 'electron'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { coopSend, coopUsername, setCoopSink, startCoopHost, stopCoopHost } from './coop/server'
 // The bundle is CJS, so the directory of main.cjs is __dirname.
 // import.meta.url is empty in that format.
 declare const __dirname: string
@@ -94,6 +95,31 @@ function registerIpc() {
     }
     return true
   })
+
+  ipcMain.handle('nestwright:username', () => coopUsername())
+
+  ipcMain.handle('nestwright:host-session', async () => {
+    const win = BrowserWindow.getAllWindows()[0]
+    setCoopSink({
+      message(peerId, raw) {
+        if (!win || win.isDestroyed()) return
+        win.webContents.send('nestwright:coop-message', { peerId, raw })
+      },
+      closed(peerId) {
+        if (!win || win.isDestroyed()) return
+        win.webContents.send('nestwright:coop-closed', { peerId })
+      },
+    })
+    return startCoopHost()
+  })
+
+  ipcMain.handle('nestwright:leave-session', () => {
+    stopCoopHost()
+  })
+
+  ipcMain.on('nestwright:coop-send', (_event, peerId: unknown, raw: unknown) => {
+    coopSend(typeof peerId === 'string' ? peerId : null, typeof raw === 'string' ? raw : '')
+  })
 }
 
 const gotLock = app.requestSingleInstanceLock()
@@ -125,5 +151,9 @@ if (!gotLock) {
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()
+  })
+
+  app.on('before-quit', () => {
+    stopCoopHost()
   })
 }

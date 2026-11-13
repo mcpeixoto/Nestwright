@@ -300,6 +300,8 @@ export interface Wish {
   reaction: 'love' | 'no' | 'idea';
   note: string;
   createdAt: number;
+  /** Set once the household has settled it. Omitted on older files. */
+  resolved?: boolean;
 }
 
 export interface Variant {
@@ -317,6 +319,8 @@ export interface Budget {
   buildCostPerM2: number;
   /** Extra cost per m² by floor material id. */
   finishCostPerM2: Record<string, number>;
+  /** Spending cap in `currency`. Omitted until someone sets one. */
+  target?: number;
 }
 
 export interface RoomRequirement {

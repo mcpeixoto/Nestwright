@@ -41,7 +41,27 @@ describe('undo and redo', () => {
     useStore.getState().applyRemotePatches(patches)
     expect(useStore.getState().project.name).toBe('Local')
     expect(useStore.getState().past.length).toBe(pastBefore)
-    expect(seen.length).toBe(1)
+    // The local edit and its undo both publish, so a partner sees the undo. Remote apply stays silent.
+    expect(seen.length).toBe(2)
     stop()
+  })
+
+  it('drops an undo that no longer applies and says why', () => {
+    useStore.getState().setProject(createProject('Undo', 'house'))
+    useStore.getState().apply('Note', (draft) => {
+      draft.wishes.push({
+        id: 'w1',
+        author: 'Ada',
+        target: { kind: 'point', levelId: draft.levels[0]?.id ?? '', at: { x: 1, y: 1 } },
+        reaction: 'love',
+        note: 'Window',
+        createdAt: 1,
+      })
+    })
+    useStore.getState().applyRemotePatches([{ op: 'remove', path: ['wishes'] }])
+    useStore.getState().undo()
+    expect(useStore.getState().message).toBe("Partner changed this — can't undo")
+    expect(useStore.getState().canUndo).toBe(false)
+    expect(useStore.getState().project.wishes).toBeUndefined()
   })
 })

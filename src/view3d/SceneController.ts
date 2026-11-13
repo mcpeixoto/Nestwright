@@ -90,14 +90,17 @@ export class SceneController {
   private signature: SceneViewState | null = null
   private seenProject: Project | null = null
   private unbindHost: (() => void) | null = null
+  /** The compare pane must not steal the walk rig or the global controller. */
+  private primary = true
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, options?: { primary?: boolean }) {
+    this.primary = options?.primary !== false
     this.canvas = canvas
     this.scene = new THREE.Scene()
     this.scene.environmentIntensity = 0.6
     this.camera = new THREE.PerspectiveCamera(48, 1, 0.2, 6000)
     this.camera.position.set(12, 10, 14)
-    bindController(this)
+    if (this.primary) bindController(this)
     try {
       this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false })
     } catch {
@@ -124,12 +127,14 @@ export class SceneController {
 
     this.scene.add(this.root)
     this.scene.add(this.helpers)
-    bindWalkScene(() => (this.disposed ? null : this.root))
+    if (this.primary) bindWalkScene(() => (this.disposed ? null : this.root))
     this.unbindHost = bindSceneHost(this)
     this.mountAll()
 
-    canvas.addEventListener('pointerdown', this.onDown, true)
-    canvas.addEventListener('pointerup', this.onUp)
+    if (this.primary) {
+      canvas.addEventListener('pointerdown', this.onDown, true)
+      canvas.addEventListener('pointerup', this.onUp)
+    }
     this.lastTime = performance.now()
     this.frameLoop()
   }
@@ -145,8 +150,10 @@ export class SceneController {
     this.unbindHost?.()
     this.unbindHost = null
     cancelAnimationFrame(this.raf)
-    this.canvas.removeEventListener('pointerdown', this.onDown, true)
-    this.canvas.removeEventListener('pointerup', this.onUp)
+    if (this.primary) {
+      this.canvas.removeEventListener('pointerdown', this.onDown, true)
+      this.canvas.removeEventListener('pointerup', this.onUp)
+    }
     this.rig?.deactivate?.()
     this.controls?.dispose()
     for (const layer of this.layers.values()) layer.dispose()
@@ -187,6 +194,39 @@ export class SceneController {
       return hit.distance
     }
     return null
+  }
+
+  pose(): { pos: { x: number; y: number; z: number }; target: { x: number; y: number; z: number } } | null {
+    if (!this.controls || this.disposed) return null
+    return {
+      pos: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
+      target: { x: this.controls.target.x, y: this.controls.target.y, z: this.controls.target.z },
+    }
+  }
+
+  matchPose(pose: { pos: { x: number; y: number; z: number }; target: { x: number; y: number; z: number } }): void {
+    if (!this.controls || this.disposed) return
+    const { pos, target } = pose
+    if (![pos.x, pos.y, pos.z, target.x, target.y, target.z].every((value) => Number.isFinite(value))) return
+    const same =
+      Math.abs(this.camera.position.x - pos.x) < 1e-4 &&
+      Math.abs(this.camera.position.y - pos.y) < 1e-4 &&
+      Math.abs(this.camera.position.z - pos.z) < 1e-4 &&
+      Math.abs(this.controls.target.x - target.x) < 1e-4 &&
+      Math.abs(this.controls.target.y - target.y) < 1e-4 &&
+      Math.abs(this.controls.target.z - target.z) < 1e-4
+    if (same) return
+    this.camera.position.set(pos.x, pos.y, pos.z)
+    this.controls.target.set(target.x, target.y, target.z)
+    this.controls.update()
+  }
+
+  frameAt(point: { x: number; y: number; z: number }): void {
+    if (!this.controls || this.disposed) return
+    if (![point.x, point.y, point.z].every((value) => Number.isFinite(value))) return
+    this.controls.target.set(point.x, point.y, point.z)
+    this.camera.position.set(point.x + 6, point.y + 5, point.z + 7)
+    this.controls.update()
   }
 
   /** Frame the visible levels' walls from a three-quarter elevated view. */
