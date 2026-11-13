@@ -252,8 +252,23 @@ export interface Terrain {
   splat: string;
   /** Scattered vegetation instances. */
   plants: { id: Id; species: string; position: Vec2; scale: number; rotation: number }[];
-  water: { id: Id; kind: 'pond' | 'pool' | 'stream'; polygon: Vec2[]; level: number }[];
-  fences: { id: Id; style: string; points: Vec2[]; height: number }[];
+  water: {
+    id: Id;
+    kind: 'pond' | 'pool' | 'stream';
+    polygon: Vec2[];
+    /** Water surface elevation in metres. */
+    level: number;
+    /** Basin depth below `level`. Omitted files keep the kind's default. */
+    depth?: number;
+  }[];
+  fences: {
+    id: Id;
+    style: string;
+    points: Vec2[];
+    height: number;
+    /** Segment indices (point i → i+1) that are gates. */
+    gates?: number[];
+  }[];
   /** Plot boundary polygon (visual + budget). */
   boundary: Vec2[];
 }
@@ -285,6 +300,8 @@ export interface Wish {
   reaction: 'love' | 'no' | 'idea';
   note: string;
   createdAt: number;
+  /** Set once the household has settled it. Omitted on older files. */
+  resolved?: boolean;
 }
 
 export interface Variant {
@@ -302,6 +319,8 @@ export interface Budget {
   buildCostPerM2: number;
   /** Extra cost per m² by floor material id. */
   finishCostPerM2: Record<string, number>;
+  /** Spending cap in `currency`. Omitted until someone sets one. */
+  target?: number;
 }
 
 export interface RoomRequirement {
