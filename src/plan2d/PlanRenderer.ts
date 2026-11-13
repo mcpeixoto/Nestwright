@@ -61,13 +61,14 @@ export class PlanRenderer {
     return this.fittedZoom
   }
 
-  worldToScreen(p: { x: number; y: number }): { x: number; y: number } {
+  /** Arrow properties so tools can pass them unbound (`ctx.transform.worldToScreen`). */
+  worldToScreen = (p: { x: number; y: number }): { x: number; y: number } => {
     const { width, height } = this.size()
     const s = PX * this.cam.zoom
     return { x: (p.x - this.cam.x) * s + width / 2, y: height / 2 - (p.y - this.cam.y) * s }
   }
 
-  screenToWorld(x: number, y: number): { x: number; y: number } {
+  screenToWorld = (x: number, y: number): { x: number; y: number } => {
     const { width, height } = this.size()
     const s = PX * this.cam.zoom
     return { x: this.cam.x + (x - width / 2) / s, y: this.cam.y - (y - height / 2) / s }
@@ -90,14 +91,16 @@ export class PlanRenderer {
   }
 
   fit(): void {
-    const level = selectActiveLevel(useStore.getState())
+    const state = useStore.getState()
+    const level = selectActiveLevel(state)
     const { width, height } = this.size()
     if (!level || width < 2 || height < 2) return
+    const levels = level.walls.length > 0 ? [level] : state.project.levels
     let minX = Infinity
     let minY = Infinity
     let maxX = -Infinity
     let maxY = -Infinity
-    for (const wall of level.walls) {
+    for (const item of levels) for (const wall of item.walls) {
       minX = Math.min(minX, wall.a.x, wall.b.x)
       minY = Math.min(minY, wall.a.y, wall.b.y)
       maxX = Math.max(maxX, wall.a.x, wall.b.x)

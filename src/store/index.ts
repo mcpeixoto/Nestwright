@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import '../catalog'
 import { loadAutosave } from '../io/autosave'
 import { getTool } from '../tools/registry'
-import { detectRooms } from '../model/rooms'
+import { detectRooms, ensureRoomRecords } from '../model/rooms'
 import type { Level, OpeningType, Project, Room } from '../model/types'
 import { createSampleProject } from '../sample'
 
@@ -53,7 +53,11 @@ export interface StoreState {
   snapAngles: boolean
   libraryOpen: boolean
   message: string
+  /** Label of the pointer stroke currently grouping undo steps, if any. */
+  stroke: string | null
   apply: (label: string, recipe: (draft: Project) => void) => void
+  beginStroke: (label: string) => void
+  endStroke: () => void
   undo: () => void
   redo: () => void
   setProject: (project: Project) => void
@@ -97,19 +101,31 @@ export const useStore = create<StoreState>((set, get) => ({
   snapAngles: true,
   libraryOpen: false,
   message: '',
+  stroke: null,
+
+  beginStroke(label) {
+    set({ stroke: label })
+  },
+
+  endStroke() {
+    if (get().stroke == null) return
+    set({ stroke: null })
+  },
 
   apply(label, recipe) {
     const now = Date.now()
     const current = get().project
     const [next, patches, inversePatches] = produceWithPatches(current, (draft) => {
       recipe(draft as unknown as Project)
+      for (const level of draft.levels) ensureRoomRecords(level)
       draft.updatedAt = now
     })
     if (patches.length === 0) return
-    const { past } = get()
+    const { past, stroke } = get()
     const last = past[past.length - 1]
     let history: HistoryEntry[]
-    if (last && last.label === label && now - last.time <= COALESCE_MS) {
+    const sameStroke = stroke === label && last?.label === label
+    if (last && (sameStroke || (stroke == null && last.label === label && now - last.time <= COALESCE_MS))) {
       history = [
         ...past.slice(0, -1),
         {
@@ -176,6 +192,7 @@ export const useStore = create<StoreState>((set, get) => ({
       canUndo: false,
       canRedo: false,
       message: '',
+      stroke: null,
     })
   },
 

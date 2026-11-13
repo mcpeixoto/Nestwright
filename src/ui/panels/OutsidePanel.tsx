@@ -47,7 +47,7 @@ function Slider({
 }) {
   return (
     <label className="field">
-      {label}
+      <span className="field-label">{label}</span>
       <input
         type="range"
         min={min}
@@ -226,19 +226,19 @@ function OutsideBody() {
   )
 }
 
-const BRUSH_PANEL_TOOLS = new Set(['terrain-sculpt', 'ground-paint', 'plant-brush', 'path', 'water', 'fence', 'plot-boundary', 'ivy'])
+const BRUSH_PANEL_TOOLS = new Set(['terrain-sculpt', 'ground-paint', 'plant-brush', 'path', 'water', 'fence'])
 
 useStore.subscribe((state, prev) => {
   if (state.tool === prev.tool) return
-  if (BRUSH_PANEL_TOOLS.has(state.tool)) setPanelOpen('brush', true)
+  setPanelOpen('brush', BRUSH_PANEL_TOOLS.has(state.tool))
 })
 
 function BrushFloat() {
   const tool = useStore((s) => s.tool)
   const brush = useBrush()
+  if (!BRUSH_PANEL_TOOLS.has(tool)) return null
   return (
     <div className="props">
-      <h2>Brush</h2>
       <BrushControls />
       {tool === 'plant-brush' && <p className="hint">Shift-drag erases. Spacing follows {brush.species} ({speciesProfile(brush.species).spacing} m).</p>}
       {tool === 'water' && <p className="hint">Click a polygon. Enter finishes. Pools drag out as a rectangle.</p>}

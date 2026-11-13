@@ -5,7 +5,12 @@ import { bootImportedModels, catalogIdForAsset, importModelFile, removeImportedM
 import { useStore } from '../store'
 import { beginPlace } from '../tools/placeItem'
 
-const DRAWER_CATEGORIES = [...CATEGORIES.map((id) => ({ id, label: id })), { id: 'imported', label: 'My models' }]
+function categoryLabel(id: string): string {
+  if (id === 'imported') return 'My models'
+  return id.charAt(0).toUpperCase() + id.slice(1)
+}
+
+const DRAWER_CATEGORIES = [...CATEGORIES.map((id) => ({ id, label: categoryLabel(id) })), { id: 'imported', label: 'My models' }]
 
 export function LibraryDrawer() {
   const [category, setCategory] = useState<string>('living')
@@ -24,7 +29,7 @@ export function LibraryDrawer() {
   }, [])
 
   useEffect(() => {
-    for (const id of thumbIds.split(',')) if (id) requestThumb(id)
+    for (const id of thumbIds.split(',')) if (id) requestThumb(id, true)
   }, [thumbIds])
 
   return (

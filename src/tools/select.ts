@@ -1,6 +1,6 @@
 import { bulgeDelta, clampBulge, curveHandle } from '../model/curve'
 import { add, dist, len, sub } from '../model/geometry'
-import { moveItems, moveWall, moveWallEndpoint } from '../model/ops'
+import { moveItems, moveRoom, moveWall, moveWallEndpoint } from '../model/ops'
 import { roomAt } from '../model/rooms'
 import type { Item, Level, Opening, Vec2, Wall } from '../model/types'
 import { pickOutside } from '../model/terrain'
@@ -16,6 +16,7 @@ type Drag =
   | { kind: 'end'; wallId: string; end: 'a' | 'b'; origin: Vec2; start: Vec2 }
   | { kind: 'wall'; wallId: string; originA: Vec2; start: Vec2 }
   | { kind: 'bulge'; wallId: string; origin: number; start: Vec2 }
+  | { kind: 'room'; roomKey: string; start: Vec2 }
   | { kind: 'marquee'; x0: number; y0: number; x1: number; y1: number; additive: boolean }
 
 let drag: Drag | null = null
@@ -108,6 +109,10 @@ registerTool({
   group: 'build',
   cursor: 'default',
   icon: icon('<path d="M5 3l5 16 2.2-6.2L19 11z"/>'),
+  deactivate() {
+    drag = null
+    useStore.getState().endStroke()
+  },
   onPointerDown(ctx) {
     const level = levelOf()
     if (!level) return
@@ -167,7 +172,11 @@ registerTool({
     }
     const room = roomAt(level, ctx.point)
     if (room) {
-      state.select([room.key], ctx.shift)
+      const already = state.selection.includes(room.key)
+      if (already && !ctx.shift) {
+        drag = { kind: 'room', roomKey: room.key, start: { ...ctx.point } }
+        useStore.getState().beginStroke('Move room')
+      } else state.select([room.key], ctx.shift)
       return
     }
     if (!ctx.shift) state.select([])
@@ -214,6 +223,14 @@ registerTool({
       })
       return
     }
+    if (drag.kind === 'room') {
+      const roomKey = drag.roomKey
+      const delta = sub(ctx.point, drag.start)
+      if (len(delta) < 1e-6) return
+      drag.start = { ...ctx.point }
+      applyMove('Move room', (draft) => moveRoom(draft, roomKey, delta))
+      return
+    }
     if (drag.kind === 'wall') {
       const wallId = drag.wallId
       const originA = drag.originA
@@ -231,6 +248,10 @@ registerTool({
   onPointerUp(ctx) {
     const current = drag
     drag = null
+    if (current?.kind === 'room') {
+      useStore.getState().endStroke()
+      return
+    }
     if (!current || current.kind !== 'marquee') return
     if (Math.hypot(current.x1 - current.x0, current.y1 - current.y0) < 4) return
     const level = levelOf()

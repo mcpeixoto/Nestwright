@@ -1,3 +1,4 @@
+import { clampBrushHit } from '../model/brushClamp'
 import { newId } from '../model/ids'
 import { dist } from '../model/geometry'
 import { PLANT_SPECIES, scatterPoints, speciesProfile, type PlantSpecies } from '../model/terrain'
@@ -12,28 +13,36 @@ import { registerTool } from './registry'
 let painting = false
 let armed = false
 let dab = 1
+let strokeLabel = 'Plant'
 
 export function plantPointer(phase: 'down' | 'move' | 'up', point: Vec2, shift: boolean): void {
   if (phase === 'up') {
     painting = false
+    useStore.getState().endStroke()
     return
   }
+  const hit = clampBrushHit(point, useStore.getState().project.terrain)
+  if (!hit) return
   armed = true
-  if (phase === 'down') painting = true
+  if (phase === 'down') {
+    painting = true
+    strokeLabel = shift ? 'Erase plants' : 'Plant'
+    useStore.getState().beginStroke(strokeLabel)
+  }
   if (!painting || !allowDab(48)) return
   const brush = getBrush()
   const profile = speciesProfile(brush.species)
-  useStore.getState().apply(shift ? 'Erase plants' : 'Plant', (draft) => {
+  useStore.getState().apply(strokeLabel, (draft) => {
     const terrain = draft.terrain
     if (shift) {
-      terrain.plants = terrain.plants.filter((plant) => dist(plant.position, point) > brush.radius)
+      terrain.plants = terrain.plants.filter((plant) => dist(plant.position, hit) > brush.radius)
       return
     }
     const wanted = Math.max(1, Math.round(brush.density * Math.PI * brush.radius * brush.radius))
     const count = Math.min(phase === 'down' ? 140 : 28, wanted)
     const existing = terrain.plants.filter((plant) => plant.species === brush.species).map((plant) => plant.position)
     dab = (dab + 0x9e3779b9) >>> 0
-    const spots = scatterPoints(point, brush.radius, count, profile.spacing, dab, existing)
+    const spots = scatterPoints(hit, brush.radius, count, profile.spacing, dab, existing)
     for (const spot of spots) {
       const spin = ((dab = (dab + 1) >>> 0) % 1000) / 1000
       terrain.plants.push({
@@ -49,7 +58,7 @@ export function plantPointer(phase: 'down' | 'move' | 'up', point: Vec2, shift: 
 
 registerShortcut({
   id: 'tool-plant',
-  keys: 'p',
+  keys: 't',
   description: 'Plant brush',
   run: () => useStore.getState().setTool('plant-brush'),
 })
@@ -62,7 +71,7 @@ export function selectSpecies(species: string): void {
 registerTool({
   id: 'plant-brush',
   label: 'Plants',
-  shortcut: 'P',
+  shortcut: 'T',
   group: 'outside',
   cursor: 'crosshair',
   icon: icon('<path d="M12 21V10"/><path d="M12 14c-3-1-5-4-5-7 3 0 5 2 5 4 0-2 2-4 5-4 0 3-2 6-5 7z"/>'),
@@ -72,6 +81,7 @@ registerTool({
   },
   deactivate() {
     painting = false
+    useStore.getState().endStroke()
   },
   onPointerDown(ctx) {
     plantPointer('down', ctx.raw, ctx.shift)

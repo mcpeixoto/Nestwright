@@ -37,8 +37,8 @@ export interface MaterialDef {
 }
 
 export const MATERIALS: MaterialDef[] = [
-  { id: 'plaster-white', name: 'White plaster', category: 'Plaster', color: '#f4f1ea', roughness: 0.92, metalness: 0, tileSize: 1.5, pattern: { kind: 'noise', colors: ['#f7f4ee', '#e7e1d6'] }, costPerM2: 18 },
-  { id: 'plaster-warm', name: 'Warm plaster', category: 'Plaster', color: '#efe2d0', roughness: 0.9, metalness: 0, tileSize: 1.5, pattern: { kind: 'noise', colors: ['#f3e6d4', '#e2d0b8'] }, costPerM2: 18 },
+  { id: 'plaster-white', name: 'White plaster', category: 'Plaster', color: '#d5d2cb', roughness: 0.92, metalness: 0, tileSize: 1.5, pattern: { kind: 'noise', colors: ['#d8d5ce', '#c9c3b8'] }, costPerM2: 18 },
+  { id: 'plaster-warm', name: 'Warm plaster', category: 'Plaster', color: '#d4c4ae', roughness: 0.9, metalness: 0, tileSize: 1.5, pattern: { kind: 'noise', colors: ['#d8c9b4', '#c4b39c'] }, costPerM2: 18 },
   { id: 'paint-sage', name: 'Sage paint', category: 'Paint', color: '#b7c4ae', roughness: 0.55, metalness: 0, tileSize: 2, pattern: { kind: 'none' }, costPerM2: 12 },
   { id: 'paint-terracotta', name: 'Terracotta paint', category: 'Paint', color: '#c47a5a', roughness: 0.55, metalness: 0, tileSize: 2, pattern: { kind: 'none' }, costPerM2: 12 },
   { id: 'paint-navy', name: 'Navy paint', category: 'Paint', color: '#243044', roughness: 0.5, metalness: 0, tileSize: 2, pattern: { kind: 'none' }, costPerM2: 14 },
@@ -55,7 +55,7 @@ export const MATERIALS: MaterialDef[] = [
   { id: 'marble', name: 'Marble', category: 'Stone', color: '#f3efe8', roughness: 0.22, metalness: 0.04, tileSize: 1.4, pattern: { kind: 'marble', colors: ['#f7f3ec', '#cfc4b4'] }, costPerM2: 120 },
   { id: 'carpet-grey', name: 'Grey carpet', category: 'Fabric', color: '#8d8a86', roughness: 1, metalness: 0, tileSize: 1, pattern: { kind: 'fabric', colors: ['#9a9691', '#7e7a76'] }, costPerM2: 32 },
   { id: 'fabric-linen', name: 'Linen', category: 'Fabric', color: '#e6dcc8', roughness: 0.95, metalness: 0, tileSize: 0.4, pattern: { kind: 'fabric', colors: ['#efe6d4', '#d9cdb4'] }, costPerM2: 36 },
-  { id: 'fabric-velvet-green', name: 'Green velvet', category: 'Fabric', color: '#2f5d52', roughness: 0.85, metalness: 0, tileSize: 0.35, pattern: { kind: 'fabric', colors: ['#3a6d60', '#244840'] }, costPerM2: 48 },
+  { id: 'fabric-velvet-green', name: 'Green velvet', category: 'Fabric', color: '#5e9b86', roughness: 0.85, metalness: 0, tileSize: 0.35, pattern: { kind: 'fabric', colors: ['#6aab96', '#4c8874'] }, costPerM2: 48 },
   { id: 'leather-brown', name: 'Brown leather', category: 'Fabric', color: '#6a432c', roughness: 0.55, metalness: 0.05, tileSize: 0.6, pattern: { kind: 'noise', colors: ['#7a4e34', '#5a3824'] }, costPerM2: 60 },
   { id: 'metal-black', name: 'Blackened metal', category: 'Metal', color: '#2a2c2e', roughness: 0.35, metalness: 0.85, tileSize: 1, pattern: { kind: 'noise', colors: ['#34373a', '#1e2022'] }, costPerM2: 40 },
   { id: 'metal-brass', name: 'Brass', category: 'Metal', color: '#c6a15a', roughness: 0.28, metalness: 0.9, tileSize: 0.5, pattern: { kind: 'none' }, costPerM2: 55 },
@@ -67,7 +67,7 @@ export const MATERIALS: MaterialDef[] = [
   { id: 'wood-cladding', name: 'Wood cladding', category: 'Wood', color: '#b08968', roughness: 0.7, metalness: 0, tileSize: 1, pattern: { kind: 'planks', colors: ['#c29a74', '#9a7450', '#d0ae86'] }, costPerM2: 50 },
   { id: 'wallpaper-floral', name: 'Floral wallpaper', category: 'Paper', color: '#f3e6d8', roughness: 0.8, metalness: 0, tileSize: 0.6, pattern: { kind: 'floral', colors: ['#f7efe4', '#c47a5a', '#3d6b66', '#e8b86d'] }, costPerM2: 22 },
   { id: 'wallpaper-stripes', name: 'Striped wallpaper', category: 'Paper', color: '#efe6d4', roughness: 0.78, metalness: 0, tileSize: 0.5, pattern: { kind: 'stripes', colors: ['#f4ecdf', '#d7c4a4'] }, costPerM2: 20 },
-  { id: 'plaster-pink', name: 'Pink plaster', category: 'Plaster', color: '#e7cfc6', roughness: 0.9, metalness: 0, tileSize: 1.5, pattern: { kind: 'noise', colors: ['#f0ddd4', '#d9b8ae'] }, costPerM2: 18 },
+  { id: 'plaster-pink', name: 'Pink plaster', category: 'Plaster', color: '#d4bfb6', roughness: 0.9, metalness: 0, tileSize: 1.5, pattern: { kind: 'noise', colors: ['#d8c8c0', '#c9b0a6'] }, costPerM2: 18 },
   { id: 'paint-ochre', name: 'Ochre paint', category: 'Paint', color: '#c8923a', roughness: 0.55, metalness: 0, tileSize: 2, pattern: { kind: 'noise', colors: ['#d4a24a', '#b07e2c'] }, costPerM2: 12 },
   { id: 'paint-charcoal', name: 'Charcoal paint', category: 'Paint', color: '#2c2e31', roughness: 0.5, metalness: 0, tileSize: 2, pattern: { kind: 'noise', colors: ['#3a3d41', '#232528'] }, costPerM2: 14 },
   { id: 'wood-cladding-dark', name: 'Dark cladding', category: 'Wood', color: '#4a3428', roughness: 0.68, metalness: 0, tileSize: 1, pattern: { kind: 'planks', colors: ['#5c4032', '#3a281e', '#6b4b38'] }, costPerM2: 54 },

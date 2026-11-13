@@ -255,17 +255,18 @@ function computeRooms(level: Level): Room[] {
   }
 
   faces.sort((a, b) => a.wallIds.slice().sort().join(',').localeCompare(b.wallIds.slice().sort().join(',')))
-  const counts: Partial<Record<RoomType, number>> = {}
+  const used = new Set<string>()
   const rooms: Room[] = []
   for (const face of faces) {
     const key = face.wallIds.slice().sort().join(',')
     const props = level.rooms.find((r) => r.key === key)
     const type: RoomType = props?.type ?? 'living'
-    counts[type] = (counts[type] ?? 0) + 1
-    const index = counts[type] ?? 1
+    const stored = props?.name?.trim() ?? ''
+    const name = stored && !used.has(stored) ? stored : nextRoomName(type, used)
+    used.add(name)
     rooms.push({
       key,
-      name: props?.name ?? `${ROOM_LABEL[type]} ${index}`,
+      name,
       type,
       floor: props?.floor ? { ...props.floor } : { id: 'oak-planks' },
       ceiling: props?.ceiling ? { ...props.ceiling } : { id: 'plaster-white' },
@@ -276,6 +277,36 @@ function computeRooms(level: Level): Room[] {
     })
   }
   return rooms
+}
+
+function nextRoomName(type: RoomType, used: Set<string>): string {
+  const label = ROOM_LABEL[type]
+  let index = 1
+  let name = `${label} ${index}`
+  while (used.has(name)) {
+    index += 1
+    name = `${label} ${index}`
+  }
+  return name
+}
+
+/** Write a stable name into `level.rooms` the first time a room appears. */
+export function ensureRoomRecords(level: Level): void {
+  for (const room of computeRooms(level)) {
+    const props = level.rooms.find((item) => item.key === room.key)
+    if (!props) {
+      level.rooms.push({
+        key: room.key,
+        name: room.name,
+        type: room.type,
+        floor: { ...room.floor },
+        ceiling: { ...room.ceiling },
+        ...(room.noCeiling ? { noCeiling: true } : {}),
+      })
+      continue
+    }
+    if (props.name !== room.name) props.name = room.name
+  }
 }
 
 /**

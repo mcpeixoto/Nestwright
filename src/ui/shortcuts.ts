@@ -11,7 +11,44 @@ export interface ShortcutDef {
 const shortcuts = new Map<string, ShortcutDef>()
 const order: string[] = []
 
+/** Mods sorted, then the key, so `shift+g` and `g+shift` compare equal. */
+export function shortcutChord(keys: string): string {
+  const parts = keys
+    .toLowerCase()
+    .split('+')
+    .map((part) => part.trim())
+    .filter(Boolean)
+  const key = parts[parts.length - 1]
+  if (!key) return ''
+  const mods = parts.slice(0, -1).sort()
+  return [...mods, key].join('+')
+}
+
+export function duplicateShortcutChords(): string[] {
+  const seen = new Map<string, string>()
+  const duplicates: string[] = []
+  for (const def of listShortcuts()) {
+    const chord = shortcutChord(def.keys)
+    const prev = seen.get(chord)
+    if (prev && prev !== def.id) duplicates.push(chord)
+    else seen.set(chord, def.id)
+  }
+  return duplicates
+}
+
+function devBuild(): boolean {
+  return typeof process === 'undefined' || process.env.NODE_ENV !== 'production'
+}
+
 export function registerShortcut(def: ShortcutDef): void {
+  if (devBuild()) {
+    const chord = shortcutChord(def.keys)
+    for (const other of shortcuts.values()) {
+      if (other.id !== def.id && shortcutChord(other.keys) === chord) {
+        console.warn(`Duplicate shortcut ${def.keys} (${def.id} and ${other.id})`)
+      }
+    }
+  }
   if (!order.includes(def.id)) order.push(def.id)
   shortcuts.set(def.id, def)
 }

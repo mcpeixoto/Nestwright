@@ -6,7 +6,7 @@ import { buildItem } from '../builders/items'
 import { buildOpening } from '../builders/openings'
 import { buildWall } from '../builders/walls'
 import type { Item, Level, Project } from '../model/types'
-import { gizmoOwnsPointer } from './layers/gizmo'
+import { gizmoOwnsPointer, releaseGizmo } from './layers/gizmo'
 import { paintFromHits, type ViewHit } from './paintPick'
 import { pixelRatioCap, useSettings } from '../settings'
 import { roomsFor, useStore } from '../store'
@@ -94,7 +94,7 @@ export class SceneController {
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
     this.scene = new THREE.Scene()
-    this.scene.environmentIntensity = 0.38
+    this.scene.environmentIntensity = 0.6
     this.camera = new THREE.PerspectiveCamera(48, 1, 0.2, 6000)
     this.camera.position.set(12, 10, 14)
     bindController(this)
@@ -107,7 +107,7 @@ export class SceneController {
     if (renderer) {
       renderer.outputColorSpace = THREE.SRGBColorSpace
       renderer.toneMapping = THREE.ACESFilmicToneMapping
-      renderer.toneMappingExposure = 0.62
+      renderer.toneMappingExposure = 0.52
       renderer.shadowMap.enabled = true
       renderer.shadowMap.type = THREE.PCFShadowMap
       renderer.setClearColor('#9ec4e4')
@@ -255,6 +255,7 @@ export class SceneController {
   }
 
   private reconcile(project: Project): void {
+    releaseGizmo()
     const live = new Set(project.levels.map((level) => level.id))
     for (const [id, bucket] of this.levels) {
       if (live.has(id)) continue
@@ -570,24 +571,34 @@ function levelBelow(project: Project, level: Level): Level | null {
   return below
 }
 
-function visibleWallBounds(project: Project, state: SceneViewState | null): THREE.Box3 {
-  const box = new THREE.Box3()
+function expandWalls(box: THREE.Box3, project: Project, include: (level: Level) => boolean): boolean {
   let any = false
-  const active = state ? project.levels.find((level) => level.id === state.activeLevelId) : undefined
-  const elev = active?.elevation ?? 0
   for (const level of project.levels) {
-    if (state) {
-      const above = level.elevation > elev + 1e-3
-      if (state.levelDisplay !== 'all' && above) continue
-      if (state.levelDisplay === 'current' && level.id !== state.activeLevelId) continue
-    }
+    if (!include(level)) continue
     for (const wall of level.walls) {
       any = true
       box.expandByPoint(new THREE.Vector3(wall.a.x, level.elevation, wall.a.y))
       box.expandByPoint(new THREE.Vector3(wall.b.x, level.elevation + wall.height, wall.b.y))
     }
   }
-  if (!any) box.set(new THREE.Vector3(-4, 0, -4), new THREE.Vector3(4, 3, 4))
+  return any
+}
+
+function visibleWallBounds(project: Project, state: SceneViewState | null): THREE.Box3 {
+  const box = new THREE.Box3()
+  const active = state ? project.levels.find((level) => level.id === state.activeLevelId) : undefined
+  const elev = active?.elevation ?? 0
+  const filtered = expandWalls(box, project, (level) => {
+    if (!state) return true
+    const above = level.elevation > elev + 1e-3
+    if (state.levelDisplay !== 'all' && above) return false
+    if (state.levelDisplay === 'current' && level.id !== state.activeLevelId) return false
+    return true
+  })
+  if (filtered) return box
+  const all = new THREE.Box3()
+  if (expandWalls(all, project, () => true)) return all
+  box.set(new THREE.Vector3(-4, 0, -4), new THREE.Vector3(4, 3, 4))
   return box
 }
 

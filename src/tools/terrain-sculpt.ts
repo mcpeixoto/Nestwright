@@ -1,3 +1,4 @@
+import { clampBrushHit } from '../model/brushClamp'
 import { flatten, lower, raise, sampleHeight, smooth } from '../model/terrain'
 import { useStore } from '../store'
 import { registerShortcut } from '../ui/shortcuts'
@@ -18,22 +19,27 @@ export function terrainPreview(): Vec2[] {
 export function terrainPointer(phase: 'down' | 'move' | 'up', point: Vec2): void {
   if (phase === 'up') {
     painting = false
+    useStore.getState().endStroke()
     return
   }
+  const terrain = useStore.getState().project.terrain
+  const hit = clampBrushHit(point, terrain)
+  if (!hit) return
   armed = true
   if (phase === 'down') {
     painting = true
-    target = sampleHeight(useStore.getState().project.terrain, point.x, point.y)
+    target = sampleHeight(terrain, hit.x, hit.y)
+    useStore.getState().beginStroke('Sculpt terrain')
   }
   if (!painting || !allowDab()) return
   const brush = getBrush()
   useStore.getState().apply('Sculpt terrain', (draft) => {
     const terrain = draft.terrain
     if (!terrain) return
-    if (brush.sculpt === 'raise') raise(terrain, point, brush.radius, brush.strength * 0.65)
-    else if (brush.sculpt === 'lower') lower(terrain, point, brush.radius, brush.strength * 0.65)
-    else if (brush.sculpt === 'flatten') flatten(terrain, point, brush.radius, target, brush.strength)
-    else smooth(terrain, point, brush.radius, brush.strength)
+    if (brush.sculpt === 'raise') raise(terrain, hit, brush.radius, brush.strength * 0.65)
+    else if (brush.sculpt === 'lower') lower(terrain, hit, brush.radius, brush.strength * 0.65)
+    else if (brush.sculpt === 'flatten') flatten(terrain, hit, brush.radius, target, brush.strength)
+    else smooth(terrain, hit, brush.radius, brush.strength)
   })
 }
 
@@ -58,6 +64,7 @@ registerTool({
   deactivate() {
     painting = false
     armed = false
+    useStore.getState().endStroke()
   },
   onPointerDown(ctx) {
     terrainPointer('down', ctx.raw)

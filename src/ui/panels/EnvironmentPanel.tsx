@@ -106,7 +106,7 @@ export function EnvironmentPanel() {
     <div className="props env-panel">
       <h2>Daylight</h2>
       <label className="field">
-        Date
+        <span className="field-label">Date</span>
         <input
           type="range"
           min={1}

@@ -23,6 +23,7 @@ export function createStars(count = 700): StarField {
     size: 1.6,
     sizeAttenuation: false,
     depthWrite: false,
+    fog: false,
   })
   const points = new THREE.Points(geometry, material)
   points.name = 'stars'

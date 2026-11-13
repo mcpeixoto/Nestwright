@@ -1,6 +1,7 @@
 import { createOpening, createWall } from '../defaults'
-import { add, dist, segmentIntersection, sub } from '../geometry'
+import { add, dist, pointInPolygon, segmentIntersection, sub } from '../geometry'
 import { newId } from '../ids'
+import { detectRooms } from '../rooms'
 import type { Item, Level, Opening, OpeningType, Vec2, Wall } from '../types'
 import {
   JOIN_EPS,
@@ -180,6 +181,39 @@ export function moveWallEndpoint(level: Level, wallId: string, end: 'a' | 'b', t
       const hi = Math.max(half, length - half)
       opening.offset = Math.min(hi, Math.max(half, loc.distance))
     }
+  }
+}
+
+/**
+ * Translate every wall that bounds `roomKey`. Shared walls move with it, so
+ * neighbouring rooms stay attached. Openings ride their walls; items, stairs
+ * and columns inside the room move by the same delta.
+ */
+export function moveRoom(level: Level, roomKey: string, delta: Vec2): void {
+  if (!Number.isFinite(delta.x) || !Number.isFinite(delta.y)) return
+  if (Math.hypot(delta.x, delta.y) < 1e-9) return
+  const room = detectRooms(level).find((item) => item.key === roomKey)
+  if (!room) return
+  const wallIds = new Set(room.key.split(',').filter(Boolean))
+  const joints: Vec2[] = []
+  for (const wall of level.walls) {
+    if (!wallIds.has(wall.id)) continue
+    joints.push({ x: wall.a.x, y: wall.a.y }, { x: wall.b.x, y: wall.b.y })
+  }
+  for (const wall of level.walls) {
+    if (joints.some((joint) => dist(wall.a, joint) <= JOIN_EPS)) wall.a = add(wall.a, delta)
+    if (joints.some((joint) => dist(wall.b, joint) <= JOIN_EPS)) wall.b = add(wall.b, delta)
+  }
+  const inside = room.polygon
+  for (const item of level.items) {
+    if (item.locked || !pointInPolygon(item.position, inside)) continue
+    item.position = add(item.position, delta)
+  }
+  for (const stair of level.stairs) {
+    if (pointInPolygon(stair.position, inside)) stair.position = add(stair.position, delta)
+  }
+  for (const column of level.columns) {
+    if (pointInPolygon(column.position, inside)) column.position = add(column.position, delta)
   }
 }
 

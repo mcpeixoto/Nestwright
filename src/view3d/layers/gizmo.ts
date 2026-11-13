@@ -45,16 +45,24 @@ function applyMode(): void {
   controls.space = 'world'
 }
 
-function in3D(): boolean {
-  const view = useStore.getState().view
-  return view === '3d' || view === 'split'
+function itemsSelectedIn3D(): boolean {
+  const state = useStore.getState()
+  if (state.view !== '3d' && state.view !== 'split') return false
+  const level = selectActiveLevel(state)
+  if (!level) return false
+  return level.items.some((item) => state.selection.includes(item.id))
+}
+
+/** Drop the gizmo before a rebuild removes the object it is holding. */
+export function releaseGizmo(): void {
+  controls?.detach()
 }
 
 registerShortcut({
   id: 'gizmo-move',
   keys: 'g',
-  description: 'Move the selection in 3D',
-  when: () => in3D(),
+  description: 'Move selected items in 3D',
+  when: () => itemsSelectedIn3D(),
   run: () => {
     useStore.getState().setTool('select')
     setGizmoMode('translate')
@@ -64,8 +72,8 @@ registerShortcut({
 registerShortcut({
   id: 'gizmo-rotate',
   keys: 'e',
-  description: 'Rotate the selection in 3D',
-  when: () => in3D(),
+  description: 'Rotate selected items in 3D',
+  when: () => itemsSelectedIn3D(),
   run: () => {
     useStore.getState().setTool('select')
     setGizmoMode('rotate')
@@ -206,6 +214,8 @@ export function createGizmoLayer(ctx: SceneLayerContext): SceneLayer {
       const level = project.levels.find((entry) => entry.id === state.activeLevelId)
       const items = level?.items.filter((item) => state.selection.includes(item.id) && !item.locked) ?? []
       const active = items[items.length - 1]
+      const attached = gizmo.object
+      if (attached && !attached.parent) gizmo.detach()
       if (!show || !active) {
         gizmo.detach()
         helper.visible = false
@@ -213,12 +223,13 @@ export function createGizmoLayer(ctx: SceneLayerContext): SceneLayer {
         return
       }
       const root = findRoot(ctx.scene, active.id)
-      if (!root) {
+      if (!root || !root.parent) {
         gizmo.detach()
         helper.visible = false
         return
       }
-      if (gizmo.dragging) return
+      if (gizmo.dragging && gizmo.object === root) return
+      if (gizmo.object && gizmo.object !== root) gizmo.detach()
       gizmo.attach(root)
       helper.visible = true
       gizmo.enabled = true

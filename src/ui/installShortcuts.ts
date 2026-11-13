@@ -3,6 +3,7 @@ import { useStore } from '../store'
 import { getTool } from '../tools/registry'
 import type { PlanTransform, ToolContext } from '../tools/types'
 import './builtinShortcuts'
+import { isPhotoMode } from './photoSession'
 import { isHelpOpen, listShortcuts, setHelpOpen, shortcutMatches } from './shortcuts'
 
 const noopTransform: PlanTransform = {
@@ -30,6 +31,8 @@ export function installShortcuts(): () => void {
       if (event.key === 'Escape') (event.target as HTMLElement).blur()
       return
     }
+    const view = useStore.getState().view
+    if (view === 'walk' || isPhotoMode()) return
     const renderer = getPlanRenderer()
     const pointer = renderer?.pointer
     const ctx: ToolContext = {

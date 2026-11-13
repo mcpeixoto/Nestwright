@@ -1,5 +1,4 @@
 import { selectActiveLevel, useStore } from '../../../store'
-import { deleteSelection } from '../../actions'
 import { MaterialPicker } from '../../MaterialPicker'
 import { selectionFacts } from '../facts'
 import { NumberField, patchLevel } from '../fields'
@@ -87,9 +86,6 @@ function WallSection() {
           })
         }
       />
-      <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
-      </button>
     </div>
   )
 }

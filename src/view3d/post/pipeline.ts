@@ -41,13 +41,13 @@ function build(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.
     composer.addPass(new RenderPass(scene, camera))
     if (flags.ssao) {
       const ssao = new SSAOPass(scene, camera, width, height, flags.kernel)
-      ssao.kernelRadius = 8
-      ssao.minDistance = 0.001
-      ssao.maxDistance = 0.18
+      ssao.kernelRadius = 4
+      ssao.minDistance = 0.002
+      ssao.maxDistance = 0.06
       composer.addPass(ssao)
     }
     if (flags.bloom) {
-      composer.addPass(new UnrealBloomPass(new THREE.Vector2(width, height), 0.18, 0.35, 0.9))
+      composer.addPass(new UnrealBloomPass(new THREE.Vector2(width, height), 0.15, 0.28, 0.95))
     }
     const bokeh = new BokehPass(scene, camera, { focus: 8, aperture: 0.0008, maxblur: 0.008 })
     bokeh.enabled = false

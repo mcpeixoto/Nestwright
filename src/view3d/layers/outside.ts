@@ -16,6 +16,7 @@ import { waterPointer, waterPreview } from '../../tools/water'
 import { replaceSceneLayer, type SceneLayer, type SceneLayerContext, type SceneViewState } from '../layers'
 import { OutsideFeatures } from '../terrain/features'
 import { PlantField } from '../terrain/plants'
+import { createSurround, type Surround } from '../terrain/surround'
 import { createSplatMaterial, disposeSplatMaterial } from '../terrain/textures'
 
 const OUTSIDE = new Set([
@@ -81,27 +82,6 @@ function writeHeights(geo: THREE.BufferGeometry, terrain: Terrain): boolean {
   geo.computeVertexNormals()
   geo.computeBoundingSphere()
   return true
-}
-
-function horizonMesh(radius: number): THREE.Mesh {
-  const geo = new THREE.CircleGeometry(Math.max(8, radius), 64)
-  const colors = new Float32Array(geo.attributes.position.count * 3)
-  const position = geo.attributes.position
-  for (let i = 0; i < position.count; i++) {
-    const t = Math.min(1, Math.hypot(position.getX(i), position.getY(i)) / Math.max(radius, 1))
-    const fade = t * t
-    colors[i * 3] = 0.43 + (0.62 - 0.43) * fade
-    colors[i * 3 + 1] = 0.56 + (0.77 - 0.56) * fade
-    colors[i * 3 + 2] = 0.31 + (0.89 - 0.31) * fade
-  }
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-  geo.rotateX(-Math.PI / 2)
-  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true }))
-  mesh.position.y = -0.08
-  mesh.name = 'horizon'
-  mesh.receiveShadow = true
-  mesh.raycast = () => {}
-  return mesh
 }
 
 function flatGrass(): { mesh: THREE.Mesh; material: THREE.MeshStandardMaterial; resize: (size: number) => void } {
@@ -170,8 +150,8 @@ function dispatch(tool: string, phase: 'down' | 'move' | 'up', point: Vec2, shif
 function createOutsideGround(ctx: SceneLayerContext): SceneLayer {
   const flat = flatGrass()
   ctx.scene.add(flat.mesh)
-  let horizon: THREE.Mesh | null = null
-  let horizonRadius = 0
+  const surround: Surround = createSurround()
+  ctx.scene.add(surround.group)
   const material = createSplatMaterial()
   const mesh = new THREE.Mesh(new THREE.BufferGeometry(), material)
   mesh.name = 'terrain'
@@ -218,32 +198,22 @@ function createOutsideGround(ctx: SceneLayerContext): SceneLayer {
   let grid = { resolution: -1, width: 0, depth: 0 }
   const canvas = ctx.renderer?.domElement ?? null
 
-  const showHorizon = (radius: number) => {
-    if (horizon && Math.abs(radius - horizonRadius) < 1) return
-    if (horizon) {
-      ctx.scene.remove(horizon)
-      horizon.geometry.dispose()
-      const mat = horizon.material
-      if (!Array.isArray(mat)) mat.dispose()
-    }
-    horizonRadius = radius
-    horizon = horizonMesh(radius)
-    ctx.scene.add(horizon)
-  }
-
   const applyProject = (current: Project, state: SceneViewState) => {
     const terrain = current.terrain
     if (!terrain) return
     const enabled = terrain.enabled !== false && terrain.resolution >= 1
     flat.mesh.visible = !enabled
+    surround.group.visible = true
+    try {
+      surround.sync(terrain)
+    } catch (err) {
+      console.error(err)
+    }
     if (!enabled) {
       const plot = Math.max(terrain.width || 0, terrain.depth || 0, 16)
       flat.resize(Math.max(plot * 6, 120))
       mesh.visible = false
-      if (horizon) horizon.visible = false
     } else {
-      showHorizon(Math.max(terrain.width, terrain.depth, 16) * 3.2)
-      if (horizon) horizon.visible = true
       const sameGrid = grid.resolution === terrain.resolution && grid.width === terrain.width && grid.depth === terrain.depth
       if (!sameGrid || mesh.geometry.getAttribute('position') == null) {
         const geo = terrainGeometry(terrain)
@@ -420,12 +390,8 @@ function createOutsideGround(ctx: SceneLayerContext): SceneLayer {
       flat.mesh.geometry.dispose()
       flat.material.map?.dispose()
       flat.material.dispose()
-      if (horizon) {
-        ctx.scene.remove(horizon)
-        horizon.geometry.dispose()
-        const mat = horizon.material
-        if (!Array.isArray(mat)) mat.dispose()
-      }
+      ctx.scene.remove(surround.group)
+      surround.dispose()
       ctx.scene.remove(mesh)
       mesh.geometry.dispose()
       disposeSplatMaterial(material)

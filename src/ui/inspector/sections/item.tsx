@@ -1,6 +1,5 @@
 import { getEntry } from '../../../catalog/registry'
 import { selectActiveLevel, useStore } from '../../../store'
-import { deleteSelection } from '../../actions'
 import { MaterialPicker } from '../../MaterialPicker'
 import { selectionFacts } from '../facts'
 import { labelOf, NumberField, patchLevel } from '../fields'
@@ -89,9 +88,6 @@ function ItemSection() {
       <p className="readout">
         {currency} {(item.price ?? entry?.price ?? 0).toFixed(0)}
       </p>
-      <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
-      </button>
     </div>
   )
 }

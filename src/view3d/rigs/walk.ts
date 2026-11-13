@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { getEntry } from '../../catalog/registry'
-import { isPassableOpening, levelObstacles, moveCircle, rectFootprint, type Footprint } from '../../model/collision'
+import { isPassableOpening, levelObstacles, rectFootprint, type Footprint } from '../../model/collision'
+import { integrateWalk } from '../../model/walkMove'
 import { pointInPolygon } from '../../model/geometry'
 import type { Item, Level, Project, Stair } from '../../model/types'
 import { roomsFor, useStore, type ViewMode } from '../../store'
@@ -169,6 +170,9 @@ let pitch = 0
 let cat = false
 let grounded = true
 let savedNear = 0.2
+let lookDrag = false
+let lookX = 0
+let lookY = 0
 const keys = new Set<string>()
 
 function eyeHeight(): number {
@@ -244,23 +248,51 @@ function onKeyDown(event: KeyboardEvent): void {
     return
   }
   keys.add(event.code)
+  if (event.code.startsWith('Key') || event.code.startsWith('Arrow')) event.preventDefault()
 }
 
 function onKeyUp(event: KeyboardEvent): void {
   keys.delete(event.code)
 }
 
-function onMouse(event: MouseEvent): void {
-  if (!canvas || document.pointerLockElement !== canvas) return
-  yaw -= event.movementX * 0.0022
-  pitch -= event.movementY * 0.002
+function lookBy(dx: number, dy: number, scale: number): void {
+  yaw -= dx * scale
+  pitch -= dy * scale
   pitch = Math.max(-1.2, Math.min(1.2, pitch))
 }
 
-function onPointerDown(): void {
-  if (!canvas || isPhotoMode()) return
+function onPointerMove(event: PointerEvent): void {
+  if (!canvas) return
+  if (document.pointerLockElement === canvas) {
+    lookBy(event.movementX, event.movementY, 0.0022)
+    return
+  }
+  if (!lookDrag) return
+  lookBy(event.clientX - lookX, event.clientY - lookY, 0.005)
+  lookX = event.clientX
+  lookY = event.clientY
+}
+
+function onPointerDown(event: PointerEvent): void {
+  if (!canvas || isPhotoMode() || event.button !== 0) return
+  lookDrag = true
+  lookX = event.clientX
+  lookY = event.clientY
   if (document.pointerLockElement === canvas) return
-  void canvas.requestPointerLock?.()
+  try {
+    const lock = canvas.requestPointerLock?.() as Promise<void> | undefined
+    if (lock && typeof lock.then === 'function') {
+      void lock.catch(() => {
+        /* embedded browsers reject the lock; drag-look stays active */
+      })
+    }
+  } catch {
+    /* WrongDocumentError: keep click-drag look */
+  }
+}
+
+function onPointerUp(): void {
+  lookDrag = false
 }
 
 function applyCamera(): void {
@@ -292,14 +324,17 @@ registerRig({
     applyCamera()
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
-    window.addEventListener('mousemove', onMouse)
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', onPointerUp)
     nextCanvas.addEventListener('pointerdown', onPointerDown)
   },
   deactivate() {
     window.removeEventListener('keydown', onKeyDown)
     window.removeEventListener('keyup', onKeyUp)
-    window.removeEventListener('mousemove', onMouse)
+    window.removeEventListener('pointermove', onPointerMove)
+    window.removeEventListener('pointerup', onPointerUp)
     canvas?.removeEventListener('pointerdown', onPointerDown)
+    lookDrag = false
     if (canvas && document.pointerLockElement === canvas) document.exitPointerLock?.()
     keys.clear()
     if (camera) {
@@ -318,10 +353,6 @@ registerRig({
     const strafe = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0)
     const run = keys.has('ShiftLeft') || keys.has('ShiftRight')
     const speed = (cat ? 2.5 : 1.55) * (run ? 2.3 : 1)
-    const sin = Math.sin(yaw)
-    const cos = Math.cos(yaw)
-    const dx = (-sin * forward + cos * strafe) * speed * step
-    const dz = (-cos * forward - sin * strafe) * speed * step
     const active = state.project.levels.find((level) => level.id === state.activeLevelId)
     const supportGuess = supportAt(state.project, feetX, feetZ, feetY, vy > 0, cat)
     const levels = new Map<string, Level>()
@@ -330,7 +361,18 @@ registerRig({
     if (standing) levels.set(standing.id, standing)
     const segments = [...levels.values()].flatMap((level) => levelObstacles(level))
     const footprints = [...levels.values()].flatMap((level) => blockingFurniture(level, feetY, cat))
-    const moved = moveCircle({ x: feetX, y: feetZ }, RADIUS, { x: dx, y: dz }, segments, footprints)
+    const moved = integrateWalk({
+      x: feetX,
+      y: feetZ,
+      yaw,
+      forward,
+      strafe,
+      speed,
+      dt: step,
+      radius: RADIUS,
+      segments,
+      footprints,
+    })
     feetX = moved.x
     feetZ = moved.y
     vy -= GRAVITY * step

@@ -498,45 +498,95 @@ function bary(p: Vec2, a: Vec2, b: Vec2, c: Vec2): { a: number; b: number; c: nu
 }
 
 function unionBoundary(rings: Vec2[][]): Vec2[] {
+  if (rings.length === 0) return []
   if (rings.length === 1) return rings[0] ?? []
-  const key = (p: Vec2) => `${Math.round(p.x * 1000)},${Math.round(p.y * 1000)}`
-  const edges = new Map<string, { a: Vec2; b: Vec2 }>()
+  const verts: Vec2[] = []
+  const addV = (p: Vec2): number => {
+    for (let i = 0; i < verts.length; i++) {
+      const q = verts[i]
+      if (q && dist(q, p) <= 1e-3) return i
+    }
+    verts.push({ x: p.x, y: p.y })
+    return verts.length - 1
+  }
+  let edges: { a: number; b: number }[] = []
   for (const ring of rings) {
     for (let i = 0; i < ring.length; i++) {
       const a = ring[i]
       const b = ring[(i + 1) % ring.length]
-      if (!a || !b) continue
-      const forward = `${key(a)}>${key(b)}`
-      const back = `${key(b)}>${key(a)}`
-      if (edges.has(back)) edges.delete(back)
-      else edges.set(forward, { a, b })
+      if (!a || !b || dist(a, b) < 1e-6) continue
+      const ia = addV(a)
+      const ib = addV(b)
+      if (ia !== ib) edges.push({ a: ia, b: ib })
     }
   }
-  const adj = new Map<string, { a: Vec2; b: Vec2 }[]>()
-  for (const edge of edges.values()) {
-    const k = key(edge.a)
-    const list = adj.get(k) ?? []
+  // Room rings drop collinear T-junctions, so a long outer edge must be split
+  // where a neighbour's vertex lands on it before shared edges can cancel.
+  let grew = true
+  let guard = edges.length * Math.max(verts.length, 1) + 4
+  while (grew && guard-- > 0) {
+    grew = false
+    const next: { a: number; b: number }[] = []
+    for (const edge of edges) {
+      const a = verts[edge.a]
+      const b = verts[edge.b]
+      if (!a || !b) continue
+      const ab = sub(b, a)
+      const l2 = dot(ab, ab)
+      if (l2 < 1e-12) continue
+      let best = -1
+      let bestT = 2
+      for (let i = 0; i < verts.length; i++) {
+        if (i === edge.a || i === edge.b) continue
+        const p = verts[i]
+        if (!p) continue
+        const t = dot(sub(p, a), ab) / l2
+        if (t <= 1e-4 || t >= 1 - 1e-4) continue
+        if (dist(p, add(a, scale(ab, t))) > 1e-3) continue
+        if (t < bestT) {
+          bestT = t
+          best = i
+        }
+      }
+      if (best >= 0) {
+        next.push({ a: edge.a, b: best }, { a: best, b: edge.b })
+        grew = true
+      } else next.push(edge)
+    }
+    edges = next
+  }
+  const live = new Map<string, { a: number; b: number }>()
+  for (const edge of edges) {
+    const forward = `${edge.a}>${edge.b}`
+    const back = `${edge.b}>${edge.a}`
+    if (live.has(back)) live.delete(back)
+    else if (!live.has(forward)) live.set(forward, edge)
+  }
+  const adj = new Map<number, { a: number; b: number }[]>()
+  for (const edge of live.values()) {
+    const list = adj.get(edge.a) ?? []
     list.push(edge)
-    adj.set(k, list)
+    adj.set(edge.a, list)
   }
   const used = new Set<string>()
   let best: Vec2[] = []
   let bestArea = 0
-  for (const [startKey, list] of adj) {
+  for (const [start, list] of adj) {
     for (const first of list) {
-      const id = `${key(first.a)}>${key(first.b)}`
+      const id = `${first.a}>${first.b}`
       if (used.has(id)) continue
       const loop: Vec2[] = []
-      let guard = edges.size + 2
-      let current: { a: Vec2; b: Vec2 } | undefined = first
-      while (current && guard-- > 0) {
-        const mark = `${key(current.a)}>${key(current.b)}`
+      let current: { a: number; b: number } | undefined = first
+      let steps = live.size + 2
+      while (current && steps-- > 0) {
+        const mark = `${current.a}>${current.b}`
         if (used.has(mark) && loop.length > 0) break
         used.add(mark)
-        loop.push(current.a)
-        if (key(current.b) === startKey && loop.length > 2) break
-        const nexts: { a: Vec2; b: Vec2 }[] = adj.get(key(current.b)) ?? []
-        current = nexts.find((edge) => !used.has(`${key(edge.a)}>${key(edge.b)}`))
+        const point = verts[current.a]
+        if (point) loop.push({ x: point.x, y: point.y })
+        if (current.b === start && loop.length > 2) break
+        const nexts: { a: number; b: number }[] = adj.get(current.b) ?? []
+        current = nexts.find((edge) => !used.has(`${edge.a}>${edge.b}`))
       }
       const area = Math.abs(polygonArea(loop))
       if (area > bestArea) {

@@ -2,7 +2,6 @@ import { openingSize } from '../../../model/defaults'
 import type { OpeningType } from '../../../model/types'
 import { selectActiveLevel, useStore } from '../../../store'
 import { DOOR_TYPES, WINDOW_TYPES } from '../../../tools/openingTool'
-import { deleteSelection } from '../../actions'
 import { selectionFacts } from '../facts'
 import { labelOf, NumberField, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
@@ -101,9 +100,6 @@ function OpeningSection() {
         />
         Flip swing
       </label>
-      <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
-      </button>
     </div>
   )
 }

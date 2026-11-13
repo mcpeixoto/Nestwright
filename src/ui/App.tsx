@@ -58,9 +58,13 @@ export function App() {
           <div className={show3d ? 'pane' : 'pane hidden'}>
             <Viewport3D />
           </div>
-          {floating.map((panel) => (
-            <PanelSlot key={panel.id} panel={panel} />
-          ))}
+          {floating.length > 0 && (
+            <div className="float-stack">
+              {floating.map((panel) => (
+                <PanelSlot key={panel.id} panel={panel} stacked />
+              ))}
+            </div>
+          )}
         </main>
         {right.map((panel) => (
           <PanelSlot key={panel.id} panel={panel} />

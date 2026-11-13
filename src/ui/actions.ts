@@ -3,6 +3,7 @@ import { createProject } from '../model/defaults'
 import { insertLevel } from '../model/levels'
 import { deleteEntities, duplicateItems, rotateItems } from '../model/ops'
 import { selectActiveLevel, useStore } from '../store'
+import { fitVisible } from './fit'
 import { getPlatform } from '../platform'
 
 function fileName(name: string, ext: string): string {
@@ -97,5 +98,10 @@ export function addLevelAbove(): void {
     const next = insertLevel(draft.levels, active.id, 'above')
     created = next?.id ?? ''
   })
-  if (created) useStore.getState().setActiveLevel(created)
+  if (created) {
+    const next = useStore.getState()
+    next.setActiveLevel(created)
+    next.setLevelDisplay('current-below')
+    fitVisible()
+  }
 }

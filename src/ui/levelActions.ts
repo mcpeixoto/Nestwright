@@ -1,5 +1,6 @@
 import { duplicateLevel, insertLevel, removeLevel } from '../model/levels'
 import { selectActiveLevel, useStore } from '../store'
+import { fitVisible } from './fit'
 
 export function addLevelBelow(): void {
   const state = useStore.getState()
@@ -9,7 +10,12 @@ export function addLevelBelow(): void {
   state.apply('Add level below', (draft) => {
     created = insertLevel(draft.levels, active.id, 'below')?.id ?? ''
   })
-  if (created) useStore.getState().setActiveLevel(created)
+  if (created) {
+    const next = useStore.getState()
+    next.setActiveLevel(created)
+    next.setLevelDisplay('current-below')
+    fitVisible()
+  }
 }
 
 export function duplicateActiveLevel(): void {

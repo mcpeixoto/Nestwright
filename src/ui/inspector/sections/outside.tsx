@@ -1,7 +1,6 @@
 import { carveBasin, FENCE_STYLES, PLANT_SPECIES, waterDepth } from '../../../model/terrain'
 import type { Terrain } from '../../../model/types'
 import { useStore } from '../../../store'
-import { deleteSelection } from '../../actions'
 import { labelOf, NumberField } from '../fields'
 import { registerInspectorSection } from '../registry'
 
@@ -70,9 +69,6 @@ function WaterSection() {
           })
         }}
       />
-      <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
-      </button>
     </div>
   )
 }
@@ -136,9 +132,6 @@ function FenceSection() {
           Gate on segment {index + 1}
         </label>
       ))}
-      <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
-      </button>
     </div>
   )
 }
@@ -191,9 +184,6 @@ function PlantSection() {
           })
         }}
       />
-      <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
-      </button>
     </div>
   )
 }

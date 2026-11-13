@@ -50,6 +50,8 @@ export function PhotoMode() {
   const photo = usePhotoSession()
   const flight = useFlight()
   const time = useStore((s) => s.project.environment.time)
+  const [flash, setFlash] = useState(false)
+  const [toast, setToast] = useState(false)
 
   useEffect(() => {
     const controls = getController()?.controls
@@ -114,15 +116,35 @@ export function PhotoMode() {
     camera.updateProjectionMatrix()
   }
 
+  const leave = () => {
+    const camera = getController()?.camera
+    if (camera && photo.savedFov != null) {
+      camera.fov = photo.savedFov
+      camera.updateProjectionMatrix()
+    }
+    exitPhoto()
+  }
+
   const capture = () => {
     const camera = getController()?.camera
     const ratio = aspectRatio(photo.aspect) ?? (camera && camera.aspect > 0.05 ? camera.aspect : 16 / 9)
     const size = framePixels(photo.aspect, photo.resolution, ratio)
+    setFlash(true)
+    setToast(true)
+    window.setTimeout(() => setFlash(false), 140)
+    window.setTimeout(() => setToast(false), 1600)
     void exportViewImage(size.width, size.height)
   }
 
   return (
-    <div className="photo-strip">
+    <>
+      <button type="button" className="photo-exit" aria-label="Exit photo" onClick={leave}>
+        ×
+      </button>
+      <p className="photo-hint">Esc to exit</p>
+      {flash && <div className="photo-flash" />}
+      {toast && <p className="photo-toast">Saved photo</p>}
+      <div className="photo-strip">
       <label>
         FOV
         <input type="range" min={20} max={80} step={1} defaultValue={getController()?.camera.fov ?? 48} onChange={(event) => setFov(Number(event.target.value))} />
@@ -225,6 +247,7 @@ export function PhotoMode() {
         </ol>
       </div>
     </div>
+    </>
   )
 }
 

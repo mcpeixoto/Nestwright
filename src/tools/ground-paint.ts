@@ -1,3 +1,4 @@
+import { clampBrushHit } from '../model/brushClamp'
 import { paintLayer } from '../model/terrain'
 import type { Vec2 } from '../model/types'
 import { useStore } from '../store'
@@ -13,20 +14,26 @@ let armed = false
 export function paintPointer(phase: 'down' | 'move' | 'up', point: Vec2): void {
   if (phase === 'up') {
     painting = false
+    useStore.getState().endStroke()
     return
   }
+  const hit = clampBrushHit(point, useStore.getState().project.terrain)
+  if (!hit) return
   armed = true
-  if (phase === 'down') painting = true
+  if (phase === 'down') {
+    painting = true
+    useStore.getState().beginStroke('Paint ground')
+  }
   if (!painting || !allowDab()) return
   const brush = getBrush()
   useStore.getState().apply('Paint ground', (draft) => {
-    paintLayer(draft.terrain, brush.layer, point, brush.radius, brush.strength)
+    paintLayer(draft.terrain, brush.layer, hit, brush.radius, brush.strength)
   })
 }
 
 registerShortcut({
   id: 'tool-ground',
-  keys: 'g',
+  keys: 'shift+g',
   description: 'Paint ground',
   run: () => useStore.getState().setTool('ground-paint'),
 })
@@ -34,7 +41,7 @@ registerShortcut({
 registerTool({
   id: 'ground-paint',
   label: 'Ground',
-  shortcut: 'G',
+  shortcut: 'Shift+G',
   group: 'outside',
   cursor: 'crosshair',
   icon: icon('<circle cx="12" cy="13" r="4"/><path d="M12 3v3M5 8l2 2M19 8l-2 2"/>'),
@@ -44,6 +51,7 @@ registerTool({
   },
   deactivate() {
     painting = false
+    useStore.getState().endStroke()
   },
   onPointerDown(ctx) {
     paintPointer('down', ctx.raw)

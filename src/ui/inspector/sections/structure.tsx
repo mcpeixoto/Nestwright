@@ -3,7 +3,6 @@ import { bulgeLimit } from '../../../model/curve'
 import type { RoofShape, StairShape } from '../../../model/types'
 import { selectActiveLevel, useStore } from '../../../store'
 import { halfWallHeight, setHalfWallHeight, setWallDrawKind, wallDrawKind, type WallDrawKind } from '../../../tools/wallOptions'
-import { deleteSelection } from '../../actions'
 import { MaterialPicker } from '../../MaterialPicker'
 import { selectionFacts } from '../facts'
 import { NumberField, patchLevel } from '../fields'
@@ -105,9 +104,6 @@ function StairSection({ selection }: InspectorSectionProps) {
           }
         />
       </label>
-      <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
-      </button>
     </div>
   )
 }
@@ -238,9 +234,6 @@ function RoofSection({ selection }: InspectorSectionProps) {
           ))}
         </div>
       ) : null}
-      <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
-      </button>
     </div>
   )
 }
@@ -290,9 +283,6 @@ function ColumnSection({ selection }: InspectorSectionProps) {
           }
         />
       </label>
-      <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
-      </button>
     </div>
   )
 }
@@ -339,9 +329,6 @@ function SlabSection({ selection }: InspectorSectionProps) {
           }
         />
       </label>
-      <button type="button" className="danger" onClick={deleteSelection}>
-        Delete
-      </button>
     </div>
   )
 }

@@ -37,7 +37,7 @@ export function fencePointer(phase: 'down' | 'move' | 'up', point: Vec2): void {
 
 registerShortcut({
   id: 'tool-fence',
-  keys: 'e',
+  keys: 'shift+f',
   description: 'Fence',
   run: () => useStore.getState().setTool('fence'),
 })
@@ -45,7 +45,7 @@ registerShortcut({
 registerTool({
   id: 'fence',
   label: 'Fence',
-  shortcut: 'E',
+  shortcut: 'Shift+F',
   group: 'outside',
   cursor: 'crosshair',
   icon: icon('<path d="M5 20V8M19 20V8M5 11h14M5 15h14"/><path d="M8 20V8M12 20V8M16 20V8"/>'),
