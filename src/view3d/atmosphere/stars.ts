@@ -1,11 +1,17 @@
 import * as THREE from 'three'
+import { instancedBufferAttribute, uniform } from 'three/tsl'
 
 export interface StarField {
-  points: THREE.Points
+  points: THREE.Object3D
   setNight(amount: number): void
   dispose(): void
 }
 
+// PHASE1-PORT: instanced sprite stand-in for the old sized THREE.Points.
+/**
+ * WebGPU draws `THREE.Points` one pixel wide, so the stars are an instanced sprite: one
+ * screen-aligned quad per star, sized in pixels like the old `sizeAttenuation: false` points.
+ */
 export function createStars(count = 700): StarField {
   const positions = new Float32Array(count * 3)
   for (let i = 0; i < count; i++) {
@@ -16,16 +22,20 @@ export function createStars(count = 700): StarField {
     positions[i * 3 + 1] = Math.abs(z) * 0.85 + 0.05
     positions[i * 3 + 2] = r * Math.sin(t)
   }
-  const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  const material = new THREE.PointsMaterial({
+  const attr = new THREE.InstancedBufferAttribute(positions, 3)
+  const opacity = uniform(1)
+  const material = new THREE.PointsNodeMaterial({
     color: '#f7f4ea',
     size: 2.1,
     sizeAttenuation: false,
     depthWrite: false,
+    transparent: true,
     fog: false,
   })
-  const points = new THREE.Points(geometry, material)
+  material.positionNode = instancedBufferAttribute(attr)
+  material.opacityNode = opacity
+  const points = new THREE.Sprite(material)
+  points.count = count
   points.name = 'stars'
   points.scale.setScalar(560)
   points.frustumCulled = false
@@ -34,12 +44,9 @@ export function createStars(count = 700): StarField {
     points,
     setNight(amount) {
       points.visible = amount > 0.08
-      material.opacity = Math.min(1, amount)
-      material.transparent = amount < 0.98
-      material.depthWrite = false
+      opacity.value = Math.min(1, amount)
     },
     dispose() {
-      geometry.dispose()
       material.dispose()
     },
   }

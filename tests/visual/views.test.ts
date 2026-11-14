@@ -110,6 +110,9 @@ describe('visual views', () => {
       url: 'http://localhost:5181',
     })
     expect(() => parseArgs(['--nope'])).toThrow(/Unknown argument/)
+    expect(parseArgs([]).backend).toBe('webgpu')
+    expect(parseArgs(['--backend', 'webgl']).backend).toBe('webgl')
+    expect(() => parseArgs(['--backend', 'metal'])).toThrow(/webgpu or webgl/)
     const html = contactHtml({
       shots: [{ name: 'living-room', src: 'living-room.png', report: { fpsAvg: 60, p50: 16, width: 100, height: 50, backend: 'webgl2' } }],
       refs: null,

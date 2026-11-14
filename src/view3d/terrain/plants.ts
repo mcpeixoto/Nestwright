@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { attribute, cos, positionGeometry, positionLocal, sin, uniform, vec3 } from 'three/tsl'
 import { sampleHeight } from '../../model/terrain'
 import type { Terrain } from '../../model/types'
 import { srgbByteToLinear } from '../colorLinear'
@@ -274,19 +275,42 @@ function chunkKey(species: string, x: number, y: number): string {
 interface Batch {
   mesh: THREE.InstancedMesh
   capacity: number
+  /** Per instance: gust phase (from the plant's origin) and plant scale. */
+  info: THREE.InstancedBufferAttribute
+}
+
+/** Per-instance sway data: [gust phase from the plant's ground position, plant scale]. */
+export const PLANT_SWAY_ATTRIBUTE = 'plantSway'
+
+/** Gust phase keyed off the plant's origin, so a whole plant moves together. */
+export function swayPhase(x: number, z: number): number {
+  return x * 0.37 + z * 0.23
+}
+
+/**
+ * A geometry per batch that shares the species' vertex buffers and adds its own per-instance
+ * sway attribute. Never `dispose()` it: that would free the shared buffers.
+ */
+function batchGeometry(base: THREE.BufferGeometry, info: THREE.InstancedBufferAttribute): THREE.BufferGeometry {
+  const geo = new THREE.BufferGeometry()
+  for (const [name, attr] of Object.entries(base.attributes)) geo.setAttribute(name, attr)
+  geo.setAttribute(PLANT_SWAY_ATTRIBUTE, info)
+  geo.boundingSphere = base.boundingSphere?.clone() ?? null
+  geo.boundingBox = base.boundingBox?.clone() ?? null
+  return geo
 }
 
 export class PlantField {
   readonly group = new THREE.Group()
   private batches = new Map<string, Batch>()
   private geos = new Map<string, THREE.BufferGeometry>()
-  private material: THREE.MeshStandardMaterial
-  private time = { value: 0 }
+  private material: THREE.MeshStandardNodeMaterial
+  private time = uniform(0)
   private dummy = new THREE.Object3D()
 
   constructor() {
     this.group.name = 'plants'
-    this.material = new THREE.MeshStandardMaterial({
+    this.material = new THREE.MeshStandardNodeMaterial({
       vertexColors: true,
       roughness: 0.92,
       metalness: 0,
@@ -295,20 +319,20 @@ export class PlantField {
       emissiveIntensity: 0,
       side: THREE.DoubleSide,
     })
-    this.material.customProgramCacheKey = () => 'nestwright-plant-wind'
+    // Wind sway. Node materials apply the instance matrix before positionNode, so the offset
+    // lands in world space (wind blows the same way for every plant, whatever its rotation).
+    // Height is the object-space y, 0 at the base, and the per-instance attribute carries the
+    // plant's scale and an origin-keyed phase, so a scaled plant bends in proportion and the
+    // whole plant gusts as one.
     const time = this.time
-    this.material.onBeforeCompile = (shader) => {
-      shader.uniforms.uTime = time
-      shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nattribute float sway;\nuniform float uTime;')
-        .replace(
-          '#include <begin_vertex>',
-          `#include <begin_vertex>
-           float gust = sin(uTime * 1.45 + position.y * 0.35 + instanceMatrix[3].x * 0.37);
-           transformed.x += sway * gust * position.y * 0.03;
-           transformed.z += sway * cos(uTime * 1.15 + position.y * 0.5) * position.y * 0.02;`,
-        )
-    }
+    const sway = attribute<'float'>('sway', 'float')
+    const info = attribute<'vec2'>(PLANT_SWAY_ATTRIBUTE, 'vec2')
+    const height = positionGeometry.y
+    const bend = sway.mul(height).mul(info.y)
+    const gust = sin(time.mul(1.45).add(height.mul(0.35)).add(info.x))
+    const dx = bend.mul(gust).mul(0.03)
+    const dz = bend.mul(cos(time.mul(1.15).add(height.mul(0.5)).add(info.x.mul(0.7)))).mul(0.02)
+    this.material.positionNode = positionLocal.add(vec3(dx, 0, dz))
   }
 
   private geometry(species: string): THREE.BufferGeometry {
@@ -334,12 +358,11 @@ export class PlantField {
       const species = list[0]?.species || 'bush-round'
       let batch = this.batches.get(key)
       if (!batch || batch.capacity < list.length) {
-        if (batch) {
-          this.group.remove(batch.mesh)
-          batch.mesh.dispose()
-        }
+        if (batch) this.drop(batch)
         const capacity = Math.max(8, 2 ** Math.ceil(Math.log2(list.length)))
-        const mesh = new THREE.InstancedMesh(this.geometry(species), this.material, capacity)
+        const info = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 2), 2)
+        info.setUsage(THREE.DynamicDrawUsage)
+        const mesh = new THREE.InstancedMesh(batchGeometry(this.geometry(species), info), this.material, capacity)
         mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
         mesh.castShadow = false
         mesh.receiveShadow = true
@@ -347,7 +370,7 @@ export class PlantField {
         mesh.userData.kind = 'plant'
         mesh.count = 0
         this.group.add(mesh)
-        batch = { mesh, capacity }
+        batch = { mesh, capacity, info }
         this.batches.set(key, batch)
       }
       const mesh = batch.mesh
@@ -363,19 +386,27 @@ export class PlantField {
         this.dummy.scale.setScalar(scale)
         this.dummy.updateMatrix()
         mesh.setMatrixAt(i, this.dummy.matrix)
+        batch.info.setXY(i, swayPhase(plant.position.x, plant.position.y), scale)
         ids.push(plant.id)
       }
       mesh.instanceMatrix.needsUpdate = true
+      batch.info.needsUpdate = true
       mesh.userData.instanceIds = ids
       mesh.boundingSphere = null
       mesh.computeBoundingSphere()
     }
     for (const [key, batch] of this.batches) {
       if (seen.has(key)) continue
-      this.group.remove(batch.mesh)
-      batch.mesh.dispose()
+      this.drop(batch)
       this.batches.delete(key)
     }
+  }
+
+  private drop(batch: Batch): void {
+    this.group.remove(batch.mesh)
+    batch.mesh.dispose()
+    // Only the batch's own buffer: the vertex buffers belong to the species geometry.
+    batch.info.dispose()
   }
 
   update(elapsed: number): void {
@@ -383,10 +414,7 @@ export class PlantField {
   }
 
   dispose(): void {
-    for (const batch of this.batches.values()) {
-      this.group.remove(batch.mesh)
-      batch.mesh.dispose()
-    }
+    for (const batch of this.batches.values()) this.drop(batch)
     this.batches.clear()
     for (const geo of this.geos.values()) geo.dispose()
     this.geos.clear()

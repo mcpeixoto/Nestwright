@@ -1,36 +1,10 @@
 import * as THREE from 'three'
+import { attribute, cameraPosition, mix, mod, sin, uniform, vec3 } from 'three/tsl'
 import type { Weather } from '../../model/types'
 import type { GraphicsQuality } from '../../settings'
 
 const RAIN = 1800
 const SNOW = 900
-
-const vertex = /* glsl */ `
-  attribute vec3 aOffset;
-  attribute float aSpeed;
-  attribute float aEnd;
-  uniform float uTime;
-  uniform float uSpan;
-  uniform float uDrift;
-  uniform float uStreak;
-  void main() {
-    float cycle = mod(aOffset.y - uTime * aSpeed, uSpan);
-    float y = cycle - uSpan * 0.5;
-    float drift = sin(uTime * 0.4 + aOffset.x) * uDrift;
-    vec3 head = cameraPosition + vec3(aOffset.x + drift, y, aOffset.z);
-    vec3 tail = head + vec3(drift * 0.15, uStreak, 0.02);
-    vec3 p = mix(head, tail, aEnd);
-    gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
-  }
-`
-
-const fragment = /* glsl */ `
-  uniform vec3 uColor;
-  uniform float uAlpha;
-  void main() {
-    gl_FragColor = vec4(uColor, uAlpha);
-  }
-`
 
 export interface Precip {
   group: THREE.Group
@@ -38,7 +12,16 @@ export interface Precip {
   dispose(): void
 }
 
-function build(count: number, name: string): { lines: THREE.LineSegments; uniforms: Record<string, THREE.IUniform> } {
+interface Streaks {
+  lines: THREE.LineSegments
+  time: { value: number }
+  drift: { value: number }
+  streak: { value: number }
+  color: THREE.Color
+  alpha: { value: number }
+}
+
+function build(count: number, name: string): Streaks {
   const positions = new Float32Array(count * 2 * 3)
   const offsets = new Float32Array(count * 2 * 3)
   const speeds = new Float32Array(count * 2)
@@ -62,26 +45,31 @@ function build(count: number, name: string): { lines: THREE.LineSegments; unifor
   geometry.setAttribute('aOffset', new THREE.BufferAttribute(offsets, 3))
   geometry.setAttribute('aSpeed', new THREE.BufferAttribute(speeds, 1))
   geometry.setAttribute('aEnd', new THREE.BufferAttribute(ends, 1))
-  const uniforms = {
-    uTime: { value: 0 },
-    uSpan: { value: 22 },
-    uDrift: { value: 0 },
-    uStreak: { value: 0.7 },
-    uColor: { value: new THREE.Color('#d5e4ee') },
-    uAlpha: { value: 0.45 },
-  }
-  const material = new THREE.ShaderMaterial({
-    uniforms,
-    vertexShader: vertex,
-    fragmentShader: fragment,
-    transparent: true,
-    depthWrite: false,
-  })
+  const uTime = uniform(0)
+  const uSpan = uniform(22)
+  const uDrift = uniform(0)
+  const uStreak = uniform(0.7)
+  const color = new THREE.Color('#d5e4ee')
+  const uAlpha = uniform(0.45)
+  const aOffset = attribute<'vec3'>('aOffset', 'vec3')
+  const aSpeed = attribute<'float'>('aSpeed', 'float')
+  const aEnd = attribute<'float'>('aEnd', 'float')
+  // The group sits at the origin, so local space is world space, as in the old shader.
+  const cycle = mod(aOffset.y.sub(uTime.mul(aSpeed)), uSpan)
+  const y = cycle.sub(uSpan.mul(0.5))
+  const drift = sin(uTime.mul(0.4).add(aOffset.x)).mul(uDrift)
+  const head = cameraPosition.add(vec3(aOffset.x.add(drift), y, aOffset.z))
+  const tail = head.add(vec3(drift.mul(0.15), uStreak, 0.02))
+  const material = new THREE.LineBasicNodeMaterial({ transparent: true, depthWrite: false, fog: false })
+  material.positionNode = mix(head, tail, aEnd)
+  material.colorNode = uniform(color)
+  material.opacityNode = uAlpha
   const lines = new THREE.LineSegments(geometry, material)
   lines.name = name
   lines.frustumCulled = false
   lines.visible = false
-  return { lines, uniforms }
+  lines.userData.precipTime = uTime
+  return { lines, time: uTime, drift: uDrift, streak: uStreak, color, alpha: uAlpha }
 }
 
 function budget(quality: GraphicsQuality, full: number): number {
@@ -91,6 +79,7 @@ function budget(quality: GraphicsQuality, full: number): number {
   return Math.round(full * 0.8)
 }
 
+// PHASE1-PORT: like-for-like TSL port of the rain/snow streaks (1 px lines, as before).
 export function createPrecip(): Precip {
   const group = new THREE.Group()
   group.name = 'precip'
@@ -105,14 +94,14 @@ export function createPrecip(): Precip {
       const snowOn = weather === 'snow'
       rain.lines.visible = rainOn
       snow.lines.visible = snowOn
-      rain.uniforms.uDrift.value = 0.05
-      rain.uniforms.uStreak.value = 0.85
-      rain.uniforms.uColor.value.set('#c5d7e4')
-      rain.uniforms.uAlpha.value = 0.35 + density * 0.25
-      snow.uniforms.uDrift.value = 0.8
-      snow.uniforms.uStreak.value = 0.08
-      snow.uniforms.uColor.value.set('#f7f8fa')
-      snow.uniforms.uAlpha.value = 0.55 + density * 0.3
+      rain.drift.value = 0.05
+      rain.streak.value = 0.85
+      rain.color.set('#c5d7e4')
+      rain.alpha.value = 0.35 + density * 0.25
+      snow.drift.value = 0.8
+      snow.streak.value = 0.08
+      snow.color.set('#f7f8fa')
+      snow.alpha.value = 0.55 + density * 0.3
       const rainCount = budget(quality, RAIN)
       const snowCount = budget(quality, SNOW)
       rain.lines.geometry.setDrawRange(0, rainOn ? rainCount * 2 : 0)
@@ -129,9 +118,7 @@ export function createPrecip(): Precip {
 
 export function driftPrecip(group: THREE.Group, elapsed: number): void {
   group.traverse((obj) => {
-    const lines = obj as THREE.LineSegments
-    const material = lines.material as THREE.ShaderMaterial | undefined
-    const slot = material?.uniforms?.uTime
+    const slot = obj.userData.precipTime as { value: number } | undefined
     if (slot) slot.value = elapsed
   })
 }

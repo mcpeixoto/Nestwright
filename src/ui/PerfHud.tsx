@@ -41,6 +41,11 @@ export function PerfHud() {
         {tr('p95 {n} ms', { n: snap.p95.toFixed(1) })}
       </div>
       <div>
+        {tr('max {n} ms', { n: snap.max.toFixed(1) })}
+        {'  '}
+        {tr('Hitches {n}', { n: snap.hitches })}
+      </div>
+      <div>
         {tr('Draws {n}', { n: draws })}
         {'  '}
         {tr('Triangles {n}', { n: triangles })}

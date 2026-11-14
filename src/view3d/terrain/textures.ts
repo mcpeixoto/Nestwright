@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { materialColor, max, positionWorld, texture, uv, vec3 } from 'three/tsl'
 import { decodeSplat, splatLength } from '../../model/terrain'
 import type { Terrain } from '../../model/types'
 import { GROUND_LAYERS } from '../../model/types'
@@ -206,8 +207,8 @@ export function groundLayerTextures(): THREE.Texture[] {
   return cachedLayers
 }
 
-export interface SplatMaterial extends THREE.MeshStandardMaterial {
-  userData: THREE.MeshStandardMaterial['userData'] & {
+export interface SplatMaterial extends THREE.MeshStandardNodeMaterial {
+  userData: THREE.MeshStandardNodeMaterial['userData'] & {
     syncSplat?: (terrain: Terrain) => void
   }
 }
@@ -225,21 +226,34 @@ function dataTexture(data: Uint8Array, size: number): THREE.DataTexture {
   return tex
 }
 
+/** Per-layer tiling, relative to the 0.07 / m base. */
+const LAYER_TILING = [1, 1.05, 1.45, 0.72, 1.25, 1.15, 0.9, 1.18] as const
+
+// PHASE1-PORT: like-for-like TSL port of the 8-layer ground splat (no normal/roughness layers yet).
+/**
+ * Two RGBA weight maps (eight ground layers) blend eight tiled colour textures, sampled in
+ * world XZ. Colour maps are SRGBColorSpace, so the sampler already returns linear values.
+ */
 export function createSplatMaterial(): SplatMaterial {
   const layers = groundLayerTextures()
-  const uniforms = {
-    splat0: { value: dataTexture(new Uint8Array(4), 1) },
-    splat1: { value: dataTexture(new Uint8Array(4), 1) },
-    layer0: { value: layers[0] },
-    layer1: { value: layers[1] },
-    layer2: { value: layers[2] },
-    layer3: { value: layers[3] },
-    layer4: { value: layers[4] },
-    layer5: { value: layers[5] },
-    layer6: { value: layers[6] },
-    layer7: { value: layers[7] },
+  const splat0 = texture(dataTexture(new Uint8Array(4), 1), uv())
+  const splat1 = texture(dataTexture(new Uint8Array(4), 1), uv())
+  const uniforms = { splat0, splat1 }
+  const sw0 = splat0
+  const sw1 = splat1
+  const weights = [sw0.r, sw0.g, sw0.b, sw0.a, sw1.r, sw1.g, sw1.b, sw1.a]
+  const tuv = positionWorld.xz.mul(0.07)
+  let col: THREE.Node<'vec3'> | null = null
+  let wsum: THREE.Node<'float'> | null = null
+  for (let i = 0; i < LAYER_TILING.length; i++) {
+    const layer = layers[i]
+    const weight = weights[i]
+    if (!layer || !weight) continue
+    const term = texture(layer, tuv.mul(LAYER_TILING[i] ?? 1)).rgb.mul(weight)
+    col = col ? col.add(term) : term
+    wsum = wsum ? wsum.add(weight) : weight
   }
-  const mat = new THREE.MeshStandardMaterial({
+  const mat = new THREE.MeshStandardNodeMaterial({
     color: '#ffffff',
     roughness: 0.94,
     metalness: 0,
@@ -247,56 +261,14 @@ export function createSplatMaterial(): SplatMaterial {
   mat.polygonOffset = true
   mat.polygonOffsetFactor = 1
   mat.polygonOffsetUnits = 1
-  mat.customProgramCacheKey = () => 'nestwright-ground-splat'
-  mat.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, uniforms)
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vSplatUv;\nvarying vec3 vWorld;')
-      .replace('#include <uv_vertex>', '#include <uv_vertex>\nvSplatUv = uv;')
-      .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWorld = worldPosition.xyz;')
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-         varying vec2 vSplatUv;
-         varying vec3 vWorld;
-         uniform sampler2D splat0;
-         uniform sampler2D splat1;
-         uniform sampler2D layer0;
-         uniform sampler2D layer1;
-         uniform sampler2D layer2;
-         uniform sampler2D layer3;
-         uniform sampler2D layer4;
-         uniform sampler2D layer5;
-         uniform sampler2D layer6;
-         uniform sampler2D layer7;`,
-      )
-      .replace(
-        '#include <map_fragment>',
-        `vec4 sw0 = texture2D(splat0, vSplatUv);
-         vec4 sw1 = texture2D(splat1, vSplatUv);
-         float wsum = sw0.r + sw0.g + sw0.b + sw0.a + sw1.r + sw1.g + sw1.b + sw1.a;
-         wsum = max(wsum, 0.0001);
-         vec2 tuv = vWorld.xz * 0.07;
-         vec3 col = texture2D(layer0, tuv).rgb * sw0.r
-           + texture2D(layer1, tuv * 1.05).rgb * sw0.g
-           + texture2D(layer2, tuv * 1.45).rgb * sw0.b
-           + texture2D(layer3, tuv * 0.72).rgb * sw0.a
-           + texture2D(layer4, tuv * 1.25).rgb * sw1.r
-           + texture2D(layer5, tuv * 1.15).rgb * sw1.g
-           + texture2D(layer6, tuv * 0.9).rgb * sw1.b
-           + texture2D(layer7, tuv * 1.18).rgb * sw1.a;
-         // Colour maps are SRGBColorSpace, so the GPU already decoded them.
-         diffuseColor.rgb *= max(col / wsum, vec3(0.0));`,
-      )
-  }
+  if (col && wsum) mat.colorNode = materialColor.mul(max(col.div(max(wsum, 0.0001)), vec3(0.0)))
   mat.userData.syncSplat = (terrain: Terrain) => {
     const resolution = terrain.resolution
     if (!(resolution >= 1)) return
     const n = resolution + 1
     const weights = decodeSplat(terrain.splat, splatLength(terrain))
     const resize = (slot: 'splat0' | 'splat1') => {
-      const current = uniforms[slot].value
+      const current = uniforms[slot].value as THREE.DataTexture
       if (current.image?.width === n && current.image?.data?.length === n * n * 4) return current
       current.dispose()
       const next = dataTexture(new Uint8Array(n * n * 4), n)
