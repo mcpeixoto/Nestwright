@@ -1,3 +1,4 @@
+import earcut from 'earcut'
 import {
   add,
   closestPointOnSegment,
@@ -250,4 +251,67 @@ export function clipToConvex(subject: readonly Vec2[], clip: readonly Vec2[]): V
     if (output.length < 3) return []
   }
   return cleanRing(output)
+}
+
+/** Counter-clockwise triangles of a simple ring. Concave rings are fine. */
+export function triangulate(ring: readonly Vec2[]): Vec2[][] {
+  const clean = cleanRing(ring)
+  if (clean.length < 3) return []
+  const flat: number[] = []
+  for (const p of clean) flat.push(p.x, p.y)
+  const indices = earcut(flat)
+  const out: Vec2[][] = []
+  for (let i = 0; i + 2 < indices.length; i += 3) {
+    const a = clean[indices[i] ?? -1]
+    const b = clean[indices[i + 1] ?? -1]
+    const c = clean[indices[i + 2] ?? -1]
+    if (!a || !b || !c) continue
+    const tri = [a, b, c]
+    const area = polygonArea(tri)
+    if (Math.abs(area) < 1e-12) continue
+    out.push(area < 0 ? tri.reverse() : tri)
+  }
+  return out
+}
+
+interface Box {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
+
+function boundsOf(pts: readonly Vec2[]): Box {
+  const box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+  for (const p of pts) {
+    box.minX = Math.min(box.minX, p.x)
+    box.minY = Math.min(box.minY, p.y)
+    box.maxX = Math.max(box.maxX, p.x)
+    box.maxY = Math.max(box.maxY, p.y)
+  }
+  return box
+}
+
+function boxesOverlap(a: Box, b: Box): boolean {
+  return a.minX < b.maxX && b.minX < a.maxX && a.minY < b.maxY && b.minY < a.maxY
+}
+
+/**
+ * Area shared by two simple rings, convex or not. Both are cut into triangles and
+ * every pair is clipped, so concave rooms (L, U shapes) come out exact.
+ */
+export function intersectionArea(a: readonly Vec2[], b: readonly Vec2[]): number {
+  if (a.length < 3 || b.length < 3) return 0
+  if (!boxesOverlap(boundsOf(a), boundsOf(b))) return 0
+  const left = triangulate(a).map((tri) => ({ tri, box: boundsOf(tri) }))
+  const right = triangulate(b).map((tri) => ({ tri, box: boundsOf(tri) }))
+  let sum = 0
+  for (const p of left) {
+    for (const q of right) {
+      if (!boxesOverlap(p.box, q.box)) continue
+      const piece = clipToConvex(p.tri, q.tri)
+      if (piece.length >= 3) sum += polygonArea(piece)
+    }
+  }
+  return sum
 }
