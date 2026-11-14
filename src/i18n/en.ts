@@ -547,6 +547,18 @@ export const en = {
   'Paint twenty surfaces.': 'Paint twenty surfaces.',
   'Export a photo.': 'Export a photo.',
   'Set a budget target and stay under it.': 'Set a budget target and stay under it.',
+  'p50 {n} ms': 'p50 {n} ms',
+  'p95 {n} ms': 'p95 {n} ms',
+  'Draws {n}': 'Draws {n}',
+  'Triangles {n}': 'Triangles {n}',
+  'Geometries {n}': 'Geometries {n}',
+  'Textures {n}': 'Textures {n}',
+  'Programs {n}': 'Programs {n}',
+  'GPU {n} MB': 'GPU {n} MB',
+  'Render {w}×{h}': 'Render {w}×{h}',
+  'Pixel ratio {n}': 'Pixel ratio {n}',
+  'Backend {name}': 'Backend {name}',
+  'Quality {name}': 'Quality {name}',
 } as const
 
 export type MessageKey = keyof typeof en

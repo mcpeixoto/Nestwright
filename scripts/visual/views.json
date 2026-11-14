@@ -1,0 +1,81 @@
+[
+  {
+    "name": "living-room",
+    "template": "family",
+    "time": 15.5,
+    "quality": "high",
+    "level": "Ground",
+    "camera": { "kind": "room", "room": "Living", "eye": 1.6, "look": "longest" }
+  },
+  {
+    "name": "kitchen",
+    "template": "family",
+    "time": 11,
+    "quality": "high",
+    "level": "Ground",
+    "camera": { "kind": "room", "room": "Kitchen", "eye": 1.6, "look": "longest" }
+  },
+  {
+    "name": "bathroom",
+    "template": "family",
+    "time": 14,
+    "quality": "high",
+    "level": "Upper",
+    "camera": { "kind": "room", "room": "Bathroom", "eye": 1.6, "look": "longest" }
+  },
+  {
+    "name": "upper-bedroom",
+    "template": "family",
+    "time": 15.5,
+    "quality": "high",
+    "level": "Upper",
+    "camera": { "kind": "room", "room": "Bedroom", "eye": 1.6, "look": "longest" }
+  },
+  {
+    "name": "aerial-cutaway",
+    "template": "family",
+    "time": 13,
+    "quality": "high",
+    "showRoofs": false,
+    "levelDisplay": "all",
+    "activeLevel": "Upper",
+    "camera": { "kind": "orbit", "position": [12, 26, 14], "target": [0, 1.5, 0] }
+  },
+  {
+    "name": "front-facade",
+    "template": "family",
+    "time": 10,
+    "quality": "high",
+    "camera": { "kind": "orbit", "position": [0, 2, -19.2], "target": [0, 1.2, -4.1] }
+  },
+  {
+    "name": "terrace-pool",
+    "template": "family",
+    "time": 17,
+    "quality": "high",
+    "camera": { "kind": "orbit", "position": [15, 2.2, 6], "target": [1, 1.2, 0] }
+  },
+  {
+    "name": "garden-wide",
+    "template": "beach",
+    "time": 16,
+    "quality": "high",
+    "camera": { "kind": "orbit", "position": [-16, 5, -12], "target": [0, 3, 0] }
+  },
+  {
+    "name": "night-living",
+    "template": "family",
+    "time": 22.5,
+    "quality": "high",
+    "autoLights": true,
+    "level": "Ground",
+    "camera": { "kind": "room", "room": "Living", "eye": 1.6, "look": "longest" }
+  },
+  {
+    "name": "dusk-exterior",
+    "template": "family",
+    "time": 20.833333333333332,
+    "quality": "high",
+    "camera": { "kind": "orbit", "position": [18, 2.4, -13], "target": [0, 1.5, 0] }
+  }
+]

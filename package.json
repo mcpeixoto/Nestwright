@@ -1,7 +1,7 @@
 {
   "name": "nestwright",
   "productName": "Nestwright",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Design your dream home together.",
   "author": "Peixoto Labs",
@@ -19,6 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "visual": "node scripts/visual/shoot.mjs --serve --out visual-out",
     "electron:dev": "npm run build:electron && concurrently -k \"vite --strictPort\" \"wait-on tcp:5173 && cross-env NESTWRIGHT_DEV_URL=http://localhost:5173 electron .\"",
     "dist:mac": "npm run build && electron-builder --mac --arm64"
   },

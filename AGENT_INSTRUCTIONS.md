@@ -222,8 +222,10 @@ Electron + Vite + React + three.js + zustand/immer, TypeScript strict.
   sync are built on the immer patches it records. Never mutate the project another way.
 - `src/model/types.ts` is the save-file schema. Changing a field needs a migration in
   `src/io/migrate.ts` and a bump of `PROJECT_VERSION`.
-- All base-game 3D assets are procedural (built in code). Do not add third-party models,
-  textures or fonts without a licence note in `docs/ASSETS.md`.
+- Base-game 3D assets may be procedural, CC0, or CC-BY 4.0 (with credit). NC, ND, and SA
+  licences are forbidden. Every third-party asset is logged in `docs/ASSETS.md` (generated
+  from content manifests once Phase 2 lands) and CC-BY assets appear on the in-game Credits
+  screen. Binaries are not committed to git; content packs ship as release tarballs (Phase 2).
 - Original game: never copy names, text, UI look or assets from any existing game.
 
 ## Verify

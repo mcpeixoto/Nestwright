@@ -26,6 +26,12 @@ declare global {
       useSettings: typeof import('../settings').useSettings
       /** Live 3D controller, for smoke tests and pixel checks. */
       getController?: typeof import('../view3d/SceneController').getController
+      /** Opens a template the same way the gallery card does. */
+      loadTemplate?: (id: string) => boolean
+      roomCameraPose?: typeof import('../model/roomCamera').roomCameraPose
+      perf?: {
+        report: (frames?: number) => Promise<import('../view3d/perfMonitor').PerfReport>
+      }
     }
   }
 }

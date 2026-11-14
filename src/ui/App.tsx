@@ -7,6 +7,7 @@ import { Viewport3D } from '../view3d/Viewport3D'
 import '../achievements/boot'
 import { ToastHost } from '../achievements/toast'
 import { HelpDialog } from './HelpDialog'
+import { PerfHud } from './PerfHud'
 import { PhotoMode } from './PhotoMode'
 import { usePhotoSession } from './photoSession'
 import './panels/EnvironmentPanel'
@@ -140,6 +141,7 @@ export function App() {
   return (
     <div className={className}>
       {screen === 'editor' ? <EditorShell /> : <StartScreen />}
+      <PerfHud />
       <HelpDialog />
       <SettingsDialog />
       <ConfirmHost />
