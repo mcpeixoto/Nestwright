@@ -4,10 +4,12 @@
 	"Desc" "Nestwright"
 	"ContentRoot" "../../release"
 	"BuildOutput" "../../release/steam-output"
+	"SetLive" ""
+	"Preview" "0"
 	"Depots"
 	{
-		"YOUR_DEPOT_MAC_ARM64" "depot_mac_arm64.vdf"
-		"YOUR_DEPOT_MAC_X64" "depot_mac_x64.vdf"
+		"YOUR_DEPOT_MAC" "depot_mac.vdf"
 		"YOUR_DEPOT_WIN_X64" "depot_win_x64.vdf"
+		"YOUR_DEPOT_LINUX_X64" "depot_linux_x64.vdf"
 	}
 }

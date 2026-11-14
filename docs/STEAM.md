@@ -1,68 +1,131 @@
-# Steam readiness
+# Steam checklist
 
-Nestwright ships as an Electron app. Steam is optional: if the client or `steamworks.js` is missing, the game runs without it. The placeholder app id **480** (Spacewar, Valve's public test app) is used only in development when `NESTWRIGHT_STEAM=1` and neither `NESTWRIGHT_STEAM_APPID` nor a `steam_appid.txt` is set. Replace it with the real app id before any upload. Do not ship 480.
+The Steam bridge, the achievement list, and the macOS, Windows, and Linux build commands exist. A real app id does not. Store setup, depots, SteamPipe upload, and Steam Cloud wait on that id. Do not ship app id 480 (Spacewar).
 
-```sh
-NESTWRIGHT_STEAM=1 NESTWRIGHT_STEAM_APPID=480 npm run electron:dev
-```
+## Partner account and calendar (owner)
 
-A packaged build reads `steam_appid.txt` (one integer) from, in order: next to the executable, `Contents/Resources` (where electron-builder `extraResources` places it), then the working directory. The file is copied into the app only when it exists at build time. There is no secret in the repo.
+- [ ] **(owner)** Create the partner account at [Steamworks](https://partner.steamgames.com/). Steam Direct is **$100 per app**, recouped after **$1,000 adjusted gross revenue**.
+- [ ] **(owner)** Complete the tax interview.
+- [ ] **(owner)** Complete bank and identity verification.
+- [ ] **(owner)** After paying the fee, wait **21 days** per Valve's onboarding page. Some Valve pages still say 30. Check the Steamworks dashboard.
+- [ ] **(owner)** Put the Coming Soon page public **at least 2 weeks** before release.
+- [ ] **(owner)** Store page review takes **3–5 business days**. Submit **at least 7 business days** ahead.
+- [ ] **(owner)** Build review takes **3–5 business days**. Plan **at least 7 business days**.
 
-## Partner account and app id
+| When | What |
+| --- | --- |
+| Dec 2026 | Paperwork |
+| Jan 2027 | Coming Soon page target |
+| Mar 2027 | Closed playtest (Steam Playtest) |
+| Early Apr 2027 | Public demo |
+| 25 Apr 2027 | Next Fest registration closes |
+| 3 Jun 2027 | Press preview starts (third-party source — check the Steamworks event page) |
+| 14–21 Jun 2027 | Next Fest (starts 10:00 PDT) |
+| 24 Jun – 8 Jul 2027 | Summer Sale |
+| Jul 2027 | Launch |
 
-1. Sign up at [Steamworks](https://partner.steamgames.com/). Steam charges a one-time app fee (currently 100 USD) when the app is created. That fee is recouped after the product reaches 1,000 USD in adjusted proceeds.
-2. Complete the paperwork Steam asks for (tax, bank, company). The owner does this.
-3. Create the app. Copy the numeric **App ID**.
-4. Write that id into `steam_appid.txt` in the repo root before `npm run dist:mac`, and into the `YOUR_APP_ID` placeholder in `scripts/steam/app_build.vdf`.
-5. In Steamworks, set the app name to Nestwright and the launch executable to the packaged binary (`Nestwright.app` on macOS, `Nestwright.exe` on Windows).
+## App id
+
+- [ ] **(owner)** Create the app in Steamworks and copy the numeric app id.
+- [ ] Write that integer, alone, into `steam_appid.txt` in the repo root. `scripts/build-electron.mjs` copies it into the app's Resources at build time. There is no secret in the file.
+- [ ] Replace `YOUR_APP_ID` and the `YOUR_DEPOT_*` placeholders in `scripts/steam/*.vdf` with the Steamworks ids.
+- [ ] Dev only: `NESTWRIGHT_STEAM=1` uses 480. `NESTWRIGHT_STEAM_APPID` overrides that number. Example: `NESTWRIGHT_STEAM=1 NESTWRIGHT_STEAM_APPID=480 npm run electron:dev`.
+- [ ] When the Steam client launches the game it sets `SteamAppId`. The bridge honors it. Resolution order is file, then `SteamAppId`, then the dev flag.
+- [ ] A packaged build that resolves to 480 logs a warning. Never ship 480.
+- [ ] With the real id in Resources, `restartAppIfNecessary` relaunches the game through Steam when it is started outside the client.
+
+## Builds
+
+Unsigned unless the signing env is set. Steam does not require Authenticode on Windows.
+
+- [ ] `npm run dist:mac` — universal arm64+x64. Unsigned unless the env below is set. Output: `release/mac-universal/Nestwright.app`.
+- [ ] `npm run dist:mac:signed` — Developer ID from the login keychain, App Store Connect API key in `~/.appstoreconnect`, notarised via `@electron/notarize`.
+- [ ] `npm run dist:win` — x64 `dir` plus portable, unsigned. Output: `release/win-unpacked/`.
+- [ ] `npm run dist:linux` — x64 `dir` plus AppImage. Output: `release/linux-unpacked/`.
+- [ ] Notarisation uses one of: `APPLE_API_KEY` + `APPLE_API_KEY_ID` + `APPLE_API_ISSUER`, or `APPLE_ID` + `APPLE_APP_SPECIFIC_PASSWORD` + `APPLE_TEAM_ID`, or `APPLE_KEYCHAIN_PROFILE`. Signing identity: `NESTWRIGHT_MAC_IDENTITY`.
+- [ ] Entitlements in `build/entitlements.mac.plist`: allow-jit, allow-unsigned-executable-memory, disable-library-validation, allow-dyld-environment-variables (Steam overlay).
+- [ ] Installed-size budget is 2 GiB. Check with `npm run size:check -- release/win-unpacked …`.
+- [ ] CI: the `Package` workflow builds Windows and Linux on PRs labelled `release` and on `v*` tags, and fails over the budget. Tags keep the AppImage and portable exe as artifacts for 3 days.
+- [ ] Name: see `docs/NAME-CHECK.md` before the Coming Soon page goes public.
 
 ## Depots
 
-Create three depots and paste their ids over the placeholders:
+One depot per OS. Create them in Steamworks and paste the ids over the placeholders.
 
-| Depot placeholder | Contents | Built by |
-| --- | --- | --- |
-| `YOUR_DEPOT_MAC_ARM64` | `release/mac-arm64/` | `npm run dist:mac` today |
-| `YOUR_DEPOT_MAC_X64` | `release/mac/` | a later `electron-builder --mac --x64` |
-| `YOUR_DEPOT_WIN_X64` | `release/win-unpacked/` | `electron-builder --win --x64` (nsis config is already in `electron-builder.yml`) |
+| Depot placeholder | Content root | OS | Launch |
+| --- | --- | --- | --- |
+| `YOUR_DEPOT_MAC` | `release/mac-universal` | macOS | `Nestwright.app` |
+| `YOUR_DEPOT_WIN_X64` | `release/win-unpacked` | Windows 64-bit | `Nestwright.exe` |
+| `YOUR_DEPOT_LINUX_X64` | `release/linux-unpacked` | Linux + SteamOS | `nestwright` |
 
-Only the macOS arm64 dmg and zip are built in this wave. The Windows nsis x64 target is configured and not built here.
+- [ ] Set each depot's OS and launch option as in the table.
+- [ ] Steam Deck can run the Linux depot natively or the Windows depot under Proton.
+- [ ] Steam Deck compatibility review happens after release-candidate builds are uploaded.
 
-## steamcmd upload
+## SteamPipe upload
 
-Install [steamcmd](https://developer.valvesoftware.com/wiki/SteamCMD). The template is `scripts/steam/`:
+Templates live in `scripts/steam/`. No passwords in the scripts or the vdf files.
 
-- `app_build.vdf` — app id and the three depot scripts
-- `depot_mac_arm64.vdf`, `depot_mac_x64.vdf`, `depot_win_x64.vdf` — file mappings, no credentials
-- `upload.sh` — `steamcmd +login "$STEAM_USERNAME" +run_app_build … +quit`
+- `app_build.vdf` — app id, description, content root `../../release`, build output `../../release/steam-output`, empty `SetLive`, `Preview` 0, and the three depot scripts.
+- `depot_mac.vdf`, `depot_win_x64.vdf`, `depot_linux_x64.vdf` — one content root each. Linux excludes `*.pdb`.
+- `upload.sh` — checks below, then `steamcmd +login "$STEAM_USERNAME" +run_app_build … +quit`.
 
-`STEAM_USERNAME` is the partner account. steamcmd prompts for the password and the Steam Guard code. Do not write either into the script or the vdf files.
+`STEAM_USERNAME` is the partner account. steamcmd prompts for the password and Steam Guard. Do not store either.
 
-```sh
-STEAM_USERNAME=you scripts/steam/upload.sh
+`SetLive` stays empty, so an upload does not go live. Set the build live on a beta branch first. Move it to the default branch only after the store page and review are done.
+
+- [ ] Install [steamcmd](https://developer.valvesoftware.com/wiki/SteamCMD).
+- [ ] Fill every `YOUR_` placeholder. `upload.sh` exits if any remain, if `steam_appid.txt` is missing or is 480, or if a content directory is missing or empty (it prints the `npm run dist:*` command for each one).
+- [ ] `STEAM_USERNAME=you scripts/steam/upload.sh`
+- [ ] `scripts/steam/upload.sh --preview` copies the vdfs to a temp directory, sets `Preview` to `1`, and points the content paths at the same `release/` folders. steamcmd reports and does not upload.
+- [ ] **(owner)** Set a good build live on a beta branch, then on default when review is done.
+
+## Steam Cloud
+
+Auto-Cloud cannot see the current autosave. It is in `localStorage`. File saves are Track P3: they will live in `<userData>/saves`.
+
+Electron `userData`:
+
+| OS | Path |
+| --- | --- |
+| Windows | `%APPDATA%\Nestwright` |
+| macOS | `~/Library/Application Support/Nestwright` |
+| Linux | `~/.config/Nestwright` |
+
+- [ ] **(owner)** Enable Auto-Cloud only after `.nest` saves exist on disk. Root `WinAppDataRoaming`, subdirectory `Nestwright/saves`, pattern `*.nest`, OS `[Cross-Platform]`.
+- [ ] **(owner)** Root override (macOS): original root `WinAppDataRoaming`, OS macOS, new root `MacAppSupport`. No Add/Replace Path.
+- [ ] **(owner)** Root override (Linux): original root `WinAppDataRoaming`, OS Linux, new root `LinuxHome`, Add/Replace Path `.config` (inserted before `Nestwright/saves`, Replace Path off).
+- [ ] **(owner)** Set the byte quota and file quota per app in Steamworks.
+- [ ] Proton runs the Windows build, so those saves sit in the Proton prefix and sync as Windows.
+
+## Stats and rich presence
+
+- [ ] Stats are integers set through the bridge (`setStat`). Changes are stored at most once every 5 seconds and flushed on quit.
+- [ ] **(owner)** A progress achievement is an achievement bound to a stat in Steamworks.
+- [ ] The bridge sets rich presence `status` (free text, 120 characters or fewer) and `steam_display` to `#Status`.
+- [ ] **(owner)** Upload a rich presence localization file for english and portuguese:
+
+```
+"lang"
+{
+	"Language" "english"
+	"Tokens"
+	{
+		"#Status" "%status%"
+	}
+}
+"lang"
+{
+	"Language" "portuguese"
+	"Tokens"
+	{
+		"#Status" "%status%"
+	}
+}
 ```
 
-Set the build live on a branch (beta or default) in Steamworks after it finishes. Do not set it live on the public branch until the store page and review are done.
-
-## Store page assets
-
-A person draws these. Sizes are the Steamworks graphical-asset requirements. Export PNG except where noted.
-
-| Asset | Size (px) | Status |
-| --- | --- | --- |
-| Header capsule | 460 × 215 | TODO |
-| Small capsule | 231 × 87 | TODO |
-| Main capsule | 616 × 353 | TODO |
-| Vertical capsule | 374 × 448 | TODO |
-| Library capsule | 600 × 900 | TODO |
-| Library header | 920 × 430 | TODO |
-| Library hero | 3840 × 1240 | TODO |
-| Library logo (transparent PNG) | 1280 × 720 | TODO |
-| Page background (optional) | 1438 × 810 | TODO |
-| Community / client icon | 184 × 184, plus a `.ico` for Windows | TODO |
-| Screenshots | 1920 × 1080, at least five | TODO |
-
-Short description, long description, and the trailer are also the owner's to write. Pricing is left to the owner; this doc does not set a price.
+- [ ] Test at <https://steamcommunity.com/dev/testrichpresence>.
+- [ ] On Deck, the floating gamepad keyboard opens over a focused text field.
 
 ## Achievements
 
@@ -89,37 +152,49 @@ Co-op should call `noteCoopSession()` from `src/achievements/signals.ts`, or dis
 
 Progress is stored in `localStorage` under `nestwright:achievements`, not in the `.nest` file.
 
+- [ ] **(owner)** Create each row in Steamworks. Leave Together and Budget master hidden until their features are in the build.
+
 ## Workshop
 
-Not built. The plan: one Workshop item is one `.nest` file (the same JSON the game already saves). Title comes from `project.name`. The preview image is a PNG from the photo export. Subscribing downloads that single file into the user's Nestwright folder; Open reads it like any other project. No extra package format. Upload stays out of the game until the Workshop legal terms and the UGC age-rating answers are done.
+Not built. One Workshop item is one `.nest` file (the JSON the game already saves). The title is `project.name`. The preview is a PNG from the photo export. Subscribing downloads that file into the player's Nestwright folder; Open reads it like any other project. No extra package format. Upload stays out of the game until the Workshop legal terms and the UGC age-rating answers are done.
 
-## macOS notarisation
+## Store page assets
 
-The current `electron-builder.yml` sets `hardenedRuntime: false` and `identity: null` so a local arm64 build does not need a certificate. That build is not notarised and Gatekeeper will warn. `scripts/install-mac.sh` copies `release/mac-arm64/Nestwright.app` to `~/Applications` and runs `xattr -dr com.apple.quarantine` on it. That is a developer convenience, not a ship path.
+PNG unless noted. Capsules carry no text except the title.
 
-To notarise:
+| Asset | Size |
+| --- | --- |
+| Header capsule | 920×430 |
+| Small capsule | 462×174 |
+| Main capsule | 1232×706 |
+| Vertical capsule | 748×896 |
+| Page background (optional) | 1438×810 |
+| Library capsule | 600×900 |
+| Library header | 920×430 |
+| Library hero | 3840×1240, no text; keep key content in the centred 860×380 safe area |
+| Library logo | 1280 wide and/or 720 tall, transparent PNG |
+| Community icon | 184×184, plus a `.ico` |
 
-1. Enroll in the Apple Developer Program. Create a **Developer ID Application** certificate for the owner.
-2. In `electron-builder.yml`, set `mac.identity` to that certificate's name and `mac.hardenedRuntime` to `true`. Add entitlements Electron needs (`com.apple.security.cs.allow-jit`, `com.apple.security.cs.allow-unsigned-executable-memory`, and `com.apple.security.cs.disable-library-validation` if the Steam overlay must load).
-3. Export an app-specific password for the Apple ID. Provide `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, and `APPLE_TEAM_ID` to electron-builder so it notarises during `npm run dist:mac`.
-4. Or submit by hand after the dmg exists:
+- [ ] **(owner)** Export each capsule and library asset above.
+- [ ] **(owner)** Screenshots: at least 5, 1920×1080 minimum, 16:9. Mark at least four suitable for all ages. Plan 8 or more.
+- [ ] **(owner)** Trailer: `.mp4`, `.mov`, or `.wmv`. H.264 + AAC preferred. Up to 1920×1080, 5,000+ kbps, 30/29.97 or 60/59.94 fps, 16:9, audio 44.1 or 48 kHz stereo. Plan 45–75 seconds, gameplay first, and it has to work muted.
 
-```sh
-xcrun notarytool submit release/Nestwright-0.1.0-arm64.dmg \
-  --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --wait
-xcrun stapler staple release/Nestwright-0.1.0-arm64.dmg
-```
+## Content Survey (owner)
 
-5. Confirm with `spctl -a -vv -t install release/Nestwright-0.1.0-arm64.dmg`.
+This fills the IARC age rating.
 
-## Age rating
+- [ ] **(owner)** Mature content: the game has none of violence, sexual content, drugs, or gambling.
+- [ ] **(owner)** AI-generated content: answer for what actually ships (in-game assets, text, store art). Check Valve's current wording.
+- [ ] **(owner)** User-generated content and online interaction: co-op is LAN-only between two players. Revise when Workshop ships.
+
+## Age rating (owner)
 
 The owner fills the IARC questionnaire in Steamworks. Notes from the current build, not a submitted rating:
 
 - No violence, sexual content, strong language, drugs, or gambling.
-- No chat, no user profiles beyond the Steam account, no location sharing.
-- Players do not interact with strangers inside the game yet. When Workshop ships, the questionnaire's user-generated-content and online-interaction answers have to be revised before release.
-- No in-app purchases in this build. If pricing later includes them, say so in the questionnaire.
+- No chat. No user profiles beyond the Steam account. No location sharing.
+- Players do not interact with strangers in the game yet. When Workshop ships, revise the user-generated-content and online-interaction answers before release.
+- No in-app purchases in this build. If a later price includes them, say so in the questionnaire.
 
 ## Smoke tests
 
@@ -131,3 +206,7 @@ npm run test:e2e
 ```
 
 `npm run test:e2e` builds the app, serves `vite preview`, and runs `tests/e2e` in Chromium with SwiftShader (`--use-angle=swiftshader`, `--enable-unsafe-swiftshader`). The smoke test checks that the app loads without console errors, that drawing a 4×4 room with the wall tool shows a 16 m² label, that the 3D canvas is not a blank frame, and that the autosave in `localStorage` contains the walls. The native save dialog is not driven headless.
+
+Any build can check itself: `Nestwright --smoke=<dir>` opens the Family template in 3D, then writes `smoke.png`, `smoke.json` (renderer backend, WebGL renderer string, GPU feature status, perf sample) and `console.log` into `<dir>` and exits 0 only if the 3D view drew frames. It uses a throwaway data folder inside `<dir>`.
+
+- [ ] Steam Deck: `npm run dist:linux` (and `npm run dist:win`), then `scripts/deck/smoke.sh [--win]` from the Mac. It needs key login to `deck@steamdeck.local`, refuses to run unless the Deck is in desktop mode with no game running, runs the Linux build natively and the Windows build under the newest installed Proton, copies results to `deck-smoke/<timestamp>/`, and deletes everything it put on the Deck.
