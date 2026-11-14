@@ -10,7 +10,31 @@ function hash(n: number): number {
 
 type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
 
-function paint(size: number, draw: (ctx: Ctx, size: number) => void): THREE.Texture {
+/** Lawn albedo. The lit lawn at noon should sit near sRGB (77, 123, 61). */
+export const LAWN_ALBEDO = { r: 76, g: 112, b: 48 } as const
+
+/** Same bytes the lawn splat texture bakes, so the surround seam can match it. */
+export function lawnAlbedoAt(worldX: number, worldZ: number): [number, number, number] {
+  const u = worldX * 0.07
+  const v = worldZ * 0.07
+  const fu = u - Math.floor(u)
+  const fv = v - Math.floor(v)
+  return lawnTexel(fu, fv)
+}
+
+function lawnTexel(u: number, v: number): [number, number, number] {
+  const n = fbm(u * 5, v * 5)
+  const blade = Math.sin((u * 18 + v * 2.2) * Math.PI * 2) * 0.5 + 0.5
+  const mix = n * 0.65 + blade * 0.12
+  return [
+    clampByte(LAWN_ALBEDO.r + mix * 16),
+    clampByte(LAWN_ALBEDO.g + mix * 14),
+    clampByte(LAWN_ALBEDO.b + mix * 10),
+  ]
+}
+
+function paint(size: number, draw: (ctx: Ctx, size: number) => void, color = true): THREE.Texture {
+  const space = color ? THREE.SRGBColorSpace : THREE.NoColorSpace
   let canvas: HTMLCanvasElement | OffscreenCanvas | null = null
   if (typeof document !== 'undefined') {
     const el = document.createElement('canvas')
@@ -30,7 +54,7 @@ function paint(size: number, draw: (ctx: Ctx, size: number) => void): THREE.Text
     const tex = new THREE.DataTexture(data, 1, 1)
     tex.wrapS = THREE.RepeatWrapping
     tex.wrapT = THREE.RepeatWrapping
-    tex.colorSpace = THREE.NoColorSpace
+    tex.colorSpace = space
     tex.needsUpdate = true
     return tex
   }
@@ -38,7 +62,7 @@ function paint(size: number, draw: (ctx: Ctx, size: number) => void): THREE.Text
   const tex = new THREE.CanvasTexture(canvas)
   tex.wrapS = THREE.RepeatWrapping
   tex.wrapT = THREE.RepeatWrapping
-  tex.colorSpace = THREE.NoColorSpace
+  tex.colorSpace = space
   tex.needsUpdate = true
   return tex
 }
@@ -93,14 +117,7 @@ function clampByte(value: number): number {
 function layerTexture(kind: string): THREE.Texture {
   const size = 128
   if (kind === 'lawn') {
-    return paint(size, (ctx) =>
-      field(ctx, size, (u, v) => {
-        const n = fbm(u * 5, v * 5)
-        const blade = Math.sin((u * 18 + v * 2.2) * Math.PI * 2) * 0.5 + 0.5
-        const mix = n * 0.65 + blade * 0.12
-        return [clampByte(72 + mix * 22), clampByte(108 + mix * 18), clampByte(48 + mix * 14)]
-      }),
-    )
+    return paint(size, (ctx) => field(ctx, size, (u, v) => lawnTexel(u, v)))
   }
   if (kind === 'meadow') {
     return paint(size, (ctx) =>
@@ -269,7 +286,8 @@ export function createSplatMaterial(): SplatMaterial {
            + texture2D(layer5, tuv * 1.15).rgb * sw1.g
            + texture2D(layer6, tuv * 0.9).rgb * sw1.b
            + texture2D(layer7, tuv * 1.18).rgb * sw1.a;
-         diffuseColor.rgb *= pow(max(col / wsum, vec3(0.0)), vec3(2.2));`,
+         // Colour maps are SRGBColorSpace, so the GPU already decoded them.
+         diffuseColor.rgb *= max(col / wsum, vec3(0.0));`,
       )
   }
   mat.userData.syncSplat = (terrain: Terrain) => {

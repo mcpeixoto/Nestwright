@@ -2,23 +2,24 @@ import * as THREE from 'three'
 import { Sky } from 'three/examples/jsm/objects/Sky.js'
 import { getEntry } from '../../catalog/registry'
 import type { Environment, Project } from '../../model/types'
-import { sunDirection, sunLook } from '../../model/sunLook'
+import { sunDirection, sunLook, TWILIGHT_RAD } from '../../model/sunLook'
+import { exteriorWindowSpills } from '../../model/windowSpill'
 import { shadowMapSize, useSettings } from '../../settings'
 import type { SceneLayer, SceneLayerContext, SceneViewState } from '../layers'
 import { photoExposure } from '../../ui/photoSession'
 import { clockTime } from './clock'
 import { createClouds } from './clouds'
+import { gradeSkyMaterial, type SkyGrade } from './gradeSky'
 import { createPrecip, driftPrecip } from './precip'
+import { createSkyParams, writeSkyParams, type SkyParams } from './skyParams'
 import { createStars } from './stars'
 import { attachWeather, setWeatherMix } from './weather'
 
-const ENV_INTENSITY = 0.48
-const SUNSET = (-6 * Math.PI) / 180
+/** PMREM fill. High values let a cyan sky tint red roofs lilac. */
+const ENV_INTENSITY = 0.7
+/** Added before tone mapping so the disc clips to a warm white, not a green blob. */
+const SUN_DISC: readonly [number, number, number] = [14, 8.2, 2.4]
 
-function smoothstep(edge0: number, edge1: number, value: number): number {
-  const t = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0 || 1)))
-  return t * t * (3 - 2 * t)
-}
 const SUN_SCALE = 450000
 
 const fallbackEnv: Environment = {
@@ -31,26 +32,29 @@ const fallbackEnv: Environment = {
   autoLights: true,
 }
 
-function paintSky(sky: Sky, unit: THREE.Vector3, env: Environment, showSun: boolean): void {
+function paintSky(sky: Sky, unit: THREE.Vector3, showSun: boolean, grade: SkyGrade, light: boolean, params: SkyParams): void {
   const mat = sky.material as THREE.ShaderMaterial
   mat.fog = false
   const uniforms = mat.uniforms
-  const clear = env.weather === 'clear'
   const set = (key: string, value: number) => {
     const slot = uniforms[key]
     if (slot) slot.value = value
   }
-  const cover = env.weather === 'fog' ? 0.9 : env.weather === 'clear' ? env.cloudiness : 0.45 + env.cloudiness * 0.45
-  set('turbidity', clear ? 2 + env.cloudiness * 3 : env.weather === 'fog' ? 10 : 6 + env.cloudiness * 4)
-  set('rayleigh', clear ? 1.6 - env.cloudiness * 0.4 : env.weather === 'fog' ? 0.35 : 0.8)
-  set('mieCoefficient', clear ? 0.003 : 0.008)
-  set('mieDirectionalG', 0.8)
-  set('cloudCoverage', cover)
-  set('cloudDensity', clear ? 0.3 : 0.55)
-  set('cloudScale', 0.00016)
+  set('turbidity', params.turbidity)
+  set('rayleigh', params.rayleigh)
+  set('mieCoefficient', params.mieCoefficient)
+  set('mieDirectionalG', params.mieDirectionalG)
+  set('cloudCoverage', 0)
+  set('cloudDensity', 0)
   set('showSunDisc', showSun ? 1 : 0)
   const sun = uniforms.sunPosition?.value
   if (sun instanceof THREE.Vector3) sun.copy(unit).multiplyScalar(SUN_SCALE)
+  const zenith = light ? params.zenithLight : params.zenithScene
+  const horizon = light ? params.horizonLight : params.horizonScene
+  grade.zenith.setRGB(zenith[0], zenith[1], zenith[2])
+  grade.horizon.setRGB(horizon[0], horizon[1], horizon[2])
+  if (showSun) grade.sunDisc.setRGB(SUN_DISC[0], SUN_DISC[1], SUN_DISC[2])
+  else grade.sunDisc.setRGB(0, 0, 0)
 }
 
 function boundsOf(project: Project, state: SceneViewState): THREE.Box3 {
@@ -75,8 +79,8 @@ function boundsOf(project: Project, state: SceneViewState): THREE.Box3 {
 export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   const scene = ctx.scene
   scene.environmentIntensity = ENV_INTENSITY
-  if (ctx.camera.far > 1400) {
-    ctx.camera.far = 1200
+  if (ctx.camera.far < 1600) {
+    ctx.camera.far = 1600
     ctx.camera.updateProjectionMatrix()
   }
   if (ctx.renderer) {
@@ -114,7 +118,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   scene.add(moon)
   scene.add(moon.target)
 
-  const hemi = new THREE.HemisphereLight('#c5d7ea', '#8a7d6a', 0.4)
+  const hemi = new THREE.HemisphereLight('#b7cbe4', '#4a5538', 0.5)
   scene.add(hemi)
 
   const clouds = createClouds()
@@ -140,9 +144,35 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   let envTimer = 0
   let pendingKey = ''
   const background = new THREE.Color()
+  const skyGrade: SkyGrade = { zenith: new THREE.Color(), horizon: new THREE.Color(), sunDisc: new THREE.Color() }
+  const envGrade: SkyGrade = { zenith: new THREE.Color(), horizon: new THREE.Color(), sunDisc: new THREE.Color() }
+  gradeSkyMaterial(sky, skyGrade)
+  gradeSkyMaterial(envSky, envGrade)
+  const skyState = createSkyParams()
+  let skyKey = ''
+  const fog = new THREE.Fog(0x000000, skyState.fogNear, skyState.fogFar)
+  scene.fog = fog
+  scene.background = background
+  const skyMat = sky.material as THREE.ShaderMaterial
+  skyMat.depthWrite = false
+  sky.renderOrder = -2
 
-  paintSky(sky, unit, fallbackEnv, true)
-  paintSky(envSky, unit, fallbackEnv, false)
+  const applySky = (alt: number, weather: string, cloudiness: number, exposure: number) => {
+    const nextKey = `${alt.toFixed(3)}|${weather}|${cloudiness.toFixed(2)}|${exposure.toFixed(3)}`
+    if (nextKey === skyKey) return
+    skyKey = nextKey
+    writeSkyParams(alt, weather, cloudiness, exposure, skyState)
+    paintSky(sky, unit, skyState.sunDisc > 0, skyGrade, false, skyState)
+    paintSky(envSky, unit, false, envGrade, true, skyState)
+    fog.near = skyState.fogNear
+    fog.far = skyState.fogFar
+    fog.color.setRGB(skyState.horizonScene[0], skyState.horizonScene[1], skyState.horizonScene[2])
+    background.copy(fog.color)
+    hemi.color.set(skyState.hemiSky)
+    hemi.groundColor.set(skyState.hemiGround)
+    hemi.intensity = skyState.hemiIntensity
+  }
+  applySky(0.7, 'clear', 0.12, 0.5)
 
   const refreshEnv = (): boolean => {
     if (!pmrem || !ctx.renderer || ctx.renderer.domElement.clientWidth < 2) return false
@@ -184,7 +214,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     if (!source.environment.autoLights || !night) return
     for (const level of source.levels) {
       for (const item of level.items) {
-        if (item.lightOn !== false) continue
+        if (item.lightOn === false) continue
         const entry = getEntry(item.catalogId)
         if (!entry?.light) continue
         const light = new THREE.PointLight(entry.light.color, entry.light.intensity * 22, Math.max(6, entry.light.distance), 2)
@@ -195,6 +225,14 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
           item.position.y,
         )
         autoLights.add(light)
+      }
+    }
+    for (const level of source.levels) {
+      for (const spill of exteriorWindowSpills(level)) {
+        const lamp = new THREE.PointLight('#ffb15a', 14, 8.5, 2)
+        lamp.position.set(spill.x, spill.y, spill.z)
+        lamp.castShadow = false
+        autoLights.add(lamp)
       }
     }
   }
@@ -222,40 +260,28 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     const look = sunLook(alt)
     sun.color.setRGB(look.r, look.g, look.b)
     sun.intensity = look.intensity
-    moon.color.set('#c6d4ff')
-    moon.intensity = Math.max(look.moon, alt < SUNSET ? 0.55 : 0)
-    const night = 1 - smoothstep(-0.22, 0.12, alt)
-    const dark = alt < SUNSET
-    hemi.color.set(dark ? '#1a2744' : '#c5d7ea')
-    hemi.groundColor.set(dark ? '#161410' : '#8a7d6a')
-    hemi.intensity = dark ? 0.28 : 0.4
-    background.setRGB(
-      0.42 + (0.015 - 0.42) * night,
-      0.58 + (0.03 - 0.58) * night,
-      0.74 + (0.1 - 0.74) * night,
-    )
-    scene.background = background
-    const skyMat = sky.material as THREE.ShaderMaterial
-    skyMat.transparent = true
-    skyMat.opacity = 1 - night * 0.9
-    skyMat.depthWrite = false
-    sky.renderOrder = -2
+    moon.color.set('#c5d4f2')
+    moon.intensity = alt < TWILIGHT_RAD ? Math.max(look.moon, 0.9) : alt < 0 ? look.moon * 0.55 : 0
+    // A sun below the horizon still owns the shadow map and blacks out the ground.
+    sun.castShadow = alt > 0.02
+    const dark = alt < 0.04
+    const exposure = look.exposure * photoExposure()
+    const exp = Number.isFinite(exposure) ? exposure : 0.5
     if (ctx.renderer) {
-      const exposure = look.exposure * photoExposure()
-      ctx.renderer.toneMappingExposure = Number.isFinite(exposure) ? exposure : 0.5
+      ctx.renderer.toneMappingExposure = exp
       ctx.renderer.setClearColor(background)
     }
-    paintSky(sky, unit, env, look.intensity > 0.05 && night < 0.85)
-    paintSky(envSky, unit, env, false)
-
-    stars.points.renderOrder = -1
-    stars.setNight(night * (1 - env.cloudiness * 0.65))
     const cloudiness = THREE.MathUtils.clamp(env.cloudiness ?? 0, 0, 1)
     const weather = env.weather ?? 'clear'
+    applySky(alt, weather, cloudiness, exp)
+
+    stars.points.renderOrder = -1
+    stars.setNight(skyState.star)
     const density =
       weather === 'clear' ? 0.15 + cloudiness * 0.45 : weather === 'fog' ? 0.15 : 0.45 + cloudiness * 0.5
     const cover = weather === 'clear' ? 0.62 - cloudiness * 0.2 : 0.42 - cloudiness * 0.12
-    clouds.set(density, cover, dark ? '#8d97a3' : '#f3f5f7')
+    const cloudColor = skyState.night > 0.55 ? '#7d8794' : skyState.sunset > 0.45 ? '#f0c4a4' : '#f4f6f8'
+    clouds.set(density, cover, cloudColor)
     const nextQuality = useSettings.getState().graphicsQuality
     precip.set(weather, weather === 'clear' ? cloudiness : 0.7, nextQuality)
     setWeatherMix(weather === 'rain' ? 0.82 : weather === 'fog' ? 0.2 : 0, weather === 'snow' ? 0.4 + cloudiness * 0.6 : 0)
@@ -271,7 +297,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     const box = boundsOf(project, view)
     const center = box.getCenter(new THREE.Vector3())
     const size = box.getSize(new THREE.Vector3())
-    const span = Math.max(size.x, size.z, 8) * 0.7
+    const span = Math.max(size.x, size.z, (project.terrain?.width ?? 0) * 0.5, 150)
     const cam = sun.shadow.camera as THREE.OrthographicCamera
     cam.left = -span
     cam.right = span
@@ -283,11 +309,6 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     sun.position.copy(center).addScaledVector(unit, span + 12)
     moon.target.position.copy(center)
     moon.position.copy(center).addScaledVector(unit, -(span + 14))
-
-    const fogColor = dark ? '#07101c' : weather === 'fog' ? '#b7c3ce' : weather === 'snow' ? '#d5dde6' : '#7f9aaf'
-    const fogNear = weather === 'fog' ? 36 : 280
-    const fogFar = weather === 'fog' ? 260 : dark ? 980 : 1500
-    scene.fog = new THREE.Fog(fogColor, fogNear, fogFar)
 
     const glow = dark && project.environment.autoLights !== false
     paintWindows(glow)

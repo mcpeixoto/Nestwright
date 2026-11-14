@@ -1,5 +1,5 @@
+import '../atmosphere'
 import './ground'
-import './atmosphere'
 import './structure'
 import './gizmo'
 import './lampShadows'

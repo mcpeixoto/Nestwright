@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { getPlatform } from '../../platform'
 import { TEMPLATES, templateById } from '../../templates'
 import { planThumb } from '../../templates/thumbnail'
+import { cachedThumb, requestLazyThumb, subscribeLazyThumbs, thumbRevision } from './lazyThumbs'
 import { getController } from '../../view3d/SceneController'
 import { Viewport3D } from '../../view3d/Viewport3D'
 import { openProject } from '../actions'
@@ -44,18 +45,34 @@ export function StartScreen() {
   const tr = useTranslate()
   const electron = getPlatform().isElectron
   const join = coopJoinAvailable()
-  const thumbs = useMemo(() => {
-    if (screen !== 'gallery') return {}
-    const next: Record<string, string> = {}
-    for (const item of TEMPLATES) {
-      try {
-        next[item.id] = planThumb(item.create())
-      } catch {
-        next[item.id] = ''
+  const thumbRev = useSyncExternalStore(subscribeLazyThumbs, thumbRevision, thumbRevision)
+  useEffect(() => {
+    if (screen === 'gallery') {
+      for (const item of TEMPLATES) {
+        requestLazyThumb(item.id, () => {
+          try {
+            return planThumb(item.create())
+          } catch {
+            return ''
+          }
+        })
       }
+      return
     }
-    return next
-  }, [screen])
+    for (const item of recent) {
+      if (item.thumb || !item.data) continue
+      requestLazyThumb(`recent:${item.id}`, () => {
+        const entry = loadRecent().find((row) => row.id === item.id)
+        const project = entry ? projectFromRecent(entry) : null
+        if (!project) return ''
+        try {
+          return planThumb(project)
+        } catch {
+          return ''
+        }
+      })
+    }
+  }, [screen, recent])
 
   const openRecent = (id: string) => {
     const entry = loadRecent().find((item) => item.id === id)
@@ -76,8 +93,7 @@ export function StartScreen() {
     }
     project.name = tr(info.nameKey)
     beginProject(project)
-    const cached = thumbs[id]
-    const remember = () => rememberProject(project, cached || planThumb(project))
+    const remember = () => rememberProject(project, cachedThumb(id) || planThumb(project))
     if (typeof requestIdleCallback === 'function') requestIdleCallback(remember)
     else setTimeout(remember, 1)
   }
@@ -102,7 +118,11 @@ export function StartScreen() {
             <div className="gallery-grid">
               {TEMPLATES.map((item) => (
                 <button type="button" key={item.id} className="gallery-card" onClick={() => startTemplate(item.id)}>
-                  {thumbs[item.id] ? <img src={thumbs[item.id]} alt="" /> : <span className="thumb-fallback">{tr(item.nameKey).slice(0, 1)}</span>}
+                  {thumbRev >= 0 && cachedThumb(item.id) ? (
+                    <img src={cachedThumb(item.id)} alt="" />
+                  ) : (
+                    <span className="thumb-fallback" />
+                  )}
                   <strong>{tr(item.nameKey)}</strong>
                   <span>{tr(item.blurbKey)}</span>
                 </button>
@@ -140,10 +160,11 @@ export function StartScreen() {
               <ul className="recent-list">
                 {recent.map((item) => {
                   const when = relativeTime(item.updatedAt)
+                  const recentThumb = item.thumb || cachedThumb(`recent:${item.id}`)
                   return (
                   <li key={item.id}>
                     <button type="button" onClick={() => openRecent(item.id)} disabled={!item.data}>
-                      {item.thumb ? <img src={item.thumb} alt="" /> : <span className="thumb-fallback">{item.name.slice(0, 1)}</span>}
+                      {thumbRev >= 0 && recentThumb ? <img src={recentThumb} alt="" /> : <span className="thumb-fallback" />}
                       <span className="recent-meta">
                         <span>{item.name}</span>
                         <span className="hint">{tr(when.key, when.n != null ? { n: when.n } : undefined)}</span>

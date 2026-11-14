@@ -24,6 +24,8 @@ declare global {
     __nestwright?: {
       useStore: typeof import('../store').useStore
       useSettings: typeof import('../settings').useSettings
+      /** Live 3D controller, for smoke tests and pixel checks. */
+      getController?: typeof import('../view3d/SceneController').getController
     }
   }
 }

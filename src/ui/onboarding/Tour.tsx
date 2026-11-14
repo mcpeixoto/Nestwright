@@ -57,6 +57,23 @@ function markDone(): void {
   publish()
 }
 
+export function isTourOpen(): boolean {
+  if (dismissed()) return false
+  return step >= 0 && step < TOUR_STEPS.length
+}
+
+/** Capture-phase Escape, so a tool's bubble handler does not also cancel. */
+export function bindTourEscape(target: Pick<Window, 'addEventListener' | 'removeEventListener'> = window): () => void {
+  const onKey = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape' || !isTourOpen()) return
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    markDone()
+  }
+  target.addEventListener('keydown', onKey, true)
+  return () => target.removeEventListener('keydown', onKey, true)
+}
+
 export function replayTour(): void {
   memoryDone = false
   try {
@@ -115,6 +132,8 @@ export function Tour() {
       publish()
     })
   }, [snap.run])
+
+  useEffect(() => bindTourEscape(), [])
 
   if (dismissed()) return null
   const current = TOUR_STEPS[snap.step]

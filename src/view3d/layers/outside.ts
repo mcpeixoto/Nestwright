@@ -14,6 +14,7 @@ import { plantPointer } from '../../tools/plant-brush'
 import { terrainPointer } from '../../tools/terrain-sculpt'
 import { waterPointer, waterPreview } from '../../tools/water'
 import { replaceSceneLayer, type SceneLayer, type SceneLayerContext, type SceneViewState } from '../layers'
+import { distantGroundMode } from './ground'
 import { OutsideFeatures } from '../terrain/features'
 import { PlantField } from '../terrain/plants'
 import { createSurround, type Surround } from '../terrain/surround'
@@ -201,11 +202,12 @@ function createOutsideGround(ctx: SceneLayerContext): SceneLayer {
   const applyProject = (current: Project, state: SceneViewState) => {
     const terrain = current.terrain
     if (!terrain) return
-    const enabled = current.kind !== 'apartment' && terrain.enabled !== false && terrain.resolution >= 1
-    flat.mesh.visible = !enabled
+    const mode = distantGroundMode(current.kind)
+    const enabled = mode === 'meadow' && terrain.enabled !== false && terrain.resolution >= 1
+    flat.mesh.visible = mode === 'meadow' && !enabled
     surround.group.visible = true
     try {
-      surround.sync(terrain)
+      surround.sync(terrain, mode)
     } catch (err) {
       console.error(err)
     }

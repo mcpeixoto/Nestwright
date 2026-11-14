@@ -106,7 +106,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
 export function shadowMapSize(quality: GraphicsQuality): number {
   if (quality === 'low') return 512
   if (quality === 'medium') return 1024
-  if (quality === 'ultra') return 4096
   return 2048
 }
 

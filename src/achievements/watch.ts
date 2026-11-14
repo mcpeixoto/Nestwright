@@ -1,10 +1,10 @@
 import { fill, translate } from '../i18n'
 import { getPlatform } from '../platform'
 import { useSettings } from '../settings'
-import { subscribeLocalApplies, useStore, type StoreState } from '../store'
+import { subscribeBeforeLocalApply, subscribeLocalApplies, useStore, type StoreState } from '../store'
 import { ACHIEVEMENTS, changedPaintSurfaces, type AchievementContext } from './evaluate'
 import { liveFeatures } from './features'
-import { loadProgress, mergeProgress, saveProgress, type AchievementProgress } from './progress'
+import { emptyProgress, loadProgress, progressForEdit, saveProgress, type AchievementProgress } from './progress'
 import { onCatMode, onCoopSession, onPhotoExported, noteCoopSession } from './signals'
 import { showToast } from './toast'
 
@@ -40,15 +40,20 @@ function publish(next: AchievementProgress): void {
   for (const listener of listeners) listener()
 }
 
-function contextFor(state: StoreState, painted: readonly string[]): AchievementContext {
+function contextFor(
+  project: StoreState['project'],
+  state: StoreState,
+  painted: readonly string[],
+  flags?: { photoExported?: boolean; catMode?: boolean; coopSession?: boolean },
+): AchievementContext {
   return {
-    project: state.project,
+    project,
     view: state.view,
-    features: liveFeatures(state.project),
+    features: liveFeatures(project),
     paintedSurfaces: painted,
-    photoExported,
-    catMode,
-    coopSession,
+    photoExported: flags?.photoExported ?? photoExported,
+    catMode: flags?.catMode ?? catMode,
+    coopSession: flags?.coopSession ?? coopSession,
     walkedAtNight: false,
   }
 }
@@ -67,15 +72,26 @@ function achievementName(id: string): string {
   return ACHIEVEMENTS.find((item) => item.id === id)?.name ?? id
 }
 
+export function resetAchievementWatchForTests(): void {
+  for (const cleanup of cleanups) cleanup()
+  cleanups.length = 0
+  installed = false
+  progress = emptyProgress()
+  photoExported = false
+  catMode = false
+  coopSession = false
+}
+
 export function installAchievementWatch(): void {
   if (installed) return
   installed = true
   progress = loadProgress(browserStorage())
   let announced = false
-  let previous = useStore.getState().project
+  let baseline = useStore.getState().project
+  let editing = false
 
-  const sync = (painted: readonly string[]) => {
-    const result = mergeProgress(progress, contextFor(useStore.getState(), painted))
+  const sync = (before: AchievementContext, after: AchievementContext) => {
+    const result = progressForEdit(progress, before, after)
     publish(result.next)
     for (const id of result.fresh) {
       void forwardSteam(id)
@@ -89,26 +105,42 @@ export function installAchievementWatch(): void {
 
   announced = true
   cleanups.push(
+    useStore.subscribe((state, previous) => {
+      if (state.project === previous.project || editing) return
+      baseline = state.project
+    }),
+    subscribeBeforeLocalApply(() => {
+      editing = true
+      baseline = useStore.getState().project
+    }),
     subscribeLocalApplies(() => {
       const state = useStore.getState()
+      const before = baseline
       const painted =
-        state.project !== previous && state.past[state.past.length - 1]?.label === 'Paint'
-          ? changedPaintSurfaces(previous, state.project)
+        state.project !== before && state.past[state.past.length - 1]?.label === 'Paint'
+          ? changedPaintSurfaces(before, state.project)
           : []
-      previous = state.project
-      sync(painted)
+      try {
+        sync(contextFor(before, state, []), contextFor(state.project, state, painted))
+      } finally {
+        baseline = state.project
+        editing = false
+      }
     }),
     onPhotoExported(() => {
+      const state = useStore.getState()
+      sync(contextFor(baseline, state, [], { photoExported: false }), contextFor(baseline, state, [], { photoExported: true }))
       photoExported = true
-      sync([])
     }),
     onCatMode(() => {
+      const state = useStore.getState()
+      sync(contextFor(baseline, state, [], { catMode: false }), contextFor(baseline, state, [], { catMode: true }))
       catMode = true
-      sync([])
     }),
     onCoopSession(() => {
+      const state = useStore.getState()
+      sync(contextFor(baseline, state, [], { coopSession: false }), contextFor(baseline, state, [], { coopSession: true }))
       coopSession = true
-      sync([])
     }),
   )
   if (typeof window !== 'undefined') {

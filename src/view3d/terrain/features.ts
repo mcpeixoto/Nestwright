@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { getMaterial } from '../../materials/materialCache'
-import { dist } from '../../model/geometry'
+import { srgbByteToLinear } from '../colorLinear'
+import { dist, normalize, perp, polygonArea, sub } from '../../model/geometry'
 import { ivyLeaves, sampleHeight, waterDepth } from '../../model/terrain'
 import type { Project, Terrain, Vec2 } from '../../model/types'
 import type { LevelDisplay } from '../../store'
@@ -22,16 +23,20 @@ function clearGroup(group: THREE.Group): void {
   }
 }
 
-function waterMaterial(time: { value: number }): THREE.MeshStandardMaterial {
-  const mat = new THREE.MeshStandardMaterial({
-    color: '#3a8ea8',
-    roughness: 0.12,
-    metalness: 0.08,
-    transparent: true,
-    opacity: 0.72,
-    depthWrite: false,
-  })
-  mat.customProgramCacheKey = () => 'nestwright-water'
+/** Clear turquoise. Normals stay geometric: a tilted normal reads as a white shaft on the lawn. */
+const POOL_WATER = '#2f8f9a'
+const POOL_FLOOR = '#1a5c66'
+const COPING_STONE = '#e4ddd2'
+
+function bindRipple(
+  mat: THREE.Material,
+  time: { value: number },
+  cacheKey: string,
+  slot: 'normal' | 'color',
+  fragmentExtra: string,
+): void {
+  const token = slot === 'normal' ? '#include <normal_fragment_maps>' : '#include <color_fragment>'
+  mat.customProgramCacheKey = () => cacheKey
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = time
     shader.vertexShader = shader.vertexShader
@@ -39,12 +44,93 @@ function waterMaterial(time: { value: number }): THREE.MeshStandardMaterial {
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvW = worldPosition.xyz;')
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vW;\nuniform float uTime;')
-      .replace(
-        '#include <normal_fragment_maps>',
-        `#include <normal_fragment_maps>
-         normal = normalize(normal + vec3(sin(vW.x * 1.7 + uTime * 1.3) * 0.16, 0.0, cos(vW.z * 1.5 + uTime) * 0.16));`,
-      )
+      .replace(token, `${token}\n${fragmentExtra}`)
   }
+}
+
+function waterMaterial(time: { value: number }): THREE.MeshStandardMaterial {
+  const mat = new THREE.MeshStandardMaterial({
+    color: POOL_WATER,
+    roughness: 0.64,
+    metalness: 0,
+    transparent: true,
+    opacity: 0.8,
+    depthWrite: true,
+    envMapIntensity: 0.08,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+    emissive: new THREE.Color(0x000000),
+    emissiveIntensity: 0,
+  })
+  bindRipple(
+    mat,
+    time,
+    'nestwright-water',
+    'color',
+    `diffuseColor.rgb *= 0.95 + 0.05 * sin(vW.x * 7.4 + uTime * 1.2) * sin(vW.z * 6.1 - uTime);`,
+  )
+  return mat
+}
+
+function copingMaterial(): THREE.MeshStandardMaterial {
+  const mat = new THREE.MeshStandardMaterial({
+    color: COPING_STONE,
+    roughness: 0.92,
+    metalness: 0,
+    envMapIntensity: 0,
+  })
+  mat.userData.own = true
+  return mat
+}
+
+/** Move each vertex of a convex ring inward so the water sits inside the coping. */
+function insetConvex(polygon: readonly Vec2[], amount: number): Vec2[] {
+  const n = polygon.length
+  if (n < 3 || !(amount > 0)) return polygon.map((point) => ({ x: point.x, y: point.y }))
+  const ccw = polygonArea(polygon) >= 0
+  const out: Vec2[] = []
+  for (let i = 0; i < n; i++) {
+    const prev = polygon[(i + n - 1) % n]!
+    const curr = polygon[i]!
+    const next = polygon[(i + 1) % n]!
+    const e0 = normalize(sub(curr, prev))
+    const e1 = normalize(sub(next, curr))
+    let n0 = perp(e0)
+    let n1 = perp(e1)
+    if (!ccw) {
+      n0 = { x: -n0.x, y: -n0.y }
+      n1 = { x: -n1.x, y: -n1.y }
+    }
+    let bx = n0.x + n1.x
+    let by = n0.y + n1.y
+    const len = Math.hypot(bx, by) || 1
+    bx /= len
+    by /= len
+    const denom = bx * n0.x + by * n0.y
+    const push = Math.abs(denom) > 0.25 ? amount / denom : amount
+    out.push({ x: curr.x + bx * push, y: curr.y + by * push })
+  }
+  return out
+}
+
+function floorMaterial(time: { value: number }): THREE.MeshStandardMaterial {
+  const mat = new THREE.MeshStandardMaterial({
+    color: POOL_FLOOR,
+    roughness: 0.74,
+    metalness: 0,
+    envMapIntensity: 0.12,
+    emissive: new THREE.Color(0x000000),
+    emissiveIntensity: 0,
+  })
+  bindRipple(
+    mat,
+    time,
+    'nestwright-pool-floor',
+    'color',
+    `float caustic = 0.84 + 0.16 * sin(vW.x * 6.0 + uTime * 1.4) * sin(vW.z * 5.2 - uTime);
+     diffuseColor.rgb *= caustic;`,
+  )
   return mat
 }
 
@@ -123,9 +209,9 @@ function segmentBox(a: Vec2, b: Vec2, y: number, height: number, thickness: numb
   return mesh
 }
 
-function buildWater(terrain: Terrain, material: THREE.Material): THREE.Group {
+function buildWater(terrain: Terrain, material: THREE.Material, floorMat: THREE.Material): THREE.Group {
   const group = new THREE.Group()
-  const stone = getMaterial({ id: 'stone-slate' })
+  let coping: THREE.Material | null = null
   const plaster = getMaterial({ id: 'plaster-warm' })
   for (const body of terrain.water) {
     if (!body || body.polygon.length < 2) continue
@@ -135,22 +221,42 @@ function buildWater(terrain: Terrain, material: THREE.Material): THREE.Group {
     holder.userData.entityId = body.id
     holder.userData.kind = 'water'
     if (body.kind === 'stream') {
-      const mesh = ribbonMesh(body.polygon, level, 0.7, material)
-      if (mesh) holder.add(mesh)
+      const mesh = ribbonMesh(body.polygon, level + 0.02, 0.7, material)
+      if (mesh) {
+        mesh.castShadow = false
+        holder.add(mesh)
+      }
     } else {
-      const mesh = surfaceMesh(body.polygon, level, material)
-      if (mesh) holder.add(mesh)
+      const skin = body.kind === 'pool' ? insetConvex(body.polygon, 0.06) : body.polygon
+      const mesh = surfaceMesh(skin, level + 0.03, material)
+      if (mesh) {
+        mesh.castShadow = false
+        holder.add(mesh)
+      }
     }
     if (body.kind === 'pool') {
       const floor = level - depth
+      const bed = surfaceMesh(insetConvex(body.polygon, 0.08), floor + 0.04, floorMat)
+      if (bed) {
+        bed.renderOrder = 1
+        bed.castShadow = false
+        holder.add(bed)
+      }
       for (let i = 0; i < body.polygon.length; i++) {
         const a = body.polygon[i]
         const b = body.polygon[(i + 1) % body.polygon.length]
         if (!a || !b) continue
+        if (!coping) coping = copingMaterial()
         const wall = segmentBox(a, b, floor, Math.max(0.2, depth), 0.1, plaster)
-        const coping = segmentBox(a, b, level, 0.1, 0.32, stone)
-        if (wall) holder.add(wall)
-        if (coping) holder.add(coping)
+        const lip = segmentBox(a, b, level, 0.12, 0.34, coping)
+        if (wall) {
+          wall.castShadow = false
+          holder.add(wall)
+        }
+        if (lip) {
+          lip.castShadow = false
+          holder.add(lip)
+        }
       }
     }
     holder.traverse((obj) => {
@@ -185,9 +291,9 @@ function pushBox(buf: BoxBuf, cx: number, cy: number, cz: number, sx: number, sy
     rot(hx, hy, hz),
     rot(-hx, hy, hz),
   ]
-  const r = ((color >> 16) & 255) / 255
-  const g = ((color >> 8) & 255) / 255
-  const b = (color & 255) / 255
+  const r = srgbByteToLinear((color >> 16) & 255)
+  const g = srgbByteToLinear((color >> 8) & 255)
+  const b = srgbByteToLinear(color & 255)
   const faces = [
     [3, 2, 6, 7],
     [0, 4, 5, 1],
@@ -347,7 +453,10 @@ function leafGeometry(): THREE.BufferGeometry {
     'position',
     new THREE.Float32BufferAttribute([0, 0.02, 0, 0.075, 0.08, 0, 0, 0.17, 0, -0.075, 0.08, 0], 3),
   )
-  geo.setAttribute('color', new THREE.Float32BufferAttribute([0.25, 0.45, 0.22, 0.4, 0.62, 0.28, 0.18, 0.38, 0.16, 0.32, 0.55, 0.24], 3))
+  const leaf = [0.25, 0.45, 0.22, 0.4, 0.62, 0.28, 0.18, 0.38, 0.16, 0.32, 0.55, 0.24].map((channel) =>
+    srgbByteToLinear(Math.round(channel * 255)),
+  )
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(leaf, 3))
   geo.setIndex([0, 1, 2, 0, 2, 3])
   geo.computeVertexNormals()
   return geo
@@ -372,7 +481,15 @@ function buildIvy(project: Project, display: LevelDisplay, activeId: string): TH
   }
   if (leaves.length === 0) return group
   const geo = leafGeometry()
-  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, side: THREE.DoubleSide })
+  const mat = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.88,
+    metalness: 0,
+    envMapIntensity: 0.35,
+    emissive: new THREE.Color(0x000000),
+    emissiveIntensity: 0,
+    side: THREE.DoubleSide,
+  })
   mat.userData.own = true
   const mesh = new THREE.InstancedMesh(geo, mat, leaves.length)
   mesh.castShadow = false
@@ -396,6 +513,7 @@ function buildIvy(project: Project, display: LevelDisplay, activeId: string): TH
 export class OutsideFeatures {
   readonly group = new THREE.Group()
   private waterMat: THREE.MeshStandardMaterial
+  private floorMat: THREE.MeshStandardMaterial
   private time = { value: 0 }
   private waterRef: Terrain['water'] | null = null
   private fenceRef: Terrain['fences'] | null = null
@@ -406,6 +524,7 @@ export class OutsideFeatures {
   constructor() {
     this.group.name = 'outside-features'
     this.waterMat = waterMaterial(this.time)
+    this.floorMat = floorMaterial(this.time)
   }
 
   sync(project: Project, display: LevelDisplay, activeId: string): void {
@@ -418,7 +537,7 @@ export class OutsideFeatures {
         this.group.remove(previous)
         clearGroup(previous as THREE.Group)
       }
-      const water = buildWater(terrain, this.waterMat)
+      const water = buildWater(terrain, this.waterMat, this.floorMat)
       water.name = 'water'
       this.group.add(water)
     }
@@ -467,6 +586,7 @@ export class OutsideFeatures {
   dispose(): void {
     clearGroup(this.group)
     this.waterMat.dispose()
+    this.floorMat.dispose()
   }
 }
 

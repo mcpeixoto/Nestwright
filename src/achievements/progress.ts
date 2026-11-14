@@ -78,6 +78,38 @@ export function progressForCause(
   return mergeProgress(prev, ctx)
 }
 
+/**
+ * Unlock only what this edit made newly true. A template load already satisfies
+ * "has rooms"; the next rename must not collect that achievement.
+ */
+export function progressForEdit(
+  prev: AchievementProgress,
+  before: AchievementContext,
+  after: AchievementContext,
+): { next: AchievementProgress; fresh: string[] } {
+  const beforeCtx: AchievementContext = {
+    ...before,
+    paintedSurfaces: prev.painted,
+    photoExported: prev.photoExported || before.photoExported,
+    catMode: prev.catMode || before.catMode,
+    coopSession: prev.coopSession || before.coopSession,
+    walkedAtNight: prev.walkedAtNight || before.walkedAtNight,
+  }
+  let beforeEarned: string[]
+  try {
+    beforeEarned = earnedNow(beforeCtx)
+  } catch {
+    beforeEarned = []
+  }
+  const merged = mergeProgress(prev, after)
+  const known = new Set(beforeEarned)
+  const fresh = merged.fresh.filter((id) => !known.has(id))
+  return {
+    fresh,
+    next: { ...merged.next, unlocked: unique([...prev.unlocked, ...fresh]) },
+  }
+}
+
 export function mergeProgress(
   prev: AchievementProgress,
   ctx: AchievementContext,

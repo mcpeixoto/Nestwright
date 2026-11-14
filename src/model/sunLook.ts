@@ -1,4 +1,17 @@
-import { sunVector } from './sun'
+import { solarHour, sunVector } from './sun'
+
+/** End of civil twilight. The sun is this far below the horizon before full night. */
+export const TWILIGHT_RAD = (-6 * Math.PI) / 180
+
+export type SunPhase = 'day' | 'twilight' | 'night'
+
+/** Day above the horizon, twilight down to −6°, night after that. */
+export function sunPhase(altitude: number): SunPhase {
+  const alt = Number.isFinite(altitude) ? altitude : 0
+  if (alt < TWILIGHT_RAD) return 'night'
+  if (alt < 0) return 'twilight'
+  return 'day'
+}
 
 export interface SunLook {
   r: number
@@ -32,26 +45,33 @@ function smooth(edge0: number, edge1: number, value: number): number {
  */
 export function sunLook(altitude: number): SunLook {
   const alt = Number.isFinite(altitude) ? altitude : 0.4
-  const daylight = smooth(-0.1, 0.28, alt)
+  // Daylight stays partly up through civil twilight so blue hour is not pitch black.
+  const daylight = smooth(TWILIGHT_RAD - 0.08, 0.32, alt)
   const warmth = 1 - smooth(0, 0.5, Math.max(0, alt))
-  const above = smooth(-0.04, 0.14, alt)
-  const intensity = (0.08 + smooth(0, 0.55, Math.max(0, alt)) * 2.42) * above
+  // Stay bright while the sun is up (a 5° sun is still afternoon) and fade
+  // through civil twilight. Full sun by ~16°, off once the sun is ~8° down.
+  const above = smooth(-0.14, 0.04, alt)
+  const climb = smooth(0, 0.28, Math.max(0, alt))
+  const intensity = (0.9 + climb * 1.6) * above
   const r = 1
   const g = 0.22 + (1 - warmth) * 0.7
   const b = 0.12 + (1 - warmth) * 0.7
-  const exposure = 0.36 + daylight * 0.14
-  const moon = (1 - daylight) * 0.42
+  const exposure = 0.42 + daylight * 0.63
+  const moon = (1 - daylight) * 0.75
   return { r, g, b, warmth, intensity, moon, exposure, daylight }
 }
 
-/** Sun direction with the project's north bearing applied. `north` is radians, clockwise from plan +y. */
+/**
+ * Sun direction with the project's north bearing applied. `north` is radians, clockwise from plan +y.
+ * `hour` is local civil time, converted to solar time for the latitude's preset site.
+ */
 export function sunDirection(
   dayOfYear: number,
   hour: number,
   latitudeDeg: number,
   north: number,
 ): { x: number; y: number; z: number } {
-  const v = sunVector(dayOfYear, hour, latitudeDeg)
+  const v = sunVector(dayOfYear, solarHour(dayOfYear, hour, latitudeDeg), latitudeDeg)
   const c = Math.cos(north)
   const s = Math.sin(north)
   const x = v.x * c + v.z * s

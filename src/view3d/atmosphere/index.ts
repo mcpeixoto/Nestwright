@@ -1,7 +1,7 @@
-import { replaceSceneLayer } from '../layers'
+import { registerSceneLayer } from '../layers'
 import { createAtmosphereLayer } from './layer'
 
-replaceSceneLayer('atmosphere', {
+registerSceneLayer({
   id: 'atmosphere',
   create: createAtmosphereLayer,
 })
