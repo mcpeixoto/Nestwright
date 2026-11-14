@@ -5,6 +5,6 @@ export default defineConfig({
   resolve: { alias: threeAlias },
   test: {
     environment: 'node',
-    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
+    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx', 'tests/**/*.test.mjs'],
   },
 })
