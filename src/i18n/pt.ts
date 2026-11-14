@@ -252,6 +252,7 @@ export const pt: { [K in MessageKey]: string } = {
   Autosave: 'Gravação automática',
   Off: 'Desligada',
   'Show FPS': 'Mostrar FPS',
+  'Show tool labels': 'Mostrar nomes das ferramentas',
   'UI scale': 'Escala da interface',
   'Continue last project': 'Continuar o último projeto',
   'Player name': 'Nome do jogador',

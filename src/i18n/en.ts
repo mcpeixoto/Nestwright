@@ -250,6 +250,7 @@ export const en = {
   'Autosave': 'Autosave',
   Off: 'Off',
   'Show FPS': 'Show FPS',
+  'Show tool labels': 'Show tool labels',
   'UI scale': 'UI scale',
   'Continue last project': 'Continue last project',
   'Player name': 'Player name',

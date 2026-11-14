@@ -17,6 +17,8 @@ export interface Settings {
   autosaveInterval: number
   /** 0.9–1.25, applied to the root font size. */
   uiScale: number
+  /** Short names under the tool-rail icons. Absent in older saved settings. */
+  railLabels: boolean
 }
 
 const KEY = 'nestwright:settings'
@@ -36,6 +38,7 @@ export const DEFAULT_SETTINGS: Settings = {
   invertY: false,
   autosaveInterval: 15,
   uiScale: 1,
+  railLabels: false,
 }
 
 function clamp(value: number, min: number, max: number, fallback: number): number {
@@ -66,6 +69,7 @@ export function normalizeSettings(partial: Partial<Settings> | null | undefined)
     invertY: source.invertY === true,
     autosaveInterval,
     uiScale: clamp(source.uiScale ?? 1, 0.9, 1.25, 1),
+    railLabels: source.railLabels === true,
   }
 }
 
