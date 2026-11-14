@@ -1,0 +1,39 @@
+{
+  "key": "brick-grey-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Bricks061",
+  "sourceUrl": "https://ambientcg.com/a/Bricks061",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:15:21.326Z",
+  "sha256Source": "85dc57946c71e19e6e300df739945d95d947f52dcb4d30fefac4c0c37231c83d",
+  "targets": {
+    "materialId": "brick-grey"
+  },
+  "files": [
+    {
+      "path": "textures/brick-grey-tex/albedo.ktx2",
+      "bytes": 774363,
+      "sha256": "cf23da222e3dcdc486ff4b0227f5eff600e22ee0cfbba36c49a3c237077fe186"
+    },
+    {
+      "path": "textures/brick-grey-tex/normal.ktx2",
+      "bytes": 4734543,
+      "sha256": "666e98e7611b7ca412e9592ae0222ec21714d0cc488fd09d2d9c1587f59d3c57"
+    },
+    {
+      "path": "textures/brick-grey-tex/orm.ktx2",
+      "bytes": 789395,
+      "sha256": "f402f32539e8a7b997e728efa992e012d50ae84804e5edf01ff0a0a0b1bce3ee"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      148.991,
+      148.143,
+      146.441
+    ],
+    "tileMeters": 0.105
+  }
+}

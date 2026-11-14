@@ -1,0 +1,39 @@
+{
+  "key": "terrazzo-cream-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Terrazzo008",
+  "sourceUrl": "https://ambientcg.com/a/Terrazzo008",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:05.666Z",
+  "sha256Source": "9c5203db2b4afddffc8590ff237b23fb0b9bced5e17cc6ac907d81a6dc810692",
+  "targets": {
+    "materialId": "terrazzo-cream"
+  },
+  "files": [
+    {
+      "path": "textures/terrazzo-cream-tex/albedo.ktx2",
+      "bytes": 857695,
+      "sha256": "be70594c038a6b9cae281f9e978ea435d3b545d8425a3016b05b646e6723de6d"
+    },
+    {
+      "path": "textures/terrazzo-cream-tex/normal.ktx2",
+      "bytes": 4328865,
+      "sha256": "9aed73a9225bd537fb0c65a2decdef62df6822d9f8b73f3fe496c1eaf39faa29"
+    },
+    {
+      "path": "textures/terrazzo-cream-tex/orm.ktx2",
+      "bytes": 602841,
+      "sha256": "395b3f42b9899e6a153c1420fd2abefff615067417da5f9861c405ef079d9b7c"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      211.855,
+      204.87,
+      202.606
+    ],
+    "tileMeters": 1
+  }
+}

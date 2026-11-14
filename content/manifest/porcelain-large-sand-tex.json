@@ -1,0 +1,39 @@
+{
+  "key": "porcelain-large-sand-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "large_floor_tiles_02",
+  "sourceUrl": "https://polyhaven.com/a/large_floor_tiles_02",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:23.681Z",
+  "sha256Source": "8bc9c7e6d243dd02db2bfbd7cd819660611fcacdf0185c0477ca6449b032ec1c",
+  "targets": {
+    "materialId": "porcelain-large-sand"
+  },
+  "files": [
+    {
+      "path": "textures/porcelain-large-sand-tex/albedo.ktx2",
+      "bytes": 834320,
+      "sha256": "56501859d49c56613c1b280926c71b540da7c2985a4a34f0d017db9ac25928d4"
+    },
+    {
+      "path": "textures/porcelain-large-sand-tex/normal.ktx2",
+      "bytes": 4044418,
+      "sha256": "73f3acbe87bd1a6f9b4fcb1dc7f3c52de73d65580a0c3e0ae673529b723429cd"
+    },
+    {
+      "path": "textures/porcelain-large-sand-tex/orm.ktx2",
+      "bytes": 774441,
+      "sha256": "54169691ad7e0c182c738e18913ccc69cd0764d3b471532ec688ec63058b9096"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      117.431,
+      118.373,
+      114.903
+    ],
+    "tileMeters": 3
+  }
+}

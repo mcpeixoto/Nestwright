@@ -1,0 +1,39 @@
+{
+  "key": "polished-concrete-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "smooth_concrete_floor",
+  "sourceUrl": "https://polyhaven.com/a/smooth_concrete_floor",
+  "author": "Dimitrios Savva",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:12:12.673Z",
+  "sha256Source": "92c8a54e64b0a304fba4f791c1df9cf1da19b6a49d9d8fdf7069c921132d2a74",
+  "targets": {
+    "materialId": "polished-concrete"
+  },
+  "files": [
+    {
+      "path": "textures/polished-concrete-tex/albedo.ktx2",
+      "bytes": 796019,
+      "sha256": "d9d93e98dd54b74f63f73ffdbeb5af5a0dc488b13705e741abf65bd203fab520"
+    },
+    {
+      "path": "textures/polished-concrete-tex/normal.ktx2",
+      "bytes": 4266873,
+      "sha256": "0d881f7f2dd4a4d8484b0041f2aec901522f86849d641f81d300db9dc86b4505"
+    },
+    {
+      "path": "textures/polished-concrete-tex/orm.ktx2",
+      "bytes": 702721,
+      "sha256": "7a22b2f8a65f73a43cbbafb3ec3667b8d164e041169c4f44422705ee47240308"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      84.912,
+      60.278,
+      40.732
+    ],
+    "tileMeters": 2
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "key": "roof-tiles-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "clay_roof_tiles_02",
+  "sourceUrl": "https://polyhaven.com/a/clay_roof_tiles_02",
+  "author": "Amal Kumar",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:45.056Z",
+  "sha256Source": "11626d9eef2ab7a5db6b0b043b680704f4a9a4d8c8b01f1c6ed69696a4eb445f",
+  "targets": {
+    "materialId": "roof-tiles"
+  },
+  "files": [
+    {
+      "path": "textures/roof-tiles-tex/albedo.ktx2",
+      "bytes": 903616,
+      "sha256": "8c8100507598fd6dcbf0bbb6e68a18f04bccbb69008cbb28853238788d776662"
+    },
+    {
+      "path": "textures/roof-tiles-tex/normal.ktx2",
+      "bytes": 4774483,
+      "sha256": "7709be2b2dc08e665070ad649b8ffef492015ef7d1aac089f6395f19eee7246b"
+    },
+    {
+      "path": "textures/roof-tiles-tex/orm.ktx2",
+      "bytes": 647665,
+      "sha256": "9830c801b5b0250a43dcca149852f1c3b66a1a27b91f173ee415e2c17edbea81"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      145.362,
+      79.703,
+      42.964
+    ],
+    "tileMeters": 2.5
+  }
+}

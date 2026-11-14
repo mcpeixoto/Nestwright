@@ -1,0 +1,39 @@
+{
+  "key": "clay-roof-grey-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "grey_roof_tiles",
+  "sourceUrl": "https://polyhaven.com/a/grey_roof_tiles",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:15:12.118Z",
+  "sha256Source": "8196b8c7c28a102fc9a73611be38b39e80c320c7f60da19cdb323ec1a6d0512e",
+  "targets": {
+    "materialId": "clay-roof-grey"
+  },
+  "files": [
+    {
+      "path": "textures/clay-roof-grey-tex/albedo.ktx2",
+      "bytes": 898685,
+      "sha256": "56181a91a7daf3f0bbd22fa094734978f9c785835c94557bd7efea964084e284"
+    },
+    {
+      "path": "textures/clay-roof-grey-tex/normal.ktx2",
+      "bytes": 4469604,
+      "sha256": "7caed629cdee5a36258253a5f2c39a2454d9121a11195792c4348a96fc8e5d28"
+    },
+    {
+      "path": "textures/clay-roof-grey-tex/orm.ktx2",
+      "bytes": 673283,
+      "sha256": "8bc693b5bc05f0663b957fd3740e990a48a37387dff4d479a191026dcd00cc87"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      96.737,
+      91.939,
+      74.9
+    ],
+    "tileMeters": 3
+  }
+}

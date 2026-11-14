@@ -1,0 +1,39 @@
+{
+  "key": "brick-yellow-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "yellow_bricks",
+  "sourceUrl": "https://polyhaven.com/a/yellow_bricks",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:15:16.630Z",
+  "sha256Source": "f832c0d88f8b5e3afec69b1966f2f37cefe6544dc84e650893236ca6f6b09f5a",
+  "targets": {
+    "materialId": "brick-yellow"
+  },
+  "files": [
+    {
+      "path": "textures/brick-yellow-tex/albedo.ktx2",
+      "bytes": 930133,
+      "sha256": "9d32d5c5f7c35c4b5ca3ea2cf7ac8da5f48783242ccceded9b21c05036a0c21b"
+    },
+    {
+      "path": "textures/brick-yellow-tex/normal.ktx2",
+      "bytes": 4524163,
+      "sha256": "3abe17e22ec4805b82d4b532d97a52bb685a4a033b5a509b99a39a7c463dd342"
+    },
+    {
+      "path": "textures/brick-yellow-tex/orm.ktx2",
+      "bytes": 595139,
+      "sha256": "77c526a171e5bd48f1d45fd65fb3d56d3a22d12196b5a89bbc6fcfa080f3f95c"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      153.525,
+      140.653,
+      109.788
+    ],
+    "tileMeters": 2
+  }
+}

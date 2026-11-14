@@ -1,0 +1,39 @@
+{
+  "key": "roof-metal-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "box_profile_metal_sheet",
+  "sourceUrl": "https://polyhaven.com/a/box_profile_metal_sheet",
+  "author": "Amal Kumar",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:46.593Z",
+  "sha256Source": "1b2196c985641407f6aa0ddbb6dd3f70ebbc2456c418d0d3a4772a1a861da0f3",
+  "targets": {
+    "materialId": "roof-metal"
+  },
+  "files": [
+    {
+      "path": "textures/roof-metal-tex/albedo.ktx2",
+      "bytes": 372963,
+      "sha256": "ed00e788936692433d859f38a17846779c94f3deb8fb415651fa65ff554aa59d"
+    },
+    {
+      "path": "textures/roof-metal-tex/normal.ktx2",
+      "bytes": 4284934,
+      "sha256": "87ca6116500198ab601fee290b4efc4aad1305e551dbafb92aabbbd44ea0eb0b"
+    },
+    {
+      "path": "textures/roof-metal-tex/orm.ktx2",
+      "bytes": 690829,
+      "sha256": "32174e0566108baf0fb165ff682b903029bbaa21b3bcb7b69841effc2a17d0d3"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      106.064,
+      37.677,
+      23.044
+    ],
+    "tileMeters": 2
+  }
+}

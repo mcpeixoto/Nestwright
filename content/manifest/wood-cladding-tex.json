@@ -1,0 +1,39 @@
+{
+  "key": "wood-cladding-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "wood_plank_wall",
+  "sourceUrl": "https://polyhaven.com/a/wood_plank_wall",
+  "author": "Dimitrios Savva",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:47.391Z",
+  "sha256Source": "a1ca3d83aa836d653f94a3030abcaf23d5193ee27f4c13c7489dd979976dc450",
+  "targets": {
+    "materialId": "wood-cladding"
+  },
+  "files": [
+    {
+      "path": "textures/wood-cladding-tex/albedo.ktx2",
+      "bytes": 645926,
+      "sha256": "0fbbeec1d478a3bbbb47fc300b3088e7352dd8fdef8b8859db5330cf7e0d4483"
+    },
+    {
+      "path": "textures/wood-cladding-tex/normal.ktx2",
+      "bytes": 4478373,
+      "sha256": "c43319d1777c3b8e35bf67caa83b028d51b09aed2d551108150dd0ba46ec4820"
+    },
+    {
+      "path": "textures/wood-cladding-tex/orm.ktx2",
+      "bytes": 492606,
+      "sha256": "6ac31c27709fd1704ed640b712e07bd3284db54a7a71ae71296c284327d031fc"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      66.35,
+      50.546,
+      44.489
+    ],
+    "tileMeters": 1
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "key": "oak-veneer-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "oak_veneer_01",
+  "sourceUrl": "https://polyhaven.com/a/oak_veneer_01",
+  "author": "Jenelle van Heerden",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:14.916Z",
+  "sha256Source": "74a1d937695c8ba64f8eddd7fd684bf55e398f759ed551ed353c5ca4c3599dd2",
+  "targets": {
+    "materialId": "oak-veneer"
+  },
+  "files": [
+    {
+      "path": "textures/oak-veneer-tex/albedo.ktx2",
+      "bytes": 752174,
+      "sha256": "56964098d72bc2c5cc997acfa6aeb215550f1233ace9c9bb724bd1cdd30bd36b"
+    },
+    {
+      "path": "textures/oak-veneer-tex/normal.ktx2",
+      "bytes": 4154822,
+      "sha256": "e5fcdc00ce69481a2121d0bb5a3020ce8e7674cf78fc6efe7c419441f036b1e9"
+    },
+    {
+      "path": "textures/oak-veneer-tex/orm.ktx2",
+      "bytes": 786359,
+      "sha256": "409572d2e58c70a4b1fed1e23d56ebba55ea5ff83ddafdd1e911ac0139c662f0"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      161.255,
+      126.077,
+      87.354
+    ],
+    "tileMeters": 1.83
+  }
+}

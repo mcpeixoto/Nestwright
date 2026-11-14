@@ -1,0 +1,39 @@
+{
+  "key": "plaster-warm-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "beige_wall_001",
+  "sourceUrl": "https://polyhaven.com/a/beige_wall_001",
+  "author": "Dimitrios Savva, Rico Cilliers",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:11:47.662Z",
+  "sha256Source": "1978ee9b61c90bcaf8d18b5e8fb984f39ca8150fadcb4db05d6aefc8945e3a9f",
+  "targets": {
+    "materialId": "plaster-warm"
+  },
+  "files": [
+    {
+      "path": "textures/plaster-warm-tex/albedo.ktx2",
+      "bytes": 328276,
+      "sha256": "f4765fb8223da6c2dc465e0a907a4aad3569eb41f40673789f4c5c5a0ed94192"
+    },
+    {
+      "path": "textures/plaster-warm-tex/normal.ktx2",
+      "bytes": 4417501,
+      "sha256": "972889b224ca1a96ac903e55761296ffe2256a2b3d4fbddec9c0e416b3914e7c"
+    },
+    {
+      "path": "textures/plaster-warm-tex/orm.ktx2",
+      "bytes": 443155,
+      "sha256": "682913f80c27c6a5645e68579896ff63b80b9687b854905bc95b306c20bedde5"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      157.54,
+      139.966,
+      120.072
+    ],
+    "tileMeters": 3
+  }
+}

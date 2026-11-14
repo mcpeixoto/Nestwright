@@ -1,0 +1,39 @@
+{
+  "key": "steel-brushed-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Metal012",
+  "sourceUrl": "https://ambientcg.com/a/Metal012",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:41.265Z",
+  "sha256Source": "4b50d5633ba71570ab08e20ce04963765c5ca95546ba0869f58729ff236c739b",
+  "targets": {
+    "materialId": "steel-brushed"
+  },
+  "files": [
+    {
+      "path": "textures/steel-brushed-tex/albedo.ktx2",
+      "bytes": 115875,
+      "sha256": "9c88f61fe2d86871571b02eb36bb11860eb3164e639cfa2b668d48ce01f79db4"
+    },
+    {
+      "path": "textures/steel-brushed-tex/normal.ktx2",
+      "bytes": 806651,
+      "sha256": "aaa08ed30fd02ed00a499982c1ff7f932ad3e606ccacc1adfc83c89407058cff"
+    },
+    {
+      "path": "textures/steel-brushed-tex/orm.ktx2",
+      "bytes": 143787,
+      "sha256": "bd8ad03a7486945cc3b9917ba46a8d2001d9581aae9c6a408f724b7b9569fc05"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      213.831,
+      220.997,
+      228.906
+    ],
+    "tileMeters": 0.6
+  }
+}

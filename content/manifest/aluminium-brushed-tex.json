@@ -1,0 +1,39 @@
+{
+  "key": "aluminium-brushed-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Metal051A",
+  "sourceUrl": "https://ambientcg.com/a/Metal051A",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:41.725Z",
+  "sha256Source": "11db88be38f53cb630a0293fef0efca3a19497a4da17d63a49fea741ac305841",
+  "targets": {
+    "materialId": "aluminium-brushed"
+  },
+  "files": [
+    {
+      "path": "textures/aluminium-brushed-tex/albedo.ktx2",
+      "bytes": 107135,
+      "sha256": "52669f11fa0341138f0bc29d03843b6462fd6585cf3d8060d9e046d191b263f9"
+    },
+    {
+      "path": "textures/aluminium-brushed-tex/normal.ktx2",
+      "bytes": 648306,
+      "sha256": "2c0d1e0fdd2473b0329346ecc8f4f41f11b7a90c4f81c0e54b693fabfaa34888"
+    },
+    {
+      "path": "textures/aluminium-brushed-tex/orm.ktx2",
+      "bytes": 101160,
+      "sha256": "2b5ad5921914f66b5be37211c8a610520c62b5af8a5b8bba305d482ee69a4687"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      246.628,
+      248.56,
+      247.601
+    ],
+    "tileMeters": 0.6
+  }
+}

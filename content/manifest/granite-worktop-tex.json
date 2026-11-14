@@ -1,0 +1,39 @@
+{
+  "key": "granite-worktop-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Granite002A",
+  "sourceUrl": "https://ambientcg.com/a/Granite002A",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:47.163Z",
+  "sha256Source": "ee51c66b9fedeaa9926e99040beb270322d7bdb14929a124b0b2da4dbf00ad51",
+  "targets": {
+    "materialId": "granite-worktop"
+  },
+  "files": [
+    {
+      "path": "textures/granite-worktop-tex/albedo.ktx2",
+      "bytes": 915455,
+      "sha256": "1a05ebaa01ed7bec1344abfa80cedd1ebb53c3d14ca919e4a0e1d464a2c1398d"
+    },
+    {
+      "path": "textures/granite-worktop-tex/normal.ktx2",
+      "bytes": 1391093,
+      "sha256": "2ed97a8d09945382cef1919f6501e044d2d7233db57345400352aa58c588cff1"
+    },
+    {
+      "path": "textures/granite-worktop-tex/orm.ktx2",
+      "bytes": 431573,
+      "sha256": "861e5369c50354bdbb0640aa6662f0e9c225fe911046061bff58ac4191cd262c"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      180.575,
+      177.056,
+      172.728
+    ],
+    "tileMeters": 1
+  }
+}

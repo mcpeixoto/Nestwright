@@ -1,0 +1,39 @@
+{
+  "key": "brick-red-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Bricks101",
+  "sourceUrl": "https://ambientcg.com/a/Bricks101",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:11:58.809Z",
+  "sha256Source": "b2706b9935e75e0a296c50112a23e6211657d808660963b7b2a249eb2d666b52",
+  "targets": {
+    "materialId": "brick-red"
+  },
+  "files": [
+    {
+      "path": "textures/brick-red-tex/albedo.ktx2",
+      "bytes": 805683,
+      "sha256": "b6bb164857fce5f91f307e07ba6233a31b314b27d3234d30cbc0f42207f0f7d4"
+    },
+    {
+      "path": "textures/brick-red-tex/normal.ktx2",
+      "bytes": 4674098,
+      "sha256": "175f9dd4915b7a40f5fab1e3064360bfb7b1bad9fca44a50dc0a3dd4e320615c"
+    },
+    {
+      "path": "textures/brick-red-tex/orm.ktx2",
+      "bytes": 727729,
+      "sha256": "56875932ebf287a77eba95b3c384c3f35b80dbdbb03d809b39958cc670b68188"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      161.403,
+      111.894,
+      87.822
+    ],
+    "tileMeters": 1
+  }
+}

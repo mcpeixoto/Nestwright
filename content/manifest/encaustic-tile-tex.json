@@ -1,0 +1,39 @@
+{
+  "key": "encaustic-tile-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Tiles101",
+  "sourceUrl": "https://ambientcg.com/a/Tiles101",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:17.267Z",
+  "sha256Source": "3de968a2458a9965b45e29c379ef6c125b288442b9b4c88ae36b1115cd5a6d90",
+  "targets": {
+    "materialId": "encaustic-tile"
+  },
+  "files": [
+    {
+      "path": "textures/encaustic-tile-tex/albedo.ktx2",
+      "bytes": 549166,
+      "sha256": "bd2949aea06ee56a7b6cdbfea90c028b864737ff2f4474b91da2f910b5ad4114"
+    },
+    {
+      "path": "textures/encaustic-tile-tex/normal.ktx2",
+      "bytes": 2658508,
+      "sha256": "c5ab3640d28bb17a6a8f93ef26d313ef0a37ef91ca6b0c5b66331207b10c6c97"
+    },
+    {
+      "path": "textures/encaustic-tile-tex/orm.ktx2",
+      "bytes": 348457,
+      "sha256": "ebf6dd1f64dc136eee630d041fdbe9b4c642b82c0962fa3fb45e6cf64ea82fac"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      186.915,
+      186.58,
+      221.845
+    ],
+    "tileMeters": 100
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "key": "leather-black-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Leather026",
+  "sourceUrl": "https://ambientcg.com/a/Leather026",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:02.265Z",
+  "sha256Source": "8efc44e6e2019720a7e97aa24b9118410bb766ba9324a0909b74f64047ee113d",
+  "targets": {
+    "materialId": "leather-black"
+  },
+  "files": [
+    {
+      "path": "textures/leather-black-tex/albedo.ktx2",
+      "bytes": 136152,
+      "sha256": "45bb4be51e366902dd6af954e5a68745f28af3f2bd048a9816934e901ed875f6"
+    },
+    {
+      "path": "textures/leather-black-tex/normal.ktx2",
+      "bytes": 1128618,
+      "sha256": "f20511877a1eea0228c5efc6863b22b280aa344916a939017ee6c56f465b2f52"
+    },
+    {
+      "path": "textures/leather-black-tex/orm.ktx2",
+      "bytes": 154732,
+      "sha256": "f269a5df3ee51dfa04c934a9ccb4dfabbad1627d1fca9818b31da5c00eb3fbb6"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      25.538,
+      24.577,
+      24.343
+    ],
+    "tileMeters": 0.5
+  }
+}

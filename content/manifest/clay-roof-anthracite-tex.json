@@ -1,0 +1,39 @@
+{
+  "key": "clay-roof-anthracite-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "RoofingTiles015A",
+  "sourceUrl": "https://ambientcg.com/a/RoofingTiles015A",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:15:14.583Z",
+  "sha256Source": "a1e297490c158a90974c19a6bcd9b638a5582cb1eea6a9a4ba0321377870b728",
+  "targets": {
+    "materialId": "clay-roof-anthracite"
+  },
+  "files": [
+    {
+      "path": "textures/clay-roof-anthracite-tex/albedo.ktx2",
+      "bytes": 467451,
+      "sha256": "d5e35ac651eeb1ae3722312bc6e182f1d05bbf17b04455e2f4ce23e3790126f3"
+    },
+    {
+      "path": "textures/clay-roof-anthracite-tex/normal.ktx2",
+      "bytes": 3090689,
+      "sha256": "783417c8b31fc341846608504d3d29fc2a6d8772a3d215626867b4140cb4f87e"
+    },
+    {
+      "path": "textures/clay-roof-anthracite-tex/orm.ktx2",
+      "bytes": 701784,
+      "sha256": "ab328634f432b1d9f98b64bbbcb16a9de828046aae5eed9bb28f9773918c7560"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      102.695,
+      91.692,
+      97.658
+    ],
+    "tileMeters": 0.29
+  }
+}

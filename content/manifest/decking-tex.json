@@ -1,0 +1,39 @@
+{
+  "key": "decking-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Planks029S",
+  "sourceUrl": "https://ambientcg.com/a/Planks029S",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:54.762Z",
+  "sha256Source": "90e22716e2c0c3566a7d23a50c0cd473c4de16f3a2f0047a08fbdecaab3f0c00",
+  "targets": {
+    "materialId": "decking"
+  },
+  "files": [
+    {
+      "path": "textures/decking-tex/albedo.ktx2",
+      "bytes": 824261,
+      "sha256": "fd4735d041b7737e598579603ae42c203a5d30f7824f6b642cf2a28c9aaeb668"
+    },
+    {
+      "path": "textures/decking-tex/normal.ktx2",
+      "bytes": 3861462,
+      "sha256": "7be5391502051b77840d691f25096ac4e0ee985e6afa59a62fe7a2cb9c47c27d"
+    },
+    {
+      "path": "textures/decking-tex/orm.ktx2",
+      "bytes": 440932,
+      "sha256": "a2354c94be04e9085126407cb4054b400c58750bf1768ad51bb7299a61871290"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      146.027,
+      129.018,
+      99.445
+    ],
+    "tileMeters": 0.24
+  }
+}

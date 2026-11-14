@@ -1,0 +1,39 @@
+{
+  "key": "zellige-white-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Tiles136A",
+  "sourceUrl": "https://ambientcg.com/a/Tiles136A",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:18.245Z",
+  "sha256Source": "18c7fc7b4303c4c26671d9c2049bc61cd5c5f98baae2201ba55a62fa0110ff16",
+  "targets": {
+    "materialId": "zellige-white"
+  },
+  "files": [
+    {
+      "path": "textures/zellige-white-tex/albedo.ktx2",
+      "bytes": 246656,
+      "sha256": "9ab34a8af29c7fb6f9bdbd5e4e886cd3109236ce2dff556d4a53282c2c603eb9"
+    },
+    {
+      "path": "textures/zellige-white-tex/normal.ktx2",
+      "bytes": 3443476,
+      "sha256": "b2e59bc0b40b6c04b178091377a91eb703c9b369d5c15fcf78f67236337b6208"
+    },
+    {
+      "path": "textures/zellige-white-tex/orm.ktx2",
+      "bytes": 439828,
+      "sha256": "97a7558b4bf61e8f60547507193487b750848954a01fd51a6a76ed9742df6e22"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      203.719,
+      206.017,
+      208.634
+    ],
+    "tileMeters": 0.8
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "key": "microcement-dark-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Concrete017",
+  "sourceUrl": "https://ambientcg.com/a/Concrete017",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:10.012Z",
+  "sha256Source": "82dbd4381570a7ed708642dd04603b9191abafc9382315034a1afa1463e8c92d",
+  "targets": {
+    "materialId": "microcement-dark"
+  },
+  "files": [
+    {
+      "path": "textures/microcement-dark-tex/albedo.ktx2",
+      "bytes": 676182,
+      "sha256": "24f2669f5e43adcde9a39c5d4f0659bb8a8f172349b9dddaa9457d5d370eecf1"
+    },
+    {
+      "path": "textures/microcement-dark-tex/normal.ktx2",
+      "bytes": 4782067,
+      "sha256": "e6ed0150c09eb873a5b1bb3ec35e4db88822cdbe5bf0437fd0ad71ac580506a5"
+    },
+    {
+      "path": "textures/microcement-dark-tex/orm.ktx2",
+      "bytes": 647757,
+      "sha256": "d715bc76f37dcb1eb3f6f0140b9552200b596bf2eaf6f5a8955407fc9d9c2b32"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      102.964,
+      108.154,
+      109.694
+    ],
+    "tileMeters": 1.4
+  }
+}

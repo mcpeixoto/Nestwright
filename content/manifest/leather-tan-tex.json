@@ -1,0 +1,39 @@
+{
+  "key": "leather-tan-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Leather029",
+  "sourceUrl": "https://ambientcg.com/a/Leather029",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:37.174Z",
+  "sha256Source": "83dada122372a11bbe2fd29dd7b88676bd128bdba0a66f1fad1d1214851d1761",
+  "targets": {
+    "materialId": "leather-tan"
+  },
+  "files": [
+    {
+      "path": "textures/leather-tan-tex/albedo.ktx2",
+      "bytes": 199159,
+      "sha256": "e26677d4222114fecf7c80eeff7e6953468121021fcd4fe7bfdcf40e74afdfa7"
+    },
+    {
+      "path": "textures/leather-tan-tex/normal.ktx2",
+      "bytes": 1099604,
+      "sha256": "4f65cee2c0f79b1108240d0f0a7b63804d47e67794145e358b966d8d3c879dd9"
+    },
+    {
+      "path": "textures/leather-tan-tex/orm.ktx2",
+      "bytes": 207225,
+      "sha256": "e1b1c7dc5461d573b9632c260f66b94f4cf3ccf2d9ce2e127a1d41cbc72a6ce8"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      147.741,
+      96.23,
+      79.162
+    ],
+    "tileMeters": 45
+  }
+}

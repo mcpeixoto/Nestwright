@@ -1,0 +1,39 @@
+{
+  "key": "leather-cream-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "leather_white",
+  "sourceUrl": "https://polyhaven.com/a/leather_white",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:39.105Z",
+  "sha256Source": "f8fc98e2d176429322cdba67a1d6babde0e02f302629ea1a824e5d682ac3814e",
+  "targets": {
+    "materialId": "leather-cream"
+  },
+  "files": [
+    {
+      "path": "textures/leather-cream-tex/albedo.ktx2",
+      "bytes": 199684,
+      "sha256": "b13981bb85387ba5527fbc84a2947617440df5436bf6c4788cad8d55d0a186a0"
+    },
+    {
+      "path": "textures/leather-cream-tex/normal.ktx2",
+      "bytes": 1053028,
+      "sha256": "779139a36f5a8b4e66f24cecca818ebfa0fa698c5c742513e615c6e4441f7d55"
+    },
+    {
+      "path": "textures/leather-cream-tex/orm.ktx2",
+      "bytes": 200858,
+      "sha256": "ae00f372b2d5aa3656013cbdd44fce23619c05d7eaaffbaaa8198c50afa66b0a"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      149.585,
+      146.516,
+      127.729
+    ],
+    "tileMeters": 0.3
+  }
+}

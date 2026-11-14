@@ -1,0 +1,39 @@
+{
+  "key": "boucle-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "wool_boucle",
+  "sourceUrl": "https://polyhaven.com/a/wool_boucle",
+  "author": "colormass, Rico Cilliers",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:59.233Z",
+  "sha256Source": "476d4ba97266f16b767e7708255e256942e2fdbf84f2dde7308c9d0d1c4b6d16",
+  "targets": {
+    "materialId": "boucle"
+  },
+  "files": [
+    {
+      "path": "textures/boucle-tex/albedo.ktx2",
+      "bytes": 215034,
+      "sha256": "d5eb0cf23cf3c114e16f2af2f5c9bb14a69e40705733fb7f03268073bd023935"
+    },
+    {
+      "path": "textures/boucle-tex/normal.ktx2",
+      "bytes": 966478,
+      "sha256": "c8239b9494cd3399459c8e3db50ed7ecca6cd058318102034a474e6086c26244"
+    },
+    {
+      "path": "textures/boucle-tex/orm.ktx2",
+      "bytes": 224146,
+      "sha256": "764da5edf72f423c730ed9ad5a61105619d2d0f19e9e6c3d115b5ad0d1207e56"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      117.714,
+      108.712,
+      96.456
+    ],
+    "tileMeters": 0.314782
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "key": "tile-subway-white-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Tiles010",
+  "sourceUrl": "https://ambientcg.com/a/Tiles010",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:27.102Z",
+  "sha256Source": "b40bb057983074b6359e754d0087675683db6c64fbb2079eaef6f6e60b612f58",
+  "targets": {
+    "materialId": "tile-subway-white"
+  },
+  "files": [
+    {
+      "path": "textures/tile-subway-white-tex/albedo.ktx2",
+      "bytes": 273560,
+      "sha256": "a323ffa7bac37cc72681127382a7fe8bbc9ee34a21be8c5b736bedaa549f14f7"
+    },
+    {
+      "path": "textures/tile-subway-white-tex/normal.ktx2",
+      "bytes": 3417582,
+      "sha256": "9c635b9d96af4dab89dda469f7beba3c8e5ccfaf74c91f2a8960fb1748435507"
+    },
+    {
+      "path": "textures/tile-subway-white-tex/orm.ktx2",
+      "bytes": 451407,
+      "sha256": "8b615676a4d7e526b4e4e2187406b87e0a2565efc7d41cc0b342e09484ff8f11"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      191.312,
+      191.137,
+      191.074
+    ],
+    "tileMeters": 0.6
+  }
+}

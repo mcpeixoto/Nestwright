@@ -1,0 +1,39 @@
+{
+  "key": "grass-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "leafy_grass",
+  "sourceUrl": "https://polyhaven.com/a/leafy_grass",
+  "author": "Charlotte Baglioni",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:38.927Z",
+  "sha256Source": "108bcf1e26b8900899c360dba3f4e3e4a5da0f4b4967cab227a363e9ce7f1ff6",
+  "targets": {
+    "materialId": "grass"
+  },
+  "files": [
+    {
+      "path": "textures/grass-tex/albedo.ktx2",
+      "bytes": 1010644,
+      "sha256": "589fc032bebb9c91d882c58326517950f1c0a89a231d651131e261859e2aba3a"
+    },
+    {
+      "path": "textures/grass-tex/normal.ktx2",
+      "bytes": 4992894,
+      "sha256": "5ee7d60a8e0cb28eb695aafec6deb426912b998fecdf667f22837dc8e7087100"
+    },
+    {
+      "path": "textures/grass-tex/orm.ktx2",
+      "bytes": 857989,
+      "sha256": "93e17c94e80e8593ee30016e726b4107a3134b0448b43d91416545b3d0dc29b7"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      151.007,
+      131.339,
+      89.139
+    ],
+    "tileMeters": 2
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "key": "stacked-stone-cladding-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "stacked_stone_wall",
+  "sourceUrl": "https://polyhaven.com/a/stacked_stone_wall",
+  "author": "Dimitrios Savva",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:10.902Z",
+  "sha256Source": "c12d3275b3e53dd081f3abf844d485bc156fff1d49c5edbdbd29a3b602cd2531",
+  "targets": {
+    "materialId": "stacked-stone-cladding"
+  },
+  "files": [
+    {
+      "path": "textures/stacked-stone-cladding-tex/albedo.ktx2",
+      "bytes": 797008,
+      "sha256": "56b147ff44582e851ee884550797024654906bb029eff30b964019ee7a974c5b"
+    },
+    {
+      "path": "textures/stacked-stone-cladding-tex/normal.ktx2",
+      "bytes": 5025741,
+      "sha256": "6087af63dddddd057d14e9ac3afeed43118fa63c8a407781cfa08a3324a24c28"
+    },
+    {
+      "path": "textures/stacked-stone-cladding-tex/orm.ktx2",
+      "bytes": 779998,
+      "sha256": "83b00ff64ab12a533439830bdf9a3374d5c85730b84f0c0e219047a7325429e7"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      95.143,
+      68.897,
+      48.017
+    ],
+    "tileMeters": 2
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "key": "brick-paving-herringbone-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "herringbone_brick",
+  "sourceUrl": "https://polyhaven.com/a/herringbone_brick",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:51.387Z",
+  "sha256Source": "522662c8e8ae65d5f2e38d06b75bf717bad7cbfc08c9ac1bfad7bedd6d83d54a",
+  "targets": {
+    "materialId": "brick-paving-herringbone"
+  },
+  "files": [
+    {
+      "path": "textures/brick-paving-herringbone-tex/albedo.ktx2",
+      "bytes": 757242,
+      "sha256": "f10235589738599a47e9d1e553ae168abb80e6d924349c7fbb8a460c37634d9f"
+    },
+    {
+      "path": "textures/brick-paving-herringbone-tex/normal.ktx2",
+      "bytes": 4858795,
+      "sha256": "378f54a948e20dcc79b60c2c48f27f28681b88fb981498243d2e8bb581c85905"
+    },
+    {
+      "path": "textures/brick-paving-herringbone-tex/orm.ktx2",
+      "bytes": 829559,
+      "sha256": "02d350ef466a0eb2561ea52dd1908d9b5fc01b5a035ea31d1fbd084f8fb95140"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      79.715,
+      60.01,
+      44.14
+    ],
+    "tileMeters": 1.8
+  }
+}

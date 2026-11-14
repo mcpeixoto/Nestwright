@@ -1,0 +1,39 @@
+{
+  "key": "zinc-roof-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Metal030",
+  "sourceUrl": "https://ambientcg.com/a/Metal030",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:42.631Z",
+  "sha256Source": "ca730b821b6671cb5da4a6d1c5c214c57d924ad4c618e7271fc3e450b227b2fd",
+  "targets": {
+    "materialId": "zinc-roof"
+  },
+  "files": [
+    {
+      "path": "textures/zinc-roof-tex/albedo.ktx2",
+      "bytes": 24227,
+      "sha256": "966610429c974fa1298cec7d3ea1bf93e60150631d119e928f560098f9df6c24"
+    },
+    {
+      "path": "textures/zinc-roof-tex/normal.ktx2",
+      "bytes": 618473,
+      "sha256": "eafcad7e0e24bc8cc9a71dac6a191076f23848f77ecaa4431a579c170e413f0f"
+    },
+    {
+      "path": "textures/zinc-roof-tex/orm.ktx2",
+      "bytes": 11785,
+      "sha256": "a1e046c80e90fc4c9ca37fb506eeae3374115f217fae005ac1c63ad6da080cac"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      79.945,
+      84.95,
+      90.904
+    ],
+    "tileMeters": 0.8
+  }
+}

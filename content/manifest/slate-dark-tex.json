@@ -1,0 +1,39 @@
+{
+  "key": "slate-dark-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "slate_floor_03",
+  "sourceUrl": "https://polyhaven.com/a/slate_floor_03",
+  "author": "Dimitrios Savva",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:12:30.360Z",
+  "sha256Source": "2a6b2cad41d1d4a971db576f39f0db272d08e1652337510ce59805a69d9b9e0e",
+  "targets": {
+    "materialId": "slate-dark"
+  },
+  "files": [
+    {
+      "path": "textures/slate-dark-tex/albedo.ktx2",
+      "bytes": 752370,
+      "sha256": "2f82ecbcae2bb77c8d517f57779395cc36292ac90d92c7af85a24dc314942fab"
+    },
+    {
+      "path": "textures/slate-dark-tex/normal.ktx2",
+      "bytes": 4674655,
+      "sha256": "d3b298c1add7fc81b37fe2f6bc244c898f5dc42de120692a5d3c7896906c3cdc"
+    },
+    {
+      "path": "textures/slate-dark-tex/orm.ktx2",
+      "bytes": 774338,
+      "sha256": "9aa581069748d669c579be27fdf60a83e947509be2ea53b19065d641c242e61d"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      96.657,
+      72.849,
+      50.1
+    ],
+    "tileMeters": 2
+  }
+}

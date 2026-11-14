@@ -1,0 +1,39 @@
+{
+  "key": "rattan-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Wicker008A",
+  "sourceUrl": "https://ambientcg.com/a/Wicker008A",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:57.261Z",
+  "sha256Source": "6c535079e998cae328471162c5dbbb19f331a69694317efb518853928aa6ad6b",
+  "targets": {
+    "materialId": "rattan"
+  },
+  "files": [
+    {
+      "path": "textures/rattan-tex/albedo.ktx2",
+      "bytes": 187823,
+      "sha256": "afe1069e88e8fa199319d40fb9387f608b3f12d774d1346181eaf423495f04c7"
+    },
+    {
+      "path": "textures/rattan-tex/normal.ktx2",
+      "bytes": 1097312,
+      "sha256": "64ead6580c9bf5ba22f9d70d22ab51edde54df8877ac86d3645d7ab182a032b6"
+    },
+    {
+      "path": "textures/rattan-tex/orm.ktx2",
+      "bytes": 157216,
+      "sha256": "e5a2fe0e0f50793d67060c692dff706a1091945384e07063dcbf29a442d8adc2"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      158.606,
+      135.258,
+      106.603
+    ],
+    "tileMeters": 0.3
+  }
+}

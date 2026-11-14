@@ -1,0 +1,39 @@
+{
+  "key": "oak-planks-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "laminate_floor_02",
+  "sourceUrl": "https://polyhaven.com/a/laminate_floor_02",
+  "author": "Dario Barresi, Charlotte Baglioni",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:12:36.042Z",
+  "sha256Source": "1141bcd59de197a47d39d79eabbe12553254fb3cb1f027563df756712d9bd41a",
+  "targets": {
+    "materialId": "oak-planks"
+  },
+  "files": [
+    {
+      "path": "textures/oak-planks-tex/albedo.ktx2",
+      "bytes": 766039,
+      "sha256": "878e98f0f641c8e3744c6eda9c84d2cc7024f7cdd7de3d9cdeba8c15682b77a5"
+    },
+    {
+      "path": "textures/oak-planks-tex/normal.ktx2",
+      "bytes": 4101159,
+      "sha256": "634d79df49c2a63513df5b4bfe1c0252ddc826ca13c5e855117548b31d893e96"
+    },
+    {
+      "path": "textures/oak-planks-tex/orm.ktx2",
+      "bytes": 629298,
+      "sha256": "de822015c1ff2856d9a4cc0f47163b0bda8a7fd01e77afd2ff426fd24e8efcbb"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      155.361,
+      128.391,
+      99.457
+    ],
+    "tileMeters": 1.7
+  }
+}

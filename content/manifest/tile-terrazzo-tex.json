@@ -1,0 +1,39 @@
+{
+  "key": "tile-terrazzo-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "terrazzo_tiles",
+  "sourceUrl": "https://polyhaven.com/a/terrazzo_tiles",
+  "author": "Amal Kumar",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:12:55.455Z",
+  "sha256Source": "73273689d4ef2318356a90f8bdde55bb964cfe95c95c637ab941329d9c0c6455",
+  "targets": {
+    "materialId": "tile-terrazzo"
+  },
+  "files": [
+    {
+      "path": "textures/tile-terrazzo-tex/albedo.ktx2",
+      "bytes": 898971,
+      "sha256": "f49ea6b6f7500617f4a03f4baa2745279886a20f97f03747a1ff46d9e9f500fe"
+    },
+    {
+      "path": "textures/tile-terrazzo-tex/normal.ktx2",
+      "bytes": 877019,
+      "sha256": "c0dec023f5f3e5a68f302239a87bc685ebafc182c411fd6d2a69289b1c2646e6"
+    },
+    {
+      "path": "textures/tile-terrazzo-tex/orm.ktx2",
+      "bytes": 482661,
+      "sha256": "1987fe58b09333400794f8da9f05407d65406e45dc677a0ec3effbc7e534e7d5"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      137.027,
+      108.659,
+      86.754
+    ],
+    "tileMeters": 2
+  }
+}

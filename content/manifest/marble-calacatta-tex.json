@@ -1,0 +1,39 @@
+{
+  "key": "marble-calacatta-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Marble021",
+  "sourceUrl": "https://ambientcg.com/a/Marble021",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:44.676Z",
+  "sha256Source": "1316f1e5465e81ce083998cdb7eade1aaddcd1f9a137356d30fa7818666d2a39",
+  "targets": {
+    "materialId": "marble-calacatta"
+  },
+  "files": [
+    {
+      "path": "textures/marble-calacatta-tex/albedo.ktx2",
+      "bytes": 651805,
+      "sha256": "e270dc34ffaf9d21986d5ca25e35ffc71fe7ac4e8f364c2b78e59d3f79684b5e"
+    },
+    {
+      "path": "textures/marble-calacatta-tex/normal.ktx2",
+      "bytes": 1025353,
+      "sha256": "57efe3c5e96161e6f85cb1a64ecc1aef47aa202be22906f63f6adf80d9194ace"
+    },
+    {
+      "path": "textures/marble-calacatta-tex/orm.ktx2",
+      "bytes": 273874,
+      "sha256": "e7e0473c3b76ebb09898e844f2e5ddcae0e730de13350f5fe9c2864e452c74b7"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      243.494,
+      242.151,
+      240.384
+    ],
+    "tileMeters": 1.4
+  }
+}

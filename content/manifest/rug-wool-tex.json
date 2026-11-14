@@ -1,0 +1,39 @@
+{
+  "key": "rug-wool-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Carpet016",
+  "sourceUrl": "https://ambientcg.com/a/Carpet016",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:30.872Z",
+  "sha256Source": "6a5489a781e9ca50be1d6f183ede276bbcb40bfd93fe2652624d4b4249601229",
+  "targets": {
+    "materialId": "rug-wool"
+  },
+  "files": [
+    {
+      "path": "textures/rug-wool-tex/albedo.ktx2",
+      "bytes": 201345,
+      "sha256": "f674d014e29fc5127be8ee025637be7e0a5b9d720a4b905429dbf2515d1bebca"
+    },
+    {
+      "path": "textures/rug-wool-tex/normal.ktx2",
+      "bytes": 1171270,
+      "sha256": "d7a6945beed999d2a63bdaa71f90dd3eaaf991cb5a32a506e918ae8a81c0d721"
+    },
+    {
+      "path": "textures/rug-wool-tex/orm.ktx2",
+      "bytes": 171754,
+      "sha256": "90da6856146d2032f516144b61200b17a824908c6b65a3c3107ec93a0fe38bc0"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      187.595,
+      176.129,
+      147.346
+    ],
+    "tileMeters": 0.17
+  }
+}

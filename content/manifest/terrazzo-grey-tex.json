@@ -1,0 +1,39 @@
+{
+  "key": "terrazzo-grey-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Terrazzo002",
+  "sourceUrl": "https://ambientcg.com/a/Terrazzo002",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:06.989Z",
+  "sha256Source": "f908b3acbcf92c62f70c648f8e0f74e0906062b3008dc092534762447b914ebb",
+  "targets": {
+    "materialId": "terrazzo-grey"
+  },
+  "files": [
+    {
+      "path": "textures/terrazzo-grey-tex/albedo.ktx2",
+      "bytes": 831541,
+      "sha256": "a4402376241e1be644ac06df3a3ffc38e32ded6d765eeef7d37d908d7d09495b"
+    },
+    {
+      "path": "textures/terrazzo-grey-tex/normal.ktx2",
+      "bytes": 4358800,
+      "sha256": "467ab00f3c51f243f59daebc806652dfd3fd9f8978d6e21b37fd530d222b7ecb"
+    },
+    {
+      "path": "textures/terrazzo-grey-tex/orm.ktx2",
+      "bytes": 600100,
+      "sha256": "f5f5b2c8749cd6e8c3f07b233bc2ff8ace844129e1d68668f422e2bed3a2c20c"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      185.194,
+      178.615,
+      176.483
+    ],
+    "tileMeters": 1
+  }
+}

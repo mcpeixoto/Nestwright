@@ -1,0 +1,39 @@
+{
+  "key": "concrete-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Concrete034",
+  "sourceUrl": "https://ambientcg.com/a/Concrete034",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:12:04.562Z",
+  "sha256Source": "6c91d37cdd0fa591ebe70e4f283cf50cca1130c2f1b6b28d6f07ce0cfec1802b",
+  "targets": {
+    "materialId": "concrete"
+  },
+  "files": [
+    {
+      "path": "textures/concrete-tex/albedo.ktx2",
+      "bytes": 334697,
+      "sha256": "e3397afaf2e012def9c1436de79244d654c5b304a665c3eb5c5012ab8eafd73c"
+    },
+    {
+      "path": "textures/concrete-tex/normal.ktx2",
+      "bytes": 2293561,
+      "sha256": "5efc4c15f1c55656fe47f995e6737a88b777360aa50ab79829dbd9e2e17632fa"
+    },
+    {
+      "path": "textures/concrete-tex/orm.ktx2",
+      "bytes": 200032,
+      "sha256": "7840a87a5cee86e5ad1c18b3a85af05ecb7e45a459dbbc1bb5c5a6c2aefc95ff"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      184.321,
+      184.321,
+      184.321
+    ],
+    "tileMeters": 0.11
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "key": "brass-brushed-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Metal034",
+  "sourceUrl": "https://ambientcg.com/a/Metal034",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:40.230Z",
+  "sha256Source": "7088914feab945f3ef809aa922b8598c6b8a2e438622325c740c3d803ec852e1",
+  "targets": {
+    "materialId": "brass-brushed"
+  },
+  "files": [
+    {
+      "path": "textures/brass-brushed-tex/albedo.ktx2",
+      "bytes": 23369,
+      "sha256": "925783d0b651afe8ad1a46aa5a5826c49c47b31d51667e45e54dd27e3c91376e"
+    },
+    {
+      "path": "textures/brass-brushed-tex/normal.ktx2",
+      "bytes": 268960,
+      "sha256": "dd1da07047568388966b35c1db5f807cdf0313563df3f04ed937a94d22c8cbff"
+    },
+    {
+      "path": "textures/brass-brushed-tex/orm.ktx2",
+      "bytes": 9544,
+      "sha256": "2fd57d6b8813e02b5b821ef907394c584e28e88b8b1e032abb8a88f5256719fc"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      227.541,
+      176.594,
+      7.594
+    ],
+    "tileMeters": 0.5
+  }
+}

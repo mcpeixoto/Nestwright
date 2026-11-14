@@ -1,0 +1,39 @@
+{
+  "key": "clay-roof-terracotta-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "clay_roof_tiles_03",
+  "sourceUrl": "https://polyhaven.com/a/clay_roof_tiles_03",
+  "author": "Amal Kumar",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:15:11.467Z",
+  "sha256Source": "d5442da488093a398292d458ecf7fbab8a0eca6bdb37e0e5ab83551e635d5017",
+  "targets": {
+    "materialId": "clay-roof-terracotta"
+  },
+  "files": [
+    {
+      "path": "textures/clay-roof-terracotta-tex/albedo.ktx2",
+      "bytes": 903550,
+      "sha256": "1c7e3c6140735f8bd48023dd91510a850344c4e1d35185eb9132168a3d1d0947"
+    },
+    {
+      "path": "textures/clay-roof-terracotta-tex/normal.ktx2",
+      "bytes": 4887744,
+      "sha256": "b5a63c2e4cccb7b4b70198d660b630dbb005115cf99dc3338795d0ea1efa7a40"
+    },
+    {
+      "path": "textures/clay-roof-terracotta-tex/orm.ktx2",
+      "bytes": 666758,
+      "sha256": "c7c7b7174c2a085592d592cb726d61c8efae4efd68d9c5e84db150f397171c73"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      141.442,
+      85.209,
+      54.897
+    ],
+    "tileMeters": 2.6
+  }
+}

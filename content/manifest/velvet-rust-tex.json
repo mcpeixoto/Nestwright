@@ -1,0 +1,39 @@
+{
+  "key": "velvet-rust-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "velour_velvet",
+  "sourceUrl": "https://polyhaven.com/a/velour_velvet",
+  "author": "colormass, Rico Cilliers",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:00.917Z",
+  "sha256Source": "10b16b1b900dd98e72f5a838bb88bb7bf7bd63254ddae970087d782dbd229073",
+  "targets": {
+    "materialId": "velvet-rust"
+  },
+  "files": [
+    {
+      "path": "textures/velvet-rust-tex/albedo.ktx2",
+      "bytes": 189272,
+      "sha256": "24474db1d8bcd87aa0ad2429c44919dddd5f161cec3887ddac2959a1a11b8b71"
+    },
+    {
+      "path": "textures/velvet-rust-tex/normal.ktx2",
+      "bytes": 1080568,
+      "sha256": "9d6a15b09c2b4506ac7d3c109780592ed0baa349dbbddb08b3437824419d32c2"
+    },
+    {
+      "path": "textures/velvet-rust-tex/orm.ktx2",
+      "bytes": 233353,
+      "sha256": "b3e3f537727b1e86204bcd96b00632d95b9deb2f447d30fa11f8acabd8021fec"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      173.618,
+      45.11,
+      71.135
+    ],
+    "tileMeters": 0.284228
+  }
+}

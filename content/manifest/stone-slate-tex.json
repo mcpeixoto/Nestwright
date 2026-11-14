@@ -1,0 +1,39 @@
+{
+  "key": "stone-slate-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "slate_floor",
+  "sourceUrl": "https://polyhaven.com/a/slate_floor",
+  "author": "Dimitrios Savva",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:12:23.376Z",
+  "sha256Source": "53f3d01b728202b717aeb5c1f93ffa54506d30e2911754df4a7b8eac945d55ba",
+  "targets": {
+    "materialId": "stone-slate"
+  },
+  "files": [
+    {
+      "path": "textures/stone-slate-tex/albedo.ktx2",
+      "bytes": 733128,
+      "sha256": "4ef2026692496a4ccd1b3c6c4df3c7d54346ef521cfd13c574a8cb986307567e"
+    },
+    {
+      "path": "textures/stone-slate-tex/normal.ktx2",
+      "bytes": 4668132,
+      "sha256": "fe4e4a0c522445eb7964632fea71c25779723d8f1d66bf6849603379d55334e1"
+    },
+    {
+      "path": "textures/stone-slate-tex/orm.ktx2",
+      "bytes": 891662,
+      "sha256": "72708b8d76039db993180e4c6eb12cb3de5a1b1cc47d87807fb5bc50eff393e4"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      42.037,
+      29.718,
+      30.154
+    ],
+    "tileMeters": 2.29
+  }
+}

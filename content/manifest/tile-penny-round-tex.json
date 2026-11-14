@@ -1,0 +1,39 @@
+{
+  "key": "tile-penny-round-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Tiles129B",
+  "sourceUrl": "https://ambientcg.com/a/Tiles129B",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:29.748Z",
+  "sha256Source": "a98f0d54afabda4a2821c2210bee94a1b92dd1b196c98444c8059608cccaa196",
+  "targets": {
+    "materialId": "tile-penny-round"
+  },
+  "files": [
+    {
+      "path": "textures/tile-penny-round-tex/albedo.ktx2",
+      "bytes": 392591,
+      "sha256": "f58ea97a655727953035088395f518cb590f51b87e0f0bb27ef91d0f3c6060a3"
+    },
+    {
+      "path": "textures/tile-penny-round-tex/normal.ktx2",
+      "bytes": 3140871,
+      "sha256": "afe73f17ae0b1fbf5bf64cfcec35f93be6f3c35808b2949e77b2dcadc581695e"
+    },
+    {
+      "path": "textures/tile-penny-round-tex/orm.ktx2",
+      "bytes": 524706,
+      "sha256": "d50fc021bc6c9c149f1d7442c1d6ef825d712db040b650b51955af083857883b"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      31.261,
+      31.391,
+      30.388
+    ],
+    "tileMeters": 0.4
+  }
+}

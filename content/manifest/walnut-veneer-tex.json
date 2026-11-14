@@ -1,0 +1,39 @@
+{
+  "key": "walnut-veneer-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "american_walnut_veneer",
+  "sourceUrl": "https://polyhaven.com/a/american_walnut_veneer",
+  "author": "Jenelle van Heerden",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:16.250Z",
+  "sha256Source": "5ec0125f9fc6b7e0ee9d1a566d563fbc8e04c4878e1bda7b8a99a7ad16ad5ebf",
+  "targets": {
+    "materialId": "walnut-veneer"
+  },
+  "files": [
+    {
+      "path": "textures/walnut-veneer-tex/albedo.ktx2",
+      "bytes": 184097,
+      "sha256": "b3d44a23983514816193ec84605c32612bd5a4614e3e5dc3e23716f823a80061"
+    },
+    {
+      "path": "textures/walnut-veneer-tex/normal.ktx2",
+      "bytes": 970667,
+      "sha256": "46a58bafa473b3843cffee76c819e2c8d435ea036d45291987f3963a0c18cdca"
+    },
+    {
+      "path": "textures/walnut-veneer-tex/orm.ktx2",
+      "bytes": 145328,
+      "sha256": "22e990569596b4307899d060134d20219c4143b9b82827fc13b0703a0ec376de"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      114.394,
+      110.269,
+      105.35
+    ],
+    "tileMeters": 1
+  }
+}

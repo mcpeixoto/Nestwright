@@ -1,0 +1,39 @@
+{
+  "key": "fabric-linen-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "rough_linen",
+  "sourceUrl": "https://polyhaven.com/a/rough_linen",
+  "author": "colormass, Rico Cilliers",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:12.488Z",
+  "sha256Source": "5653122b57cd7a95d374541ca3bc7e878a3d3a27f746bfb40c7146bb3c123473",
+  "targets": {
+    "materialId": "fabric-linen"
+  },
+  "files": [
+    {
+      "path": "textures/fabric-linen-tex/albedo.ktx2",
+      "bytes": 184186,
+      "sha256": "afec264921a0686eaea74ecfa273c4c8d6703b2a58c7c8f9e497ac8f563e19ba"
+    },
+    {
+      "path": "textures/fabric-linen-tex/normal.ktx2",
+      "bytes": 1150175,
+      "sha256": "c1fe6ce1fed3415d59693a01d31e070a3c83c4de7af9a4b2484ebff66bc6ffe1"
+    },
+    {
+      "path": "textures/fabric-linen-tex/orm.ktx2",
+      "bytes": 223871,
+      "sha256": "58c8f8b1065663d3386d1533f83c7ba981a3fb2149d2f37d07995ad5eea49de6"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      145.239,
+      170.974,
+      205.287
+    ],
+    "tileMeters": 0.270708
+  }
+}

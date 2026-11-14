@@ -1,0 +1,39 @@
+{
+  "key": "gravel-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Gravel038",
+  "sourceUrl": "https://ambientcg.com/a/Gravel038",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:44.057Z",
+  "sha256Source": "2d55c884b19b2a38867a9d83d059fd19c564702c2ff74f89e6d25c5b7866d5b4",
+  "targets": {
+    "materialId": "gravel"
+  },
+  "files": [
+    {
+      "path": "textures/gravel-tex/albedo.ktx2",
+      "bytes": 997710,
+      "sha256": "eab4f217b737938e13409484f1f97d094c598dff42214de7a132ef5196145e7b"
+    },
+    {
+      "path": "textures/gravel-tex/normal.ktx2",
+      "bytes": 5107471,
+      "sha256": "433a3a707b3c6d4b1c2820471aee7933900da49071b631dbcbf4643e6a3ea195"
+    },
+    {
+      "path": "textures/gravel-tex/orm.ktx2",
+      "bytes": 864093,
+      "sha256": "b900f57008ccda4c6b586826a6ed740946700ea05dc7a0e7b3cf3d918c229507"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      181.691,
+      156.485,
+      137.848
+    ],
+    "tileMeters": 0.15
+  }
+}

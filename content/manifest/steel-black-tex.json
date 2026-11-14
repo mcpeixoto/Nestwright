@@ -1,0 +1,39 @@
+{
+  "key": "steel-black-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Metal027",
+  "sourceUrl": "https://ambientcg.com/a/Metal027",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:40.802Z",
+  "sha256Source": "812ac901feff7c4bed0ebd34f5a186452b31f1cd83bec197ef92ead7986d1a34",
+  "targets": {
+    "materialId": "steel-black"
+  },
+  "files": [
+    {
+      "path": "textures/steel-black-tex/albedo.ktx2",
+      "bytes": 172356,
+      "sha256": "d4155304edd81a5523c5338f75c3ac86bf2ad8fc845e04b4f910d3e8a8304768"
+    },
+    {
+      "path": "textures/steel-black-tex/normal.ktx2",
+      "bytes": 1018668,
+      "sha256": "9fc3374991b99b1781a41749a1ed6f15582b6fbfb8abcf3b4075b89a7a0ac9e7"
+    },
+    {
+      "path": "textures/steel-black-tex/orm.ktx2",
+      "bytes": 165165,
+      "sha256": "73671f8aa0a3cd76bb8d6f407372a00657600b45dd949bfd93cb76d112b65a72"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      45.949,
+      44.853,
+      52.549
+    ],
+    "tileMeters": 1
+  }
+}
