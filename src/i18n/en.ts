@@ -589,6 +589,18 @@ export const en = {
   'Pixel ratio {n}': 'Pixel ratio {n}',
   'Backend {name}': 'Backend {name}',
   'Quality {name}': 'Quality {name}',
+  'Untitled': 'Untitled',
+  'Landscape': 'Landscape',
+  'Portrait': 'Portrait',
+  'Legend': 'Legend',
+  'Door swing': 'Door swing',
+  'Furniture outline': 'Furniture outline',
+  'Dimension line': 'Dimension line',
+  'Plan PDF': 'Plan PDF',
+  'Levels to print': 'Levels to print',
+  'Save PDF': 'Save PDF',
+  'Pick at least one level': 'Pick at least one level',
+  '{level} does not fit on {paper} at 1:{scale}. Try 1:100 or A3.': '{level} does not fit on {paper} at 1:{scale}. Try 1:100 or A3.',
 } as const
 
 export type MessageKey = keyof typeof en
