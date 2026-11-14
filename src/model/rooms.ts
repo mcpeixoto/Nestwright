@@ -9,7 +9,8 @@ import {
   sub,
   cross,
 } from './geometry'
-import type { Level, Room, RoomType, Vec2, Wall } from './types'
+import { intersectionArea } from './polygon'
+import type { Level, Project, Room, RoomProps, RoomType, Vec2, Wall } from './types'
 import { JOIN_EPS, locateOnWall, wallFrame } from './walls'
 
 const ROOM_LABEL: Record<RoomType, string> = {
@@ -147,7 +148,13 @@ function simplifyCollinear(poly: Vec2[]): Vec2[] {
   return kept.length >= 3 ? kept : poly
 }
 
-function computeRooms(level: Level): Room[] {
+interface Face {
+  key: string
+  polygon: Vec2[]
+}
+
+/** Closed loops and their keys. Geometry only: records are not read. */
+function detectFaces(level: Level): Face[] {
   const segs: Seg[] = []
   for (const wall of level.walls) {
     if (wall.kind === 'railing') continue
@@ -254,11 +261,16 @@ function computeRooms(level: Level): Room[] {
     if (area > 1e-4) faces.push({ polygon: simple, wallIds })
   }
 
-  faces.sort((a, b) => a.wallIds.slice().sort().join(',').localeCompare(b.wallIds.slice().sort().join(',')))
+  return faces
+    .map((face) => ({ key: face.wallIds.slice().sort().join(','), polygon: face.polygon }))
+    .sort((a, b) => a.key.localeCompare(b.key))
+}
+
+function resolveRooms(level: Level, faces: readonly Face[]): Room[] {
   const used = new Set<string>()
   const rooms: Room[] = []
   for (const face of faces) {
-    const key = face.wallIds.slice().sort().join(',')
+    const key = face.key
     const props = level.rooms.find((r) => r.key === key)
     const type: RoomType = props?.type ?? 'living'
     const stored = props?.name?.trim() ?? ''
@@ -279,6 +291,10 @@ function computeRooms(level: Level): Room[] {
   return rooms
 }
 
+function computeRooms(level: Level): Room[] {
+  return resolveRooms(level, detectFaces(level))
+}
+
 function nextRoomName(type: RoomType, used: Set<string>): string {
   const label = ROOM_LABEL[type]
   let index = 1
@@ -290,9 +306,104 @@ function nextRoomName(type: RoomType, used: Set<string>): string {
   return name
 }
 
-/** Write a stable name into `level.rooms` the first time a room appears. */
-export function ensureRoomRecords(level: Level): void {
-  for (const room of computeRooms(level)) {
+/**
+ * Share of the smaller of the two rooms that must overlap before a new room inherits an
+ * old room's record. Half means a room that was split, merged or reshaped keeps its
+ * details, while a sliver that merely touches an old room does not.
+ */
+export const ROOM_MATCH_SHARE = 0.5
+
+function copyProps(props: RoomProps, key: string): RoomProps {
+  return {
+    key,
+    name: props.name,
+    type: props.type,
+    floor: { ...props.floor },
+    ceiling: { ...props.ceiling },
+    ...(props.noCeiling ? { noCeiling: true } : {}),
+  }
+}
+
+interface Candidate {
+  next: Face
+  old: Room
+  overlap: number
+}
+
+/**
+ * Carry room records across an edit that changed which walls bound a room (a wall
+ * split, a dividing wall drawn or deleted, walls merged). A detected room with a
+ * record under its own key keeps it. Every other room takes the record of the vanished
+ * room it overlaps most, provided the overlap is at least ROOM_MATCH_SHARE of the
+ * smaller of the two. Each old record goes to one room only, the one it overlaps most;
+ * another room cut from the same old room copies its type and materials under a fresh
+ * name. Returns old key → new key for every vanished room that landed somewhere, so
+ * wishes and requirements can follow.
+ */
+function reconcileFaces(prev: Level, level: Level, faces: readonly Face[]): Map<string, string> {
+  const rekey = new Map<string, string>()
+  const recorded = new Set(level.rooms.map((room) => room.key))
+  const orphans = faces.filter((face) => !recorded.has(face.key))
+  // Cheap exit for the common edit: every room still has its record.
+  if (orphans.length === 0) return rekey
+  const nextKeys = new Set(faces.map((face) => face.key))
+  const vanished = computeRooms(prev).filter((room) => !nextKeys.has(room.key))
+  if (vanished.length === 0) return rekey
+
+  const candidates: Candidate[] = []
+  for (const next of orphans) {
+    const nextArea = Math.abs(polygonArea(next.polygon))
+    for (const old of vanished) {
+      const overlap = intersectionArea(next.polygon, old.polygon)
+      if (overlap <= 1e-6) continue
+      if (overlap + 1e-9 < ROOM_MATCH_SHARE * Math.min(nextArea, Math.abs(old.area))) continue
+      candidates.push({ next, old, overlap })
+    }
+  }
+  if (candidates.length === 0) return rekey
+  candidates.sort(
+    (a, b) => b.overlap - a.overlap || a.next.key.localeCompare(b.next.key) || a.old.key.localeCompare(b.old.key),
+  )
+
+  const donorOf = (old: Room): RoomProps =>
+    level.rooms.find((room) => room.key === old.key) ?? prev.rooms.find((room) => room.key === old.key) ?? old
+
+  // Largest overlaps first: each new room and each old record pair up at most once.
+  const heir = new Map<string, Room>()
+  const given = new Set<string>()
+  for (const { next, old } of candidates) {
+    if (heir.has(next.key) || given.has(old.key)) continue
+    heir.set(next.key, old)
+    given.add(old.key)
+    rekey.set(old.key, next.key)
+    const live = level.rooms.find((room) => room.key === old.key)
+    if (live) live.key = next.key
+    else level.rooms.push(copyProps(donorOf(old), next.key))
+  }
+
+  const names = new Set(level.rooms.filter((room) => nextKeys.has(room.key)).map((room) => room.name))
+  const cut = new Set<string>()
+  for (const { next, old } of candidates) {
+    if (!rekey.has(old.key)) rekey.set(old.key, next.key)
+    if (heir.has(next.key) || cut.has(next.key)) continue
+    cut.add(next.key)
+    const donor = donorOf(old)
+    const name = nextRoomName(donor.type, names)
+    names.add(name)
+    level.rooms.push({ ...copyProps(donor, next.key), name })
+  }
+  return rekey
+}
+
+/**
+ * Write a stable name into `level.rooms` the first time a room appears. Given the
+ * level as it was before the edit, records whose walls changed are carried over first
+ * (see reconcileFaces). Returns old key → new key for the rooms that moved.
+ */
+export function ensureRoomRecords(level: Level, prev?: Level): Map<string, string> {
+  const faces = detectFaces(level)
+  const rekey = prev ? reconcileFaces(prev, level, faces) : new Map<string, string>()
+  for (const room of resolveRooms(level, faces)) {
     const props = level.rooms.find((item) => item.key === room.key)
     if (!props) {
       level.rooms.push({
@@ -307,6 +418,37 @@ export function ensureRoomRecords(level: Level): void {
     }
     if (props.name !== room.name) props.name = room.name
   }
+  return rekey
+}
+
+/** Point wishes and room requirements at the rooms their old keys turned into. */
+export function rekeyRoomReferences(project: Project, rekey: ReadonlyMap<string, string>): void {
+  if (rekey.size === 0) return
+  for (const wish of project.wishes ?? []) {
+    const target = wish.target
+    if (target?.kind !== 'room') continue
+    const next = rekey.get(target.key)
+    if (next) target.key = next
+  }
+  for (const requirement of project.requirements ?? []) {
+    const next = rekey.get(requirement.roomKey)
+    if (next) requirement.roomKey = next
+  }
+}
+
+/**
+ * Run after every edit, inside the same draft so the patches carry it. `prev` is the
+ * project before the edit. Returns old key → new key across all levels.
+ */
+export function reconcileProjectRooms(prev: Project | undefined, project: Project): Map<string, string> {
+  const rekey = new Map<string, string>()
+  const before = new Map((prev?.levels ?? []).map((level) => [level.id, level]))
+  for (const level of project.levels) {
+    const moved = ensureRoomRecords(level, before.get(level.id))
+    for (const [from, to] of moved) rekey.set(from, to)
+  }
+  rekeyRoomReferences(project, rekey)
+  return rekey
 }
 
 /**
