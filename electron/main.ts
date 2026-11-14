@@ -4,7 +4,16 @@ import fsSync from 'node:fs'
 import path from 'node:path'
 import { coopSend, coopUsername, setCoopSink, startCoopHost, stopCoopHost } from './coop/server'
 import { crashFileName, formatCrash, sanitizeCrash } from './crashLog'
-import { safeAchievementId, safeOverlayUrl, startSteam, type SteamRuntime } from './steam'
+import {
+  safeAchievementId,
+  safeKeyboardRequest,
+  safeOverlayUrl,
+  safePresence,
+  safeStatName,
+  startSteam,
+  toKeyboardRect,
+  type SteamRuntime,
+} from './steam'
 import { fitWindow, parseWindowState, type WindowBounds } from './windowState'
 // The bundle is CJS, so the directory of main.cjs is __dirname.
 // import.meta.url is empty in that format.
@@ -260,6 +269,34 @@ function registerIpc(steam: SteamRuntime) {
       return false
     }
   })
+  ipcMain.handle('nestwright:steam-stat-get', (_event, name: unknown) => {
+    const clean = safeStatName(name)
+    if (!clean || !steam.available) return null
+    return steam.getStat(clean)
+  })
+  ipcMain.handle('nestwright:steam-stat-set', (_event, name: unknown, value: unknown) => {
+    const clean = safeStatName(name)
+    if (!clean || !steam.available || typeof value !== 'number') return false
+    return steam.setStat(clean, value)
+  })
+  ipcMain.handle('nestwright:steam-presence', (_event, status: unknown) => {
+    if (!steam.available) return false
+    if (status === null) return steam.setPresence(null)
+    if (typeof status !== 'string') return false
+    return steam.setPresence(safePresence(status))
+  })
+  ipcMain.handle('nestwright:steam-keyboard', (event, req: unknown) => {
+    const clean = safeKeyboardRequest(req)
+    if (!clean || !steam.available) return false
+    // The rect is in CSS pixels inside the page; Steam wants pixels relative to the
+    // game window, so only the page zoom applies. The display scaleFactor does not:
+    // the Deck's gamescope session runs the window fullscreen at scale 1.
+    const rect = toKeyboardRect(clean, event.sender.getZoomFactor())
+    const mode = (['single', 'multi', 'email', 'numeric'] as const)[clean.mode]
+    if (!mode) return false
+    return steam.showKeyboard({ mode, x: rect.x, y: rect.y, width: rect.width, height: rect.height })
+  })
+  ipcMain.handle('nestwright:steam-deck', () => steam.isSteamDeck)
 
   ipcMain.handle('nestwright:crash', async (_event, payload: unknown) => {
     const entry = sanitizeCrash(payload)
@@ -288,19 +325,8 @@ if (!gotLock) {
     win.focus()
   })
 
-  app.whenReady().then(() => {
-    const steam = startSteam()
-    if (steam.restarting) {
-      app.quit()
-      return
-    }
-    installMenu()
-    registerIpc(steam)
-    createWindow()
-    app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow()
-    })
-  })
+  // Overlay Chromium switches only take effect before app.whenReady().
+  const steam = startSteam({ packaged: app.isPackaged })
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()
@@ -308,5 +334,19 @@ if (!gotLock) {
 
   app.on('before-quit', () => {
     stopCoopHost()
+    steam.flush()
   })
+
+  if (steam.restarting) {
+    app.quit()
+  } else {
+    app.whenReady().then(() => {
+      installMenu()
+      registerIpc(steam)
+      createWindow()
+      app.on('activate', () => {
+        if (BrowserWindow.getAllWindows().length === 0) createWindow()
+      })
+    })
+  }
 }

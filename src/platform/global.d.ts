@@ -17,6 +17,17 @@ declare global {
         playerName(): Promise<string>
         unlock(id: string): Promise<boolean>
         overlayUrl(url: string): Promise<void>
+        getStat?(name: string): Promise<number | null>
+        setStat?(name: string, value: number): Promise<boolean>
+        setPresence?(status: string | null): Promise<boolean>
+        showKeyboard?(req: {
+          mode: 'single' | 'multi' | 'email' | 'numeric'
+          x: number
+          y: number
+          width: number
+          height: number
+        }): Promise<boolean>
+        isSteamDeck?(): Promise<boolean>
       }
       reportCrash?(payload: { kind: 'error' | 'rejection'; message: string; stack?: string }): Promise<void>
       onShowAchievements?(callback: () => void): () => void

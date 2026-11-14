@@ -4,7 +4,7 @@ import '../catalog'
 import { loadAutosave } from '../io/autosave'
 import { getTool } from '../tools/registry'
 import { levelToOpen } from '../model/openLevel'
-import { detectRooms, ensureRoomRecords } from '../model/rooms'
+import { detectRooms, reconcileProjectRooms } from '../model/rooms'
 import type { Level, OpeningType, Project, Room } from '../model/types'
 import { createSampleProject } from '../sample'
 
@@ -154,9 +154,11 @@ export const useStore = create<StoreState>((set, get) => ({
   apply(label, recipe) {
     const now = Date.now()
     const current = get().project
+    let rekey = new Map<string, string>()
     const [next, patches, inversePatches] = produceWithPatches(current, (draft) => {
       recipe(draft as unknown as Project)
-      for (const level of draft.levels) ensureRoomRecords(level)
+      // Inside the draft, so the records that follow a re-keyed room travel with the patches.
+      rekey = reconcileProjectRooms(current, draft as unknown as Project)
       draft.updatedAt = now
     })
     if (patches.length === 0) return
@@ -167,7 +169,7 @@ export const useStore = create<StoreState>((set, get) => ({
         /* a listener must not block the edit */
       }
     }
-    const { past, stroke } = get()
+    const { past, stroke, selection } = get()
     const last = past[past.length - 1]
     let history: HistoryEntry[]
     const sameStroke = stroke === label && last?.label === label
@@ -185,7 +187,15 @@ export const useStore = create<StoreState>((set, get) => ({
       history = [...past, { label, patches, inversePatches, time: now }]
       if (history.length > HISTORY_CAP) history = history.slice(history.length - HISTORY_CAP)
     }
-    set({ project: next as Project, past: history, future: [], canUndo: true, canRedo: false })
+    const moved = rekey.size > 0 && selection.some((id) => rekey.has(id))
+    set({
+      project: next as Project,
+      past: history,
+      future: [],
+      canUndo: true,
+      canRedo: false,
+      ...(moved ? { selection: unique(selection.map((id) => rekey.get(id) ?? id)) } : {}),
+    })
     emitEdit(patches, inversePatches)
     for (const listener of localApplyListeners) {
       try {
