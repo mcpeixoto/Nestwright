@@ -56,9 +56,10 @@ One depot per OS. Create them in Steamworks and paste the ids over the placehold
 | --- | --- | --- | --- |
 | `YOUR_DEPOT_MAC` | `release/mac-universal` | macOS | `Nestwright.app` |
 | `YOUR_DEPOT_WIN_X64` | `release/win-unpacked` | Windows 64-bit | `Nestwright.exe` |
-| `YOUR_DEPOT_LINUX_X64` | `release/linux-unpacked` | Linux + SteamOS | `nestwright` |
+| `YOUR_DEPOT_LINUX_X64` | `release/linux-unpacked` | Linux + SteamOS | `nestwright`, arguments `--no-sandbox` |
 
 - [ ] Set each depot's OS and launch option as in the table.
+- [ ] Keep `--no-sandbox` on the Linux launch option. Chromium aborts at start unless `chrome-sandbox` is owned by root with mode 4755, which a Steam depot cannot carry, and Ubuntu 24.04+ blocks the unprivileged user-namespace fallback (seen on the Linux smoke run below). The renderer still runs with `sandbox: true` and context isolation.
 - [ ] Steam Deck can run the Linux depot natively or the Windows depot under Proton.
 - [ ] Steam Deck compatibility review happens after release-candidate builds are uploaded.
 
@@ -210,3 +211,17 @@ npm run test:e2e
 Any build can check itself: `Nestwright --smoke=<dir>` opens the Family template in 3D, then writes `smoke.png`, `smoke.json` (renderer backend, WebGL renderer string, GPU feature status, perf sample) and `console.log` into `<dir>` and exits 0 only if the 3D view drew frames. It uses a throwaway data folder inside `<dir>`.
 
 - [ ] Steam Deck: `npm run dist:linux` (and `npm run dist:win`), then `scripts/deck/smoke.sh [--win]` from the Mac. It needs key login to `deck@steamdeck.local`, refuses to run unless the Deck is in desktop mode with no game running, runs the Linux build natively and the Windows build under the newest installed Proton, copies results to `deck-smoke/<timestamp>/`, and deletes everything it put on the Deck.
+
+### Smoke results
+
+`--smoke` on 2026-11-14, Electron 39.8.10 (Chrome 142), Family template in 3D, High quality.
+
+| Build | Machine | Backend | GPU (WebGL renderer) | fps avg | p95 ms | Result |
+| --- | --- | --- | --- | --- | --- | --- |
+| mac universal, signed + notarised, arm64 slice | MacBook, Apple M4, 2268×1386 @2x | webgl2 | ANGLE Metal, Apple M4 | 60 | 18 | ok |
+| same app, x64 slice under Rosetta (`arch -x86_64`) | same | webgl2 | ANGLE Metal, Apple M4 | 47 | 27 | ok |
+| linux x64 `dir` (cross-built on macOS) | Ubuntu 24.04, kernel 7.0, GNOME on X11, 1264×847 | webgl2 | ANGLE, Mesa Intel UHD 630 (OpenGL 4.6) | 30 | 48 | ok with `--no-sandbox`; aborts without it |
+| linux x64 on Steam Deck | — | — | — | — | — | **not run**: the Deck was offline (no answer on `steamdeck.local`) |
+| win x64 under Proton on Steam Deck | — | — | — | — | — | **not run**, same reason |
+
+`gpuFeatureStatus.webgpu` was `disabled_off` on Linux, so the Linux build renders through WebGL 2 there.
