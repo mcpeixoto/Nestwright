@@ -1,10 +1,13 @@
 import * as THREE from 'three'
-import { getEntry } from '../../catalog/registry'
 import type { Environment, Project } from '../../model/types'
 import { sunDirection, sunLook, TWILIGHT_RAD } from '../../model/sunLook'
 import { exteriorWindowSpills } from '../../model/windowSpill'
 import { useSettings } from '../../settings'
-import { qualityProfile } from '../render/quality'
+import { castFoliageShadows } from '../lighting/foliage'
+import { shadowFocus } from '../lighting/focus'
+import { createOutdoorLights } from '../lighting/outdoorLights'
+import { createSunShadow } from '../lighting/sunShadow'
+import { rendererBackend } from '../render/createRenderer'
 import type { SceneLayer, SceneLayerContext, SceneViewState } from '../layers'
 import { photoExposure } from '../../ui/photoSession'
 import { clockTime } from './clock'
@@ -93,17 +96,17 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   const envScene = new THREE.Scene()
   envScene.add(envDome.mesh)
 
+  // The one shadow-casting directional light: the sun by day, the moon by night. It never
+  // drops castShadow, so nightfall does not recompile every material.
   const sun = new THREE.DirectionalLight('#fff4e0', 2.5)
+  sun.name = 'sun'
   sun.castShadow = true
-  sun.shadow.mapSize.set(2048, 2048)
-  sun.shadow.radius = 3
-  sun.shadow.bias = -0.0002
-  sun.shadow.normalBias = 0.035
-  sun.shadow.camera.near = 0.5
-  sun.shadow.camera.far = 80
   scene.add(sun)
   scene.add(sun.target)
+  const sunShadow = createSunShadow(sun, ctx.camera)
+  const outdoorLights = createOutdoorLights(scene)
 
+  // Unshadowed fill: the moon by day (off), the sun's afterglow by night.
   const moon = new THREE.DirectionalLight('#c5d4ff', 0)
   moon.name = 'moon'
   scene.add(moon)
@@ -129,9 +132,12 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   let envReady = false
   let project: Project | null = null
   let view: SceneViewState | null = null
-  let quality = useSettings.getState().graphicsQuality
   const unit = new THREE.Vector3(0.35, 0.78, 0.25).normalize()
   let autoKey = ''
+  let spillKey = ''
+  let foliageFrame = 0
+  const moonDir = new THREE.Vector3()
+  const camPos = new THREE.Vector3()
   let envTimer = 0
   let pendingKey = ''
   const background = new THREE.Color()
@@ -192,41 +198,46 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     })
   }
 
+  /**
+   * Window spill lights are kept for the project's life and dimmed by day, so dusk does
+   * not change the light count. Lamps are doubled at night by the lamp pool
+   * (scene.userData.lampNight) instead of getting a twin light here.
+   */
   const syncAutoLights = (source: Project, night: boolean) => {
-    for (const child of [...autoLights.children]) {
-      autoLights.remove(child)
-    }
-    if (!source.environment.autoLights || !night) return
-    for (const level of source.levels) {
-      for (const item of level.items) {
-        if (item.lightOn === false) continue
-        const entry = getEntry(item.catalogId)
-        if (!entry?.light) continue
-        const light = new THREE.PointLight(entry.light.color, entry.light.intensity * 22, Math.max(6, entry.light.distance), 2)
-        const scaleY = entry.defaultSize.h > 1e-4 ? item.size.h / entry.defaultSize.h : 1
-        light.position.set(
-          item.position.x,
-          level.elevation + item.elevation + entry.light.offsetY * scaleY,
-          item.position.y,
-        )
-        autoLights.add(light)
+    const on = source.environment.autoLights !== false && night
+    scene.userData.lampNight = on
+    const spills = source.levels.flatMap((level) => exteriorWindowSpills(level))
+    const key = spills.map((spill) => `${spill.x.toFixed(2)},${spill.y.toFixed(2)},${spill.z.toFixed(2)}`).join('|')
+    if (key !== spillKey || autoLights.children.length !== spills.length) {
+      spillKey = key
+      const lights = autoLights.children as THREE.PointLight[]
+      if (lights.length !== spills.length) {
+        for (const child of [...autoLights.children]) autoLights.remove(child)
+        for (let i = 0; i < spills.length; i++) {
+          const lamp = new THREE.PointLight('#ffb15a', 0, 8.5, 2)
+          lamp.castShadow = false
+          autoLights.add(lamp)
+        }
       }
+      spills.forEach((spill, i) => autoLights.children[i]?.position.set(spill.x, spill.y, spill.z))
     }
-    for (const level of source.levels) {
-      for (const spill of exteriorWindowSpills(level)) {
-        const lamp = new THREE.PointLight('#ffb15a', 14, 8.5, 2)
-        lamp.position.set(spill.x, spill.y, spill.z)
-        lamp.castShadow = false
-        autoLights.add(lamp)
-      }
-    }
+    for (const child of autoLights.children) (child as THREE.PointLight).intensity = on ? 14 : 0
   }
 
   const dressOutdoor = () => {
     scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh
       if (!mesh.isMesh) return
-      if (isOutdoorMesh(mesh)) dressOutdoorMesh(mesh)
+      const terrain = mesh.userData.kind === 'terrain'
+      const outdoor = isOutdoorMesh(mesh)
+      if (!outdoor && !terrain) return
+      // Outdoor meshes first swap to their `|outdoor` material twins (weather lives only there),
+      // so the outdoor light list below never lands on a shared indoor library material.
+      if (outdoor) dressOutdoorMesh(mesh)
+      const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+      for (const material of list) {
+        if (material) outdoorLights.apply(material)
+      }
     })
   }
 
@@ -240,12 +251,27 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     unit.normalize()
     const alt = Math.asin(THREE.MathUtils.clamp(unit.y, -1, 1))
     const look = sunLook(alt)
-    sun.color.setRGB(look.r, look.g, look.b)
-    sun.intensity = look.intensity
-    moon.color.set('#c5d4f2')
-    moon.intensity = alt < TWILIGHT_RAD ? Math.max(look.moon, 0.9) : alt < 0 ? look.moon * 0.55 : 0
-    // A sun below the horizon still owns the shadow map and blacks out the ground.
-    sun.castShadow = alt > 0.02
+    const moonIntensity = alt < TWILIGHT_RAD ? Math.max(look.moon, 0.9) : alt < 0 ? look.moon * 0.55 : 0
+    // A sun below the horizon would own the shadow map and black out the ground, so the
+    // shadowed key light becomes the moon (opposite the sun, held at least ~25° up).
+    const sunKey = alt > 0.02
+    moonDir.copy(unit).negate()
+    if (moonDir.y < 0.42) {
+      const flat = Math.hypot(moonDir.x, moonDir.z) || 1
+      const k = Math.sqrt(1 - 0.42 * 0.42) / flat
+      moonDir.set(moonDir.x * k, 0.42, moonDir.z * k)
+    }
+    if (sunKey) {
+      sun.color.setRGB(look.r, look.g, look.b)
+      sun.intensity = look.intensity
+      moon.color.set('#c5d4f2')
+      moon.intensity = moonIntensity
+    } else {
+      sun.color.set('#c5d4f2')
+      sun.intensity = moonIntensity
+      moon.color.setRGB(look.r, look.g, look.b)
+      moon.intensity = look.intensity
+    }
     const dark = alt < 0.04
     const exposure = look.exposure * photoExposure()
     const exp = Number.isFinite(exposure) ? exposure : 0.5
@@ -268,28 +294,23 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     precip.set(weather, weather === 'clear' ? cloudiness : 0.7, nextQuality)
     setWeatherMix(weather === 'rain' ? 0.82 : weather === 'fog' ? 0.2 : 0, weather === 'snow' ? 0.4 + cloudiness * 0.6 : 0)
 
-    const mapSize = qualityProfile(nextQuality).shadowMapSize
-    if (quality !== nextQuality || sun.shadow.mapSize.x !== mapSize) {
-      quality = nextQuality
-      // The WebGPU shadow node resizes its own target from mapSize on the next update.
-      sun.shadow.mapSize.set(mapSize, mapSize)
-    }
-
     const box = boundsOf(project, view)
     const center = box.getCenter(new THREE.Vector3())
-    const size = box.getSize(new THREE.Vector3())
-    const span = Math.max(size.x, size.z, (project.terrain?.width ?? 0) * 0.5, 150)
-    const cam = sun.shadow.camera as THREE.OrthographicCamera
-    cam.left = -span
-    cam.right = span
-    cam.top = span
-    cam.bottom = -span
-    cam.far = span * 4 + 20
-    cam.updateProjectionMatrix()
+    const keyDir = sunKey ? unit : moonDir
     sun.target.position.copy(center)
-    sun.position.copy(center).addScaledVector(unit, span + 12)
+    sun.position.copy(center).addScaledVector(keyDir, 60)
+    const fillDir = sunKey ? moonDir : unit
     moon.target.position.copy(center)
-    moon.position.copy(center).addScaledVector(unit, -(span + 14))
+    moon.position.copy(center).addScaledVector(fillDir, 60)
+    ctx.camera.getWorldPosition(camPos)
+    sunShadow.update({
+      tier: nextQuality,
+      focus: shadowFocus(project, view, camPos, ctx.camera.near),
+      night: !sunKey,
+      active: sun.intensity > 0.02,
+      webgl: rendererBackend(ctx.renderer) === 'webgl2',
+      revision: `${project.updatedAt}`,
+    })
 
     const glow = dark && project.environment.autoLights !== false
     paintWindows(glow)
@@ -338,6 +359,8 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
         driftPrecip(precip.group, elapsed)
         if (!project || !view) return
         if (!envReady) envReady = refreshEnv()
+        if (foliageFrame++ % 30 === 0) castFoliageShadows(scene)
+        outdoorLights.update()
         apply()
       } catch (err) {
         console.error(err)
@@ -345,6 +368,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     },
     dispose() {
       if (typeof window !== 'undefined') window.clearTimeout(envTimer)
+      sunShadow.dispose()
       scene.remove(sky)
       scene.remove(sun)
       scene.remove(sun.target)
