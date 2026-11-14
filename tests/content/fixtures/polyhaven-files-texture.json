@@ -1,0 +1,26 @@
+{
+  "Diffuse": {
+    "1k": {
+      "jpg": { "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/example/example_diff_1k.jpg", "size": 100 },
+      "png": { "url": "https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/example/example_diff_1k.png", "size": 200 }
+    }
+  },
+  "nor_dx": {
+    "1k": { "jpg": { "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/example/example_nor_dx_1k.jpg", "size": 90 } }
+  },
+  "nor_gl": {
+    "1k": { "jpg": { "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/example/example_nor_gl_1k.jpg", "size": 80 } }
+  },
+  "Rough": {
+    "1k": { "jpg": { "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/example/example_rough_1k.jpg", "size": 40 } }
+  },
+  "Metal": {
+    "1k": { "png": { "url": "https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/example/example_metal_1k.png", "size": 30 } }
+  },
+  "AO": {
+    "1k": { "jpg": { "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/example/example_ao_1k.jpg", "size": 20 } }
+  },
+  "Displacement": {
+    "1k": { "jpg": { "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/example/example_disp_1k.jpg", "size": 70 } }
+  }
+}

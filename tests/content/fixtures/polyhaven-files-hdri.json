@@ -1,0 +1,8 @@
+{
+  "hdri": {
+    "1k": {
+      "hdr": { "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/example_1k.hdr", "size": 50 },
+      "exr": { "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/exr/1k/example_1k.exr", "size": 40 }
+    }
+  }
+}
