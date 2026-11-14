@@ -1,3 +1,4 @@
+import { roomNetArea } from '../../../model/areas'
 import { formatArea } from '../../../model/units'
 import type { MaterialRef, RoomType } from '../../../model/types'
 import { roomsFor, selectActiveLevel, useStore } from '../../../store'
@@ -87,7 +88,11 @@ function RoomSection() {
           }
         />
       </label>
-      <p className="readout">{tr('Area {area}', { area: formatArea(room.area, units) })}</p>
+      <p className="readout" title={tr('Net floor area, inside the wall faces')}>
+        {tr('Net area {area}', { area: formatArea(roomNetArea(level, room), units) })}
+        <br />
+        {tr('Gross area {area}', { area: formatArea(room.area, units) })}
+      </p>
     </div>
   )
 }

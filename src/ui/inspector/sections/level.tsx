@@ -1,4 +1,7 @@
-import { selectActiveLevel, useStore } from '../../../store'
+import { levelAreas } from '../../../model/areas'
+import { formatArea } from '../../../model/units'
+import { roomsFor, selectActiveLevel, useStore } from '../../../store'
+import { useTranslate } from '../../../i18n'
 import { selectionFacts } from '../facts'
 import { NumberField, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
@@ -6,7 +9,10 @@ import { T } from '../../../i18n/T'
 
 function LevelSection() {
   const level = useStore(selectActiveLevel)
+  const units = useStore((s) => s.project.units)
+  const tr = useTranslate()
   if (!level) return null
+  const areas = levelAreas(level, roomsFor(level))
   return (
     <div className="props">
       <h2><T k="Level" /></h2>
@@ -22,6 +28,19 @@ function LevelSection() {
           }}
         />
       </label>
+      {areas.rooms > 0 ? (
+        <p className="readout" title={tr('Net floor area, inside the wall faces')}>
+          {tr('Net area {area}', { area: formatArea(areas.net, units) })}
+          <br />
+          {tr('Gross area {area}', { area: formatArea(areas.gross, units) })}
+          {areas.outdoor > 0 ? (
+            <>
+              <br />
+              {tr('Outdoor {area}', { area: formatArea(areas.outdoor, units) })}
+            </>
+          ) : null}
+        </p>
+      ) : null}
       <NumberField
         label="Height"
         value={level.height}

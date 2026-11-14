@@ -1,8 +1,10 @@
-import { useSyncExternalStore } from 'react'
+import { useMemo, useSyncExternalStore } from 'react'
+import type { Project } from '../model/types'
 import { getPlanCursor, subscribePlanCursor } from '../plan2d/cursor'
 import { polygonArea } from '../model/geometry'
+import { levelAreas, projectAreas } from '../model/areas'
 import { formatArea, formatLength } from '../model/units'
-import { useStore } from '../store'
+import { roomsFor, selectActiveLevel, useStore } from '../store'
 import { T } from '../i18n/T'
 import { useTranslate } from '../i18n'
 
@@ -15,6 +17,10 @@ export function StatusBar() {
   const message = useStore((s) => s.message)
   const boundary = useStore((s) => s.project.terrain?.boundary)
   const plotArea = formatArea(Math.abs(polygonArea(boundary ?? [])), units)
+  const levels = useStore((s) => s.project.levels)
+  const active = useStore(selectActiveLevel)
+  const house = useMemo(() => projectAreas({ levels } as Project, roomsFor), [levels])
+  const floor = useMemo(() => (active ? levelAreas(active, roomsFor(active)) : null), [active])
   const cursor = useSyncExternalStore(subscribePlanCursor, getPlanCursor, () => null)
 
   return (
@@ -42,6 +48,15 @@ export function StatusBar() {
       >
         {units === 'metric' ? tr('Metric') : tr('Imperial')}
       </button>
+      {house.rooms > 0 ? (
+        <span className="status-area" title={tr('Net floor area, inside the wall faces')}>
+          {tr('Floor {level} · House {house}', {
+            level: formatArea(floor?.net ?? 0, units),
+            house: formatArea(house.net, units),
+          })}
+          {house.outdoor > 0 ? ` · ${tr('Outdoor {area}', { area: formatArea(house.outdoor, units) })}` : ''}
+        </span>
+      ) : null}
       <span>{plotArea}</span>
       <span className="status-msg">{message}</span>
     </footer>
