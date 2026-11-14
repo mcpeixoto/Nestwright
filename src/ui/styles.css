@@ -38,7 +38,8 @@ button {
 
 button:hover { background: rgba(255, 255, 255, 0.06); }
 button.on { background: rgba(63, 184, 175, 0.2); border-color: rgba(63, 184, 175, 0.5); color: white; }
-button:disabled { opacity: 0.35; cursor: default; }
+button:disabled, button[aria-disabled='true'] { opacity: 0.35; cursor: default; }
+button[aria-disabled='true']:hover { background: transparent; }
 button.danger { color: var(--danger); border-color: rgba(212, 101, 90, 0.4); }
 
 :is(button, input, select, textarea, .rail, .rail-flyout, .menu, [role='menu'], [role='menuitem']):focus-visible,
@@ -90,7 +91,7 @@ input, select {
   padding: 0 12px;
   border-width: 0 0 1px;
   flex-wrap: nowrap;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .wordmark {
@@ -109,7 +110,15 @@ input, select {
   flex: 1 1 80px;
   max-width: 210px;
 }
-.project-title .project-name { max-width: none; min-width: 0; flex: 1 1 auto; width: auto; }
+.project-title .project-name {
+  max-width: none;
+  min-width: 0;
+  flex: 1 1 auto;
+  width: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .unsaved-dot {
   width: 8px;
   height: 8px;
@@ -120,7 +129,12 @@ input, select {
 
 .view-switch, .top-actions { display: flex; gap: 4px; flex-wrap: nowrap; flex: none; }
 .view-switch button, .top-actions button { white-space: nowrap; }
-.top-actions { margin-left: auto; }
+.top-actions { margin-left: auto; align-items: center; }
+.top-cluster { display: flex; align-items: center; gap: 4px; flex: none; }
+.top-divider { width: 1px; height: 18px; background: var(--line); flex: none; margin: 0 4px; }
+.tb-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; }
+.tb-glyph { display: grid; place-items: center; flex: none; }
+.tb-glyph svg, .tb-btn svg { width: 18px; height: 18px; display: block; }
 
 .rail {
   display: flex;
@@ -379,6 +393,27 @@ input, select {
   .inspector { width: 240px; }
   .panel-slot { width: 190px; }
   .top-actions button { padding: 6px 7px; }
+}
+
+@media (max-width: 1359px) {
+  .top-cluster.design .tb-btn,
+  .top-cluster.file .tb-btn {
+    width: 34px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+  .top-cluster.design .tb-label,
+  .top-cluster.file .tb-label { display: none; }
+  .top-cluster .menu-pop .tb-btn {
+    width: 100%;
+    height: auto;
+    padding: 6px 8px;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+  .top-cluster .menu-pop .tb-label { display: inline; }
 }
 
 .modal-back {

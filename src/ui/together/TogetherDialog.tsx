@@ -4,6 +4,8 @@ import { useSettings } from '../../settings'
 import { T } from '../../i18n/T'
 import { useTranslate } from '../../i18n'
 import { Modal } from '../Modal'
+import { Tooltip } from '../Tooltip'
+import { togetherIcon } from '../topbar/icons'
 import { registerTopBarAction } from '../topbar/registry'
 import { joinSession, lastAddress, leaveSession, notify, startHosting, useLive } from '../../net/live'
 
@@ -12,21 +14,15 @@ function TogetherButton() {
   const live = useLive()
   const tr = useTranslate()
   const on = open || live.role !== 'idle'
+  const name = tr('Together')
   return (
     <>
-      <button
-        type="button"
-        className={on ? 'icon-btn on' : 'icon-btn'}
-        title={tr('Together')}
-        aria-label={tr('Together')}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7">
-          <circle cx="8" cy="9" r="2.2" />
-          <circle cx="16" cy="9" r="2.2" />
-          <path d="M4.5 18c.6-2.2 2.2-3.2 3.5-3.2S11 15.8 11.6 18M12.4 18c.6-2.2 2.2-3.2 3.5-3.2s2.9 1 3.5 3.2" />
-        </svg>
-      </button>
+      <Tooltip label={name}>
+        <button type="button" className={on ? 'tb-btn on' : 'tb-btn'} aria-label={name} onClick={() => setOpen((value) => !value)}>
+          <span className="tb-glyph" dangerouslySetInnerHTML={{ __html: togetherIcon }} />
+          <span className="tb-label">{name}</span>
+        </button>
+      </Tooltip>
       {open && <TogetherDialog onClose={() => setOpen(false)} />}
     </>
   )
