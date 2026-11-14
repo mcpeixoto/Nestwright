@@ -251,6 +251,8 @@ input, select {
 .check { flex-direction: row; align-items: center; }
 .check input { width: auto; }
 .field input[type='range'] { padding: 0; }
+.field.invalid input { border-color: #d0574f; outline-color: #d0574f; }
+.field-error { color: #d0574f; font-size: 0.85em; }
 .hint, .readout { color: var(--muted); margin: 8px 0; }
 .hint { line-height: 1.4; }
 
