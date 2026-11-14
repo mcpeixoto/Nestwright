@@ -23,6 +23,11 @@ window.__nestwright = {
   loadTemplate,
   roomCameraPose,
   perf: { report: perfReport },
+  async samplePixels(points) {
+    const controller = getController()
+    if (!controller) return points.map(() => null)
+    return controller.samplePixels(points)
+  },
 }
 
 const root = document.getElementById('root')

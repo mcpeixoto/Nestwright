@@ -32,6 +32,13 @@ declare global {
       perf?: {
         report: (frames?: number) => Promise<import('../view3d/perfMonitor').PerfReport>
       }
+      /**
+       * Render the live view and read sRGB bytes (as displayed) at world points [x, y, z] or
+       * canvas CSS points {x, y}. Null for a point off screen or before the renderer is up.
+       */
+      samplePixels?: (
+        points: readonly import('../view3d/render/readback').SamplePoint[],
+      ) => Promise<(import('../view3d/render/readback').PixelSample | null)[]>
     }
   }
 }

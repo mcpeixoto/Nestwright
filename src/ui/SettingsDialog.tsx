@@ -2,13 +2,22 @@ import { useSyncExternalStore } from 'react'
 import { coopJoinAvailable } from './start/coop'
 import { T } from '../i18n/T'
 import { useTranslate } from '../i18n'
-import { AUTOSAVE_CHOICES, useSettings, type AppLanguage, type GraphicsQuality } from '../settings'
+import {
+  AUTOSAVE_CHOICES,
+  useSettings,
+  type AppLanguage,
+  type GraphicsQuality,
+  type RendererBackendSetting,
+} from '../settings'
 import { useStore } from '../store'
 import { Modal } from './Modal'
 import { isSettingsOpen, setSettingsOpen, subscribeSettings } from './settingsDialogState'
 import { registerTopBarAction } from './topbar/registry'
 
 const QUALITIES: GraphicsQuality[] = ['low', 'medium', 'high', 'ultra']
+const BACKENDS: RendererBackendSetting[] = ['auto', 'webgpu', 'webgl']
+/** 0 follows the graphics tier. */
+const RENDER_SCALES = [0, 0.5, 0.67, 0.8, 1] as const
 
 function SettingsButton() {
   const tr = useTranslate()
@@ -71,6 +80,29 @@ export function SettingsDialog() {
             {QUALITIES.map((quality) => (
               <option key={quality} value={quality}>
                 {tr(quality === 'low' ? 'Low' : quality === 'medium' ? 'Medium' : quality === 'high' ? 'High' : 'Ultra')}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <T k="Render scale" />
+          <select value={String(settings.renderScale)} onChange={(event) => set({ renderScale: Number(event.target.value) })}>
+            {RENDER_SCALES.map((scale) => (
+              <option key={scale} value={scale}>
+                {scale === 0 ? tr('Match graphics') : `${Math.round(scale * 100)}%`}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <T k="Renderer (applies on restart)" />
+          <select
+            value={settings.backend}
+            onChange={(event) => set({ backend: event.target.value as RendererBackendSetting })}
+          >
+            {BACKENDS.map((backend) => (
+              <option key={backend} value={backend}>
+                {backend === 'auto' ? tr('Automatic') : backend === 'webgpu' ? 'WebGPU' : 'WebGL 2'}
               </option>
             ))}
           </select>

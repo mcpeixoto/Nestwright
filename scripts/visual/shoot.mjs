@@ -2,8 +2,9 @@
  * Baseline screenshots of the named views in views.json.
  *
  *   node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181]
- *     [--views a,b] [--serve] [--ref <dir>]
+ *     [--views a,b] [--serve] [--ref <dir>] [--backend webgpu|webgl]
  *
+ * --backend webgl loads the page with ?renderer=webgl (forced WebGL2 fallback).
  * --serve starts vite on a free port and stops it when the run ends.
  * Chromium is launched with a GPU. This machine's sandbox cannot do that;
  * a failure to launch is reported and the process exits non-zero.
@@ -24,7 +25,7 @@ const root = fileURLToPath(new globalThis.URL('../..', import.meta.url))
 const here = dirname(fileURLToPath(import.meta.url))
 
 function help() {
-  return `node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181] [--views a,b] [--serve] [--ref <dir>]
+  return `node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181] [--views a,b] [--serve] [--ref <dir>] [--backend webgpu|webgl]
 Default reference folder: ${join(homedir(), 'Documents', 'Coding', '_assets', 'architecture-design-steam-screenshots')}`
 }
 
@@ -244,12 +245,13 @@ async function main() {
       server = startVite(port)
       await waitForUrl(url, server.child, server.log)
     }
+    // The full Chromium build (channel 'chromium'); the default headless shell has no WebGPU.
     const args =
       process.platform === 'darwin'
-        ? ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
-        : ['--enable-gpu', '--ignore-gpu-blocklist']
+        ? ['--enable-unsafe-webgpu', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
+        : ['--enable-unsafe-webgpu', '--enable-gpu', '--ignore-gpu-blocklist']
     try {
-      browser = await chromium.launch({ headless: true, timeout: 45_000, args })
+      browser = await chromium.launch({ channel: 'chromium', headless: true, timeout: 45_000, args })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       throw new Error(`Chromium did not start. A GPU browser is required for these shots. ${message}`, { cause: err })
@@ -267,7 +269,9 @@ async function main() {
     page.on('console', (msg) => {
       if (msg.type() === 'error') errors.push(`console: ${msg.text()}`)
     })
-    await page.goto(url, { waitUntil: 'domcontentloaded' })
+    const target = new globalThis.URL(url)
+    if (opts.backend === 'webgl') target.searchParams.set('renderer', 'webgl')
+    await page.goto(target.toString(), { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => typeof globalThis.__nestwright?.loadTemplate === 'function')
     await mkdir(opts.out, { recursive: true })
     for (const view of selected) {
@@ -283,7 +287,7 @@ async function main() {
     await writeFile(join(opts.out, 'contact.html'), contactHtml({ shots, refs }))
     await writeFile(
       join(opts.out, 'summary.json'),
-      JSON.stringify({ createdAt: new Date().toISOString(), url, errors, shots }, null, 2),
+      JSON.stringify({ createdAt: new Date().toISOString(), url, backend: opts.backend, errors, shots }, null, 2),
     )
     if (errors.length) {
       process.stderr.write(`${errors.join('\n')}\n`)

@@ -14,7 +14,7 @@ export interface SceneViewState {
 export interface SceneLayerController {
   readonly scene: THREE.Scene
   readonly camera: THREE.PerspectiveCamera
-  readonly renderer: THREE.WebGLRenderer | null
+  readonly renderer: THREE.WebGPURenderer | null
   readonly controls: OrbitControls | null
   frame(): void
 }
@@ -22,7 +22,7 @@ export interface SceneLayerController {
 export interface SceneLayerContext {
   scene: THREE.Scene
   camera: THREE.PerspectiveCamera
-  renderer: THREE.WebGLRenderer | null
+  renderer: THREE.WebGPURenderer | null
   controller: SceneLayerController
 }
 

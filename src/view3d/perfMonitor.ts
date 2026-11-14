@@ -1,4 +1,3 @@
-import * as THREE from 'three'
 import { useSettings } from '../settings'
 import { estimateGpuBytes, type GpuScene } from './gpuEstimate'
 import { createFrameCapture, frameStats, type CaptureTiming } from './perfStats'
@@ -86,17 +85,42 @@ function buildReport(timing: CaptureTiming): PerfReport {
   return report
 }
 
+/**
+ * The parts of renderer.info both renderers share. WebGPURenderer counts draws in
+ * `render.drawCalls` (its `render.calls` is render() invocations), pipelines in
+ * `memory.programs` and real allocations in `memory.total`; WebGLRenderer has
+ * `render.calls`, a `programs` array and no byte totals.
+ */
+export interface PerfRenderer {
+  info: {
+    render: { calls?: number; drawCalls?: number; triangles: number }
+    memory: { geometries: number; textures: number; programs?: number; total?: number }
+    programs?: unknown[] | null
+    reset(): void
+  }
+  backend?: { isWebGPUBackend?: boolean; isWebGLBackend?: boolean }
+  capabilities?: { isWebGL2?: boolean }
+  domElement: { width: number; height: number }
+  getPixelRatio(): number
+}
+
+function backendName(renderer: PerfRenderer): string {
+  if (renderer.backend?.isWebGPUBackend) return 'webgpu'
+  if (renderer.backend?.isWebGLBackend) return 'webgl2'
+  return renderer.capabilities?.isWebGL2 ? 'webgl2' : 'webgl'
+}
+
 /** Snapshot renderer.info after a completed frame, then reset it. Primary view only. */
-export function recordFrame(renderer: THREE.WebGLRenderer, scene: GpuScene, dtMs: number): void {
+export function recordFrame(renderer: PerfRenderer, scene: GpuScene, dtMs: number, backend?: string): void {
   if (!Number.isFinite(dtMs) || dtMs < 0) return
   frameStats.push(dtMs)
   const info = renderer.info
-  latest.drawCalls = info.render.calls
+  latest.drawCalls = info.render.drawCalls ?? info.render.calls ?? 0
   latest.triangles = info.render.triangles
   latest.geometries = info.memory.geometries
   latest.textures = info.memory.textures
-  latest.programs = info.programs?.length ?? 0
-  latest.backend = renderer.capabilities.isWebGL2 ? 'webgl2' : 'webgl'
+  latest.programs = typeof info.memory.programs === 'number' ? info.memory.programs : (info.programs?.length ?? 0)
+  latest.backend = backend ?? backendName(renderer)
   latest.width = renderer.domElement.width
   latest.height = renderer.domElement.height
   latest.pixelRatio = renderer.getPixelRatio()
@@ -106,7 +130,11 @@ export function recordFrame(renderer: THREE.WebGLRenderer, scene: GpuScene, dtMs
   // lands on the next frame, outside the captured window) and, while the HUD
   // is up, about four times a second.
   const hud = useSettings.getState().showFps
-  if (finishing || (hud && (gpuTick === 1 || gpuTick % 15 === 0))) {
+  const tracked = info.memory.total
+  if (typeof tracked === 'number' && tracked > 0) {
+    // WebGPURenderer tracks its own buffers and textures (render targets included).
+    latest.gpuMemMB = tracked / (1024 * 1024)
+  } else if (finishing || (hud && (gpuTick === 1 || gpuTick % 15 === 0))) {
     latest.gpuMemMB = estimateGpuBytes(scene) / (1024 * 1024)
   }
   info.reset()

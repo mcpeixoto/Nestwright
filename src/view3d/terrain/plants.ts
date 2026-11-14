@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { attribute, cos, positionGeometry, positionLocal, sin, uniform, vec3 } from 'three/tsl'
 import { sampleHeight } from '../../model/terrain'
 import type { Terrain } from '../../model/types'
 import { srgbByteToLinear } from '../colorLinear'
@@ -280,13 +281,13 @@ export class PlantField {
   readonly group = new THREE.Group()
   private batches = new Map<string, Batch>()
   private geos = new Map<string, THREE.BufferGeometry>()
-  private material: THREE.MeshStandardMaterial
-  private time = { value: 0 }
+  private material: THREE.MeshStandardNodeMaterial
+  private time = uniform(0)
   private dummy = new THREE.Object3D()
 
   constructor() {
     this.group.name = 'plants'
-    this.material = new THREE.MeshStandardMaterial({
+    this.material = new THREE.MeshStandardNodeMaterial({
       vertexColors: true,
       roughness: 0.92,
       metalness: 0,
@@ -295,20 +296,16 @@ export class PlantField {
       emissiveIntensity: 0,
       side: THREE.DoubleSide,
     })
-    this.material.customProgramCacheKey = () => 'nestwright-plant-wind'
+    // PHASE1-PORT: wind sway as a positionNode. Node materials apply the instance matrix
+    // before positionNode, so the offset is added in mesh space and its gust phase keys off
+    // the vertex's x instead of the instance origin's x (the old GLSL swayed pre-instance).
     const time = this.time
-    this.material.onBeforeCompile = (shader) => {
-      shader.uniforms.uTime = time
-      shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nattribute float sway;\nuniform float uTime;')
-        .replace(
-          '#include <begin_vertex>',
-          `#include <begin_vertex>
-           float gust = sin(uTime * 1.45 + position.y * 0.35 + instanceMatrix[3].x * 0.37);
-           transformed.x += sway * gust * position.y * 0.03;
-           transformed.z += sway * cos(uTime * 1.15 + position.y * 0.5) * position.y * 0.02;`,
-        )
-    }
+    const sway = attribute<'float'>('sway', 'float')
+    const height = positionGeometry.y
+    const gust = sin(time.mul(1.45).add(height.mul(0.35)).add(positionLocal.x.mul(0.37)))
+    const dx = sway.mul(gust).mul(height).mul(0.03)
+    const dz = sway.mul(cos(time.mul(1.15).add(height.mul(0.5)))).mul(height).mul(0.02)
+    this.material.positionNode = positionLocal.add(vec3(dx, 0, dz))
   }
 
   private geometry(species: string): THREE.BufferGeometry {

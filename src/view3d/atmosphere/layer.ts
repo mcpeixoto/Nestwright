@@ -1,15 +1,15 @@
 import * as THREE from 'three'
-import { Sky } from 'three/examples/jsm/objects/Sky.js'
 import { getEntry } from '../../catalog/registry'
 import type { Environment, Project } from '../../model/types'
 import { sunDirection, sunLook, TWILIGHT_RAD } from '../../model/sunLook'
 import { exteriorWindowSpills } from '../../model/windowSpill'
-import { shadowMapSize, useSettings } from '../../settings'
+import { useSettings } from '../../settings'
+import { qualityProfile } from '../render/quality'
 import type { SceneLayer, SceneLayerContext, SceneViewState } from '../layers'
 import { photoExposure } from '../../ui/photoSession'
 import { clockTime } from './clock'
 import { createClouds } from './clouds'
-import { gradeSkyMaterial, type SkyGrade } from './gradeSky'
+import { createGradedSky, type GradedSky, type SkyGrade } from './gradeSky'
 import { createPrecip, driftPrecip } from './precip'
 import { createSkyParams, writeSkyParams, type SkyParams } from './skyParams'
 import { createStars } from './stars'
@@ -19,8 +19,6 @@ import { attachWeather, setWeatherMix } from './weather'
 const ENV_INTENSITY = 0.7
 /** Added before tone mapping so the disc clips to a warm white, not a green blob. */
 const SUN_DISC: readonly [number, number, number] = [14, 8.2, 2.4]
-
-const SUN_SCALE = 450000
 
 const fallbackEnv: Environment = {
   dayOfYear: 172,
@@ -32,23 +30,13 @@ const fallbackEnv: Environment = {
   autoLights: true,
 }
 
-function paintSky(sky: Sky, unit: THREE.Vector3, showSun: boolean, grade: SkyGrade, light: boolean, params: SkyParams): void {
-  const mat = sky.material as THREE.ShaderMaterial
-  mat.fog = false
-  const uniforms = mat.uniforms
-  const set = (key: string, value: number) => {
-    const slot = uniforms[key]
-    if (slot) slot.value = value
-  }
-  set('turbidity', params.turbidity)
-  set('rayleigh', params.rayleigh)
-  set('mieCoefficient', params.mieCoefficient)
-  set('mieDirectionalG', params.mieDirectionalG)
-  set('cloudCoverage', 0)
-  set('cloudDensity', 0)
-  set('showSunDisc', showSun ? 1 : 0)
-  const sun = uniforms.sunPosition?.value
-  if (sun instanceof THREE.Vector3) sun.copy(unit).multiplyScalar(SUN_SCALE)
+/**
+ * The Preetham parameters (turbidity, rayleigh, mie) in SkyParams fed only the sun direction
+ * once the fragment colour was graded, so the dome takes the graded colours directly.
+ */
+function paintSky(sky: GradedSky, unit: THREE.Vector3, showSun: boolean, grade: SkyGrade, light: boolean, params: SkyParams): void {
+  sky.sunDirection.copy(unit)
+  sky.setShowSun(showSun)
   const zenith = light ? params.zenithLight : params.zenithScene
   const horizon = light ? params.horizonLight : params.horizonScene
   grade.zenith.setRGB(zenith[0], zenith[1], zenith[2])
@@ -91,16 +79,19 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     ctx.renderer.shadowMap.type = THREE.PCFShadowMap
   }
 
-  const sky = new Sky()
+  const skyGrade: SkyGrade = { zenith: new THREE.Color(), horizon: new THREE.Color(), sunDisc: new THREE.Color() }
+  const envGrade: SkyGrade = { zenith: new THREE.Color(), horizon: new THREE.Color(), sunDisc: new THREE.Color() }
+  const skyDome = createGradedSky(skyGrade)
+  const sky = skyDome.mesh
   sky.scale.setScalar(480)
   sky.frustumCulled = false
   sky.name = 'sky'
   scene.add(sky)
 
-  const envSky = new Sky()
-  envSky.scale.setScalar(80)
+  const envDome = createGradedSky(envGrade)
+  envDome.mesh.scale.setScalar(80)
   const envScene = new THREE.Scene()
-  envScene.add(envSky)
+  envScene.add(envDome.mesh)
 
   const sun = new THREE.DirectionalLight('#fff4e0', 2.5)
   sun.castShadow = true
@@ -133,7 +124,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   scene.add(autoLights)
 
   const pmrem = ctx.renderer ? new THREE.PMREMGenerator(ctx.renderer) : null
-  let envTarget: THREE.WebGLRenderTarget | null = null
+  let envTarget: { texture: THREE.Texture; dispose(): void } | null = null
   let envKey = ''
   let envReady = false
   let project: Project | null = null
@@ -144,17 +135,11 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   let envTimer = 0
   let pendingKey = ''
   const background = new THREE.Color()
-  const skyGrade: SkyGrade = { zenith: new THREE.Color(), horizon: new THREE.Color(), sunDisc: new THREE.Color() }
-  const envGrade: SkyGrade = { zenith: new THREE.Color(), horizon: new THREE.Color(), sunDisc: new THREE.Color() }
-  gradeSkyMaterial(sky, skyGrade)
-  gradeSkyMaterial(envSky, envGrade)
   const skyState = createSkyParams()
   let skyKey = ''
   const fog = new THREE.Fog(0x000000, skyState.fogNear, skyState.fogFar)
   scene.fog = fog
   scene.background = background
-  const skyMat = sky.material as THREE.ShaderMaterial
-  skyMat.depthWrite = false
   sky.renderOrder = -2
 
   const applySky = (alt: number, weather: string, cloudiness: number, exposure: number) => {
@@ -162,8 +147,8 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     if (nextKey === skyKey) return
     skyKey = nextKey
     writeSkyParams(alt, weather, cloudiness, exposure, skyState)
-    paintSky(sky, unit, skyState.sunDisc > 0, skyGrade, false, skyState)
-    paintSky(envSky, unit, false, envGrade, true, skyState)
+    paintSky(skyDome, unit, skyState.sunDisc > 0, skyGrade, false, skyState)
+    paintSky(envDome, unit, false, envGrade, true, skyState)
     fog.near = skyState.fogNear
     fog.far = skyState.fogFar
     fog.color.setRGB(skyState.horizonScene[0], skyState.horizonScene[1], skyState.horizonScene[2])
@@ -286,12 +271,11 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     precip.set(weather, weather === 'clear' ? cloudiness : 0.7, nextQuality)
     setWeatherMix(weather === 'rain' ? 0.82 : weather === 'fog' ? 0.2 : 0, weather === 'snow' ? 0.4 + cloudiness * 0.6 : 0)
 
-    const mapSize = shadowMapSize(nextQuality)
+    const mapSize = qualityProfile(nextQuality).shadowMapSize
     if (quality !== nextQuality || sun.shadow.mapSize.x !== mapSize) {
       quality = nextQuality
+      // The WebGPU shadow node resizes its own target from mapSize on the next update.
       sun.shadow.mapSize.set(mapSize, mapSize)
-      sun.shadow.map?.dispose()
-      sun.shadow.map = null
     }
 
     const box = boundsOf(project, view)
@@ -378,10 +362,8 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
       scene.fog = null
       envTarget?.dispose()
       pmrem?.dispose()
-      sky.geometry.dispose()
-      envSky.geometry.dispose()
-      ;(sky.material as THREE.Material).dispose()
-      ;(envSky.material as THREE.Material).dispose()
+      skyDome.dispose()
+      envDome.dispose()
       clouds.dispose()
       stars.dispose()
       precip.dispose()

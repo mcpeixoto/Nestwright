@@ -136,6 +136,8 @@ export function parseArgs(argv) {
     views: /** @type {string[] | null} */ (null),
     serve: false,
     ref: defaultRefDir(),
+    /** 'webgpu' (default: auto, which is WebGPU on a GPU browser) or 'webgl' (forced fallback). */
+    backend: 'webgpu',
     help: false,
   }
   for (let i = 0; i < argv.length; i++) {
@@ -155,6 +157,11 @@ export function parseArgs(argv) {
         .filter(Boolean)
     } else if (arg === '--ref') opts.ref = next()
     else if (arg === '--serve') opts.serve = true
+    else if (arg === '--backend') {
+      const value = next()
+      if (value !== 'webgpu' && value !== 'webgl') throw new Error(`--backend must be webgpu or webgl, got ${value}`)
+      opts.backend = value
+    }
     else if (arg === '--help' || arg === '-h') opts.help = true
     else throw new Error(`Unknown argument ${arg}`)
   }

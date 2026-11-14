@@ -1,5 +1,23 @@
 import * as THREE from 'three'
 import {
+  abs,
+  attribute,
+  float,
+  floor,
+  fract,
+  max,
+  mix,
+  mod,
+  normalGeometry,
+  positionGeometry,
+  sin,
+  step,
+  uniform,
+  vec2,
+  vec3,
+  vec4,
+} from 'three/tsl'
+import {
   ASPHALT_ROUGHNESS,
   GROUND_ENV_INTENSITY,
   PLAZA_TILE_M,
@@ -133,138 +151,61 @@ function groundMaterial(map: THREE.Texture | null, albedo: readonly [number, num
   return mat
 }
 
-const FACADE_GLSL = /* glsl */ `
-float gGlass;
-float gFrame;
-float gBand;
-float gMx;
-float gMy;
-float gRoof;
-float cityHash(vec2 p) {
-  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-void cityFace() {
-  vec3 an = abs(vLocalN);
-  gRoof = step(0.6, an.y);
-  gMx = mix((vLocal.x + 0.5) * vSize.x, (vLocal.z + 0.5) * vSize.z, step(an.z, an.x));
-  gMy = (vLocal.y + 0.5) * vSize.y;
-}
-float cityPunched(float insetX, float y0, float y1) {
-  float bay = 2.5;
-  float fx = mod(gMx, bay);
-  float fy = mod(gMy, 3.0);
-  return step(insetX, fx) * step(fx, bay - insetX) * step(y0, fy) * step(fy, y1);
-}
-float cityRibbon(float y0, float y1) {
-  float fy = mod(gMy, 3.0);
-  return step(y0, fy) * step(fy, y1);
-}
-void cityClassify() {
-  cityFace();
-  gBand = 0.0;
-  gFrame = 0.0;
-  gGlass = 0.0;
-  if (gRoof > 0.5) return;
-  gBand = step(mod(gMy, 3.0), 0.16);
-  if (vPattern > 0.5) {
-    float outer = cityRibbon(0.88, 2.22);
-    float inner = cityRibbon(1.02, 2.08);
-    float mullion = step(0.16, mod(gMx, 1.8));
-    gFrame = max(outer - inner, 0.0);
-    gGlass = inner * mullion;
-    return;
-  }
-  float hole = cityPunched(0.5, 0.64, 2.28);
-  gGlass = cityPunched(0.66, 0.8, 2.12);
-  gFrame = max(hole - gGlass, 0.0);
-}
-float cityLit() {
-  cityFace();
-  if (gRoof > 0.5 || gGlass < 0.5) return 0.0;
-  float pitch = mix(2.5, 1.8, step(0.5, vPattern));
-  float cell = cityHash(vec2(floor(gMx / pitch) + vSeed * 19.0, floor(gMy / 3.0) + vSeed * 7.0));
-  return step(cell, vGlow) * uNight;
-}
-`
+type F = THREE.Node<'float'>
 
-function createFacadeMaterial(): { material: THREE.MeshStandardMaterial; night: { value: number } } {
-  const night = { value: 0 }
-  const glass = srgbColor([46, 58, 74])
-  const warm = new THREE.Color().setRGB(1.85, 0.86, 0.38)
-  const material = new THREE.MeshStandardMaterial({
+const cityHash = (x: F, y: F): F => fract(sin(vec2(x, y).dot(vec2(127.1, 311.7))).mul(43758.5453))
+
+// PHASE1-PORT: like-for-like TSL port of the instanced facade shader.
+/**
+ * Procedural facade on a unit box per instance: storey bands, punched or ribbon windows,
+ * frames and night-lit panes keyed by a per-instance seed. Same rules as the GLSL it replaced.
+ */
+function createFacadeMaterial(): { material: THREE.MeshStandardNodeMaterial; night: { value: number } } {
+  const night = uniform(0)
+  const uGlass = uniform(srgbColor([46, 58, 74]))
+  const uWarm = uniform(new THREE.Color().setRGB(1.85, 0.86, 0.38))
+  const aFacade = attribute<'vec3'>('aFacade', 'vec3')
+  const aSize = attribute<'vec3'>('aSize', 'vec3')
+  const aPattern = attribute<'float'>('aPattern', 'float')
+  const aGlow = attribute<'float'>('aGlow', 'float')
+  const aSeed = attribute<'float'>('aSeed', 'float')
+  const local = positionGeometry
+  const an = abs(normalGeometry)
+  const roof = step(0.6, an.y)
+  const wallOnly = float(1).sub(roof)
+  const mx = mix(local.x.add(0.5).mul(aSize.x), local.z.add(0.5).mul(aSize.z), step(an.z, an.x))
+  const my = local.y.add(0.5).mul(aSize.y)
+  const fy = mod(my, 3.0)
+  const punched = (insetX: number, y0: number, y1: number): F => {
+    const fx = mod(mx, 2.5)
+    return step(insetX, fx).mul(step(fx, 2.5 - insetX)).mul(step(y0, fy)).mul(step(fy, y1))
+  }
+  const ribbon = (y0: number, y1: number): F => step(y0, fy).mul(step(fy, y1))
+  const ribbonPattern = step(0.5, aPattern)
+  const outer = ribbon(0.88, 2.22)
+  const inner = ribbon(1.02, 2.08)
+  const mullion = step(0.16, mod(mx, 1.8))
+  const hole = punched(0.5, 0.64, 2.28)
+  const pane = punched(0.66, 0.8, 2.12)
+  const glass = mix(pane, inner.mul(mullion), ribbonPattern).mul(wallOnly)
+  const frame = mix(max(hole.sub(pane), 0.0), max(outer.sub(inner), 0.0), ribbonPattern).mul(wallOnly)
+  const band = step(mod(my, 3.0), 0.16).mul(wallOnly)
+  const pitch = mix(float(2.5), float(1.8), ribbonPattern)
+  const cell = cityHash(floor(mx.div(pitch)).add(aSeed.mul(19.0)), floor(my.div(3.0)).add(aSeed.mul(7.0)))
+  const lit = step(cell, aGlow).mul(night).mul(step(0.5, glass))
+  const banded = aFacade.mul(mix(float(1.0), float(0.84), band))
+  const wall0 = mix(banded, aFacade.mul(0.94), roof)
+  const wall = mix(wall0, wall0.mul(vec3(0.58, 0.56, 0.54)), frame)
+  const material = new THREE.MeshStandardNodeMaterial({
     color: '#ffffff',
     roughness: 0.92,
     metalness: 0,
     envMapIntensity: 1.15,
   })
-  material.customProgramCacheKey = () => 'nestwright-city-facade'
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.uNight = night
-    shader.uniforms.uGlass = { value: glass }
-    shader.uniforms.uWarm = { value: warm }
-    const vary = `
-      attribute vec3 aFacade;
-      attribute vec3 aSize;
-      attribute float aPattern;
-      attribute float aGlow;
-      attribute float aSeed;
-      varying vec3 vFacade;
-      varying vec3 vSize;
-      varying float vPattern;
-      varying float vGlow;
-      varying float vSeed;
-      varying vec3 vLocal;
-      varying vec3 vLocalN;`
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', `#include <common>\n${vary}`)
-      .replace(
-        '#include <uv_vertex>',
-        `#include <uv_vertex>
-         vFacade = aFacade;
-         vSize = aSize;
-         vPattern = aPattern;
-         vGlow = aGlow;
-         vSeed = aSeed;
-         vLocal = position;
-         vLocalN = normal;`,
-      )
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-         uniform float uNight;
-         uniform vec3 uGlass;
-         uniform vec3 uWarm;
-         varying vec3 vFacade;
-         varying vec3 vSize;
-         varying float vPattern;
-         varying float vGlow;
-         varying float vSeed;
-         varying vec3 vLocal;
-         varying vec3 vLocalN;
-         ${FACADE_GLSL}`,
-      )
-      .replace(
-        '#include <color_fragment>',
-        `#include <color_fragment>
-         cityClassify();
-         vec3 wall = vFacade * mix(1.0, 0.84, gBand);
-         if (abs(vLocalN.y) > 0.6) wall = vFacade * 0.94;
-         wall = mix(wall, wall * vec3(0.58, 0.56, 0.54), gFrame);
-         diffuseColor.rgb = mix(wall, uGlass, gGlass);`,
-      )
-      .replace(
-        '#include <metalnessmap_fragment>',
-        `#include <metalnessmap_fragment>
-         roughnessFactor = mix(0.92, 0.07, gGlass);
-         metalnessFactor = gGlass * 0.42;`,
-      )
-      .replace(
-        '#include <emissivemap_fragment>',
-        `#include <emissivemap_fragment>
-         totalEmissiveRadiance = uWarm * cityLit();`,
-      )
-  }
+  material.colorNode = vec4(mix(wall, uGlass, glass), 1)
+  material.roughnessNode = mix(float(0.92), float(0.07), glass)
+  material.metalnessNode = glass.mul(0.42)
+  material.emissiveNode = uWarm.mul(lit)
   return { material, night }
 }
 
