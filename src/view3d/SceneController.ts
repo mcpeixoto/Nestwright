@@ -13,6 +13,7 @@ import { roomsFor, useStore } from '../store'
 import { isPhotoMode } from '../ui/photoSession'
 import { getRig, type CameraRig } from './rigs'
 import { bindWalkScene } from './rigs/walk'
+import { recordFrame } from './perfMonitor'
 import { renderFrame } from './post/pipeline'
 import {
   bindSceneHost,
@@ -115,6 +116,11 @@ export class SceneController {
       renderer.shadowMap.enabled = true
       renderer.shadowMap.type = THREE.PCFShadowMap
       renderer.setClearColor('#9ec4e4')
+      if (this.primary) {
+        // A multi-pass composer would otherwise keep only the last pass, because
+        // three resets info at the start of each render. Read after renderFrame, then reset.
+        renderer.info.autoReset = false
+      }
     }
 
     if (renderer) {
@@ -453,7 +459,8 @@ export class SceneController {
     if (this.disposed || this.failed || !this.renderer) return
     this.raf = requestAnimationFrame(this.frameLoop)
     const now = performance.now()
-    const dt = Math.min(0.1, (now - this.lastTime) / 1000)
+    const rawMs = now - this.lastTime
+    const dt = Math.min(0.1, Math.max(0, rawMs) / 1000)
     this.lastTime = now
     this.elapsed += dt
     const width = this.canvas.clientWidth
@@ -488,6 +495,7 @@ export class SceneController {
         helper.update()
       }
       renderFrame(this.renderer, this.scene, this.camera)
+      if (this.primary) recordFrame(this.renderer, this.scene, rawMs)
     } catch (err) {
       this.failed = true
       console.error(err)

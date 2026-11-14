@@ -6,8 +6,10 @@ project at the same time over the local network.
 
 Genre reference: parametric home-planner games (2D plan ↔ live 3D, furnishing, garden, sun).
 Nestwright is its own game: its own name, UI, art, assets and feature set. No assets, names,
-text or visual identity are taken from any existing product. Every 3D asset in the base game is
-generated procedurally in code, so the shipped game carries no third-party art licences.
+text or visual identity are taken from any existing product. Base-game 3D assets may be
+procedural, CC0, or CC-BY 4.0 (with credit). NC, ND, and SA licences are forbidden. Every
+third-party asset is logged in `docs/ASSETS.md`, and CC-BY assets are credited in the game.
+Binaries stay out of git; content packs ship as release tarballs.
 
 ## Target
 

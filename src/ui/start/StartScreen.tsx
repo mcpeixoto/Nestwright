@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { getPlatform } from '../../platform'
-import { TEMPLATES, templateById } from '../../templates'
+import { TEMPLATES } from '../../templates'
 import { planThumb } from '../../templates/thumbnail'
 import { cachedThumb, requestLazyThumb, subscribeLazyThumbs, thumbRevision } from './lazyThumbs'
 import { getController } from '../../view3d/SceneController'
@@ -9,9 +9,10 @@ import { openProject } from '../actions'
 import { T } from '../../i18n/T'
 import { useTranslate } from '../../i18n'
 import { beginProject, canContinueProject, enterEditor, showGallery, showStart, useScreen } from '../session'
+import { loadTemplate } from './loadTemplate'
 import { setSettingsOpen } from '../settingsDialogState'
 import { coopJoinAvailable, openCoopJoin } from './coop'
-import { loadRecent, projectFromRecent, rememberProject, subscribeRecent } from './recent'
+import { loadRecent, projectFromRecent, subscribeRecent } from './recent'
 import { relativeTime } from './recentList'
 
 function useRecent() {
@@ -82,22 +83,6 @@ export function StartScreen() {
     beginProject(project)
   }
 
-  const startTemplate = (id: string) => {
-    const info = templateById(id)
-    if (!info) return
-    let project
-    try {
-      project = info.create()
-    } catch {
-      return
-    }
-    project.name = tr(info.nameKey)
-    beginProject(project)
-    const remember = () => rememberProject(project, cachedThumb(id) || planThumb(project))
-    if (typeof requestIdleCallback === 'function') requestIdleCallback(remember)
-    else setTimeout(remember, 1)
-  }
-
   return (
     <div className="start-host">
       <div className="start-stage">
@@ -117,7 +102,7 @@ export function StartScreen() {
             </div>
             <div className="gallery-grid">
               {TEMPLATES.map((item) => (
-                <button type="button" key={item.id} className="gallery-card" onClick={() => startTemplate(item.id)}>
+                <button type="button" key={item.id} className="gallery-card" onClick={() => loadTemplate(item.id)}>
                   {thumbRev >= 0 && cachedThumb(item.id) ? (
                     <img src={cachedThumb(item.id)} alt="" />
                   ) : (

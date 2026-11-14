@@ -1,0 +1,391 @@
+{
+  "createdAt": "2026-11-14T11:49:42.041Z",
+  "url": "http://127.0.0.1:63524",
+  "errors": [],
+  "shots": [
+    {
+      "name": "living-room",
+      "src": "living-room.png",
+      "view": {
+        "name": "living-room",
+        "template": "family",
+        "time": 15.5,
+        "quality": "high",
+        "level": "Ground",
+        "camera": {
+          "kind": "room",
+          "room": "Living",
+          "eye": 1.6,
+          "look": "longest"
+        }
+      },
+      "report": {
+        "backend": "webgl2",
+        "width": 2208,
+        "height": 1550,
+        "pixelRatio": 2,
+        "quality": "high",
+        "fpsAvg": 59.93606819416439,
+        "p50": 16.650000005960464,
+        "p95": 18.355000008642673,
+        "max": 18.599999994039536,
+        "drawCalls": 1108,
+        "triangles": 140649,
+        "geometries": 441,
+        "textures": 59,
+        "programs": 44,
+        "gpuMemMB": 55.89904785156253,
+        "jsHeapMB": 40.149688720703125
+      }
+    },
+    {
+      "name": "kitchen",
+      "src": "kitchen.png",
+      "view": {
+        "name": "kitchen",
+        "template": "family",
+        "time": 11,
+        "quality": "high",
+        "level": "Ground",
+        "camera": {
+          "kind": "room",
+          "room": "Kitchen",
+          "eye": 1.6,
+          "look": "longest"
+        }
+      },
+      "report": {
+        "backend": "webgl2",
+        "width": 2208,
+        "height": 1550,
+        "pixelRatio": 2,
+        "quality": "high",
+        "fpsAvg": 53.17263381798235,
+        "p50": 18.700000017881393,
+        "p95": 20.19999998807907,
+        "max": 21.900000005960464,
+        "drawCalls": 1192,
+        "triangles": 143489,
+        "geometries": 441,
+        "textures": 59,
+        "programs": 44,
+        "gpuMemMB": 55.89904785156253,
+        "jsHeapMB": 40.149688720703125
+      }
+    },
+    {
+      "name": "bathroom",
+      "src": "bathroom.png",
+      "view": {
+        "name": "bathroom",
+        "template": "family",
+        "time": 14,
+        "quality": "high",
+        "level": "Upper",
+        "camera": {
+          "kind": "room",
+          "room": "Bathroom",
+          "eye": 1.6,
+          "look": "longest"
+        }
+      },
+      "report": {
+        "backend": "webgl2",
+        "width": 2208,
+        "height": 1550,
+        "pixelRatio": 2,
+        "quality": "high",
+        "fpsAvg": 54.91153142159853,
+        "p50": 17.400000005960464,
+        "p95": 22.61999999284744,
+        "max": 24.099999994039536,
+        "drawCalls": 986,
+        "triangles": 119773,
+        "geometries": 441,
+        "textures": 59,
+        "programs": 44,
+        "gpuMemMB": 55.89904785156253,
+        "jsHeapMB": 40.149688720703125
+      }
+    },
+    {
+      "name": "upper-bedroom",
+      "src": "upper-bedroom.png",
+      "view": {
+        "name": "upper-bedroom",
+        "template": "family",
+        "time": 15.5,
+        "quality": "high",
+        "level": "Upper",
+        "camera": {
+          "kind": "room",
+          "room": "Bedroom",
+          "eye": 1.6,
+          "look": "longest"
+        }
+      },
+      "report": {
+        "backend": "webgl2",
+        "width": 2208,
+        "height": 1550,
+        "pixelRatio": 2,
+        "quality": "high",
+        "fpsAvg": 60.06807715482487,
+        "p50": 16.599999994039536,
+        "p95": 18.1550000205636,
+        "max": 18.599999994039536,
+        "drawCalls": 1100,
+        "triangles": 132949,
+        "geometries": 441,
+        "textures": 59,
+        "programs": 44,
+        "gpuMemMB": 55.89904785156253,
+        "jsHeapMB": 40.149688720703125
+      }
+    },
+    {
+      "name": "aerial-cutaway",
+      "src": "aerial-cutaway.png",
+      "view": {
+        "name": "aerial-cutaway",
+        "template": "family",
+        "time": 13,
+        "quality": "high",
+        "showRoofs": false,
+        "levelDisplay": "all",
+        "activeLevel": "Upper",
+        "camera": {
+          "kind": "orbit",
+          "position": [
+            12,
+            26,
+            14
+          ],
+          "target": [
+            0,
+            1.5,
+            0
+          ]
+        }
+      },
+      "report": {
+        "backend": "webgl2",
+        "width": 2208,
+        "height": 1550,
+        "pixelRatio": 2,
+        "quality": "high",
+        "fpsAvg": 52.319497733184335,
+        "p50": 19.149999991059303,
+        "p95": 20.85499997884035,
+        "max": 21.700000017881393,
+        "drawCalls": 1652,
+        "triangles": 196261,
+        "geometries": 439,
+        "textures": 59,
+        "programs": 44,
+        "gpuMemMB": 55.89904785156253,
+        "jsHeapMB": 40.149688720703125
+      }
+    },
+    {
+      "name": "front-facade",
+      "src": "front-facade.png",
+      "view": {
+        "name": "front-facade",
+        "template": "family",
+        "time": 10,
+        "quality": "high",
+        "camera": {
+          "kind": "orbit",
+          "position": [
+            0,
+            2,
+            -19.2
+          ],
+          "target": [
+            0,
+            1.2,
+            -4.1
+          ]
+        }
+      },
+      "report": {
+        "backend": "webgl2",
+        "width": 2208,
+        "height": 1550,
+        "pixelRatio": 2,
+        "quality": "high",
+        "fpsAvg": 59.92808629596857,
+        "p50": 16.600000008940697,
+        "p95": 18.400000005960464,
+        "max": 18.599999994039536,
+        "drawCalls": 1654,
+        "triangles": 187149,
+        "geometries": 438,
+        "textures": 59,
+        "programs": 44,
+        "gpuMemMB": 55.89904785156253,
+        "jsHeapMB": 40.149688720703125
+      }
+    },
+    {
+      "name": "terrace-pool",
+      "src": "terrace-pool.png",
+      "view": {
+        "name": "terrace-pool",
+        "template": "family",
+        "time": 17,
+        "quality": "high",
+        "camera": {
+          "kind": "orbit",
+          "position": [
+            15,
+            2.2,
+            6
+          ],
+          "target": [
+            1,
+            1.2,
+            0
+          ]
+        }
+      },
+      "report": {
+        "backend": "webgl2",
+        "width": 2208,
+        "height": 1550,
+        "pixelRatio": 2,
+        "quality": "high",
+        "fpsAvg": 50.05005005038185,
+        "p50": 20.100000008940697,
+        "p95": 21.45500000268221,
+        "max": 21.80000001192093,
+        "drawCalls": 1646,
+        "triangles": 186153,
+        "geometries": 438,
+        "textures": 59,
+        "programs": 44,
+        "gpuMemMB": 55.89904785156253,
+        "jsHeapMB": 40.149688720703125
+      }
+    },
+    {
+      "name": "garden-wide",
+      "src": "garden-wide.png",
+      "view": {
+        "name": "garden-wide",
+        "template": "beach",
+        "time": 16,
+        "quality": "high",
+        "camera": {
+          "kind": "orbit",
+          "position": [
+            -16,
+            5,
+            -12
+          ],
+          "target": [
+            0,
+            3,
+            0
+          ]
+        }
+      },
+      "report": {
+        "backend": "webgl2",
+        "width": 2208,
+        "height": 1550,
+        "pixelRatio": 2,
+        "quality": "high",
+        "fpsAvg": 59.964021586809636,
+        "p50": 16.650000005960464,
+        "p95": 18.109999993443488,
+        "max": 18.69999998807907,
+        "drawCalls": 448,
+        "triangles": 83885,
+        "geometries": 133,
+        "textures": 59,
+        "programs": 44,
+        "gpuMemMB": 40.969721476237,
+        "jsHeapMB": 40.149688720703125
+      }
+    },
+    {
+      "name": "night-living",
+      "src": "night-living.png",
+      "view": {
+        "name": "night-living",
+        "template": "family",
+        "time": 22.5,
+        "quality": "high",
+        "autoLights": true,
+        "level": "Ground",
+        "camera": {
+          "kind": "room",
+          "room": "Living",
+          "eye": 1.6,
+          "look": "longest"
+        }
+      },
+      "report": {
+        "backend": "webgl2",
+        "width": 2208,
+        "height": 1550,
+        "pixelRatio": 2,
+        "quality": "high",
+        "fpsAvg": 60.02400960360293,
+        "p50": 16.69999998807907,
+        "p95": 18.054999996721744,
+        "max": 18.599999994039536,
+        "drawCalls": 343,
+        "triangles": 84105,
+        "geometries": 440,
+        "textures": 59,
+        "programs": 60,
+        "gpuMemMB": 55.89904785156253,
+        "jsHeapMB": 40.149688720703125
+      }
+    },
+    {
+      "name": "dusk-exterior",
+      "src": "dusk-exterior.png",
+      "view": {
+        "name": "dusk-exterior",
+        "template": "family",
+        "time": 20.833333333333332,
+        "quality": "high",
+        "camera": {
+          "kind": "orbit",
+          "position": [
+            18,
+            2.4,
+            -13
+          ],
+          "target": [
+            0,
+            1.5,
+            0
+          ]
+        }
+      },
+      "report": {
+        "backend": "webgl2",
+        "width": 2208,
+        "height": 1550,
+        "pixelRatio": 2,
+        "quality": "high",
+        "fpsAvg": 60.04002668445631,
+        "p50": 16.600000008940697,
+        "p95": 18.400000005960464,
+        "max": 18.599999994039536,
+        "drawCalls": 1652,
+        "triangles": 193061,
+        "geometries": 440,
+        "textures": 59,
+        "programs": 60,
+        "gpuMemMB": 55.89904785156253,
+        "jsHeapMB": 40.149688720703125
+      }
+    }
+  ]
+}
