@@ -10,10 +10,12 @@ export function warn(message = '') {
 }
 
 export function parseArgs(argv) {
-  const out = { help: false, dryRun: false, webp: false, only: null, positionals: [] }
+  const out = { help: false, dryRun: false, webp: false, stats: false, gzip: false, only: null, positionals: [] }
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
     if (arg === '--help' || arg === '-h') out.help = true
+    else if (arg === '--stats') out.stats = true
+    else if (arg === '--gzip') out.gzip = true
     else if (arg === '--dry-run') out.dryRun = true
     else if (arg === '--webp') out.webp = true
     else if (arg === '--only' || arg.startsWith('--only=')) {

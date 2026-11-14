@@ -14,25 +14,30 @@
   "files": [
     {
       "path": "textures/velvet-rust-tex/albedo.ktx2",
-      "bytes": 189272,
-      "sha256": "24474db1d8bcd87aa0ad2429c44919dddd5f161cec3887ddac2959a1a11b8b71"
+      "bytes": 188051,
+      "sha256": "98535dfbbe628eab07530169f3dd0ab3e3080c80841f9d43d1a59a49ed904c8b"
     },
     {
       "path": "textures/velvet-rust-tex/normal.ktx2",
-      "bytes": 1080568,
-      "sha256": "9d6a15b09c2b4506ac7d3c109780592ed0baa349dbbddb08b3437824419d32c2"
+      "bytes": 1076769,
+      "sha256": "294c28d3e434849112468a5387b55d7f14bb73a2dd3eb458fed9d2b9193d86c9"
     },
     {
       "path": "textures/velvet-rust-tex/orm.ktx2",
-      "bytes": 233353,
-      "sha256": "b3e3f537727b1e86204bcd96b00632d95b9deb2f447d30fa11f8acabd8021fec"
+      "bytes": 231892,
+      "sha256": "311dfc8523f8a69ed9c8f89d3ae60fc5e087979555dfd432d1225ba34693c9e1"
     }
   ],
   "texture": {
     "meanAlbedoSrgb": [
-      173.618,
-      45.11,
-      71.135
+      173.573,
+      45.098,
+      71.116
+    ],
+    "meanOrm": [
+      0.891,
+      0.726,
+      0.061
     ],
     "tileMeters": 0.284228
   }

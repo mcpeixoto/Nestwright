@@ -1,5 +1,5 @@
 {
-  "version": 0,
-  "tarball": null,
-  "sha256": null
+  "version": 1,
+  "tarball": "content-v1.tar.gz",
+  "sha256": "ce10d49b6b64efed970901035fc7c52df6ff2dae8f16688bf4737ccb90953dad"
 }

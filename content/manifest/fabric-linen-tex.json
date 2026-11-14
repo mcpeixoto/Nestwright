@@ -14,25 +14,30 @@
   "files": [
     {
       "path": "textures/fabric-linen-tex/albedo.ktx2",
-      "bytes": 184186,
-      "sha256": "afec264921a0686eaea74ecfa273c4c8d6703b2a58c7c8f9e497ac8f563e19ba"
+      "bytes": 184029,
+      "sha256": "686b98c29722faea9ed0a35062703fc56569e10fabfbf23969f1b529116e359c"
     },
     {
       "path": "textures/fabric-linen-tex/normal.ktx2",
-      "bytes": 1150175,
-      "sha256": "c1fe6ce1fed3415d59693a01d31e070a3c83c4de7af9a4b2484ebff66bc6ffe1"
+      "bytes": 1146513,
+      "sha256": "94a530aa003020e93088544fff91d3e814dab44132e2fd999b8026ec30c4182b"
     },
     {
       "path": "textures/fabric-linen-tex/orm.ktx2",
-      "bytes": 223871,
-      "sha256": "58c8f8b1065663d3386d1533f83c7ba981a3fb2149d2f37d07995ad5eea49de6"
+      "bytes": 223172,
+      "sha256": "c7dfcc1e34bd7ebc9cc205ed9128d36cf6a942fe63ca770dd566f7b9e8046f23"
     }
   ],
   "texture": {
     "meanAlbedoSrgb": [
-      145.239,
-      170.974,
-      205.287
+      145.204,
+      170.933,
+      205.239
+    ],
+    "meanOrm": [
+      0.772,
+      0.718,
+      0.005
     ],
     "tileMeters": 0.270708
   }

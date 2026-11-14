@@ -101,10 +101,11 @@ describe('ambientCG maps', () => {
     expect(ambientMapRole('WoodFloor024_1K-JPG_Displacement.jpg')).toBe('displacement')
   })
 
-  it('reads dimensionX as metres, or millimetres when the number is a raw scan size', () => {
+  it('reads dimensionX as centimetres', () => {
     expect(ambientSpanToMetres(0)).toBe(null)
-    expect(ambientSpanToMetres(2)).toBe(2)
-    expect(ambientSpanToMetres(50000)).toBe(50)
+    expect(ambientSpanToMetres(110)).toBe(1.1)
+    expect(ambientSpanToMetres(100)).toBe(1)
+    expect(ambientSpanToMetres(45)).toBe(0.45)
   })
 })
 
@@ -224,7 +225,12 @@ describe('manifest, lock and ids', () => {
 
   it('keeps the asset policy header when there is nothing to list', () => {
     const existing = readFileSync(join(repoRoot, 'docs/ASSETS.md'), 'utf8')
-    expect(renderAssetsDoc(existing, [])).toBe(existing)
+    // docs/ASSETS.md now lists the R2 pack, so "nothing to list" is checked on the header alone.
+    const empty = renderAssetsDoc(existing, [])
+    const divider = '| --- | --- | --- | --- | --- | --- | --- |'
+    expect(empty.startsWith(existing.slice(0, existing.indexOf(divider) + divider.length))).toBe(true)
+    expect(empty).toContain('No third-party assets yet.')
+    expect(renderAssetsDoc(empty, [])).toBe(empty)
     const rendered = renderAssetsDoc(existing, [manifest()])
     expect(rendered).toContain('NC, ND, and SA licences are not allowed.')
     expect(rendered).toContain('| oak-planks | https://polyhaven.com/a/wood |')

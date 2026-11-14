@@ -1,6 +1,6 @@
 # Content pipeline
 
-Offline tools that turn CC0 and CC-BY 4.0 sources into the files under `public/content/`. Nothing here is loaded by the game until a later phase. `src/` is unchanged.
+Offline tools that turn CC0 and CC-BY 4.0 sources into the files under `public/content/`. The game reads `public/content/index.json` (written by `process.mjs` and `pack.mjs`) and loads each material's KTX2 set from it; `src/materials/pbrTextures.ts` is the loader. Without a pack every material stays procedural.
 
 `content/sources.json` is the wish-list. It starts empty. JSON has no comments, so the three starter entries live here:
 
@@ -47,6 +47,8 @@ Offline tools that turn CC0 and CC-BY 4.0 sources into the files under `public/c
 }
 ```
 
+ambientCG's `dimensionX` is centimetres (`Concrete034` reports 110 for a 1.1 m tile).
+
 `kind` is `texture`, `model` or `hdri`. `provider` is `polyhaven`, `ambientcg`, `sketchfab` or `local`. `resolution` is `1k`, `2k` or `4k`. Optional `units` is `m` (default), `cm` or `mm` and applies to models. Optional `tileMeters` is the fallback real-world width of one texture repeat.
 
 ## Commands
@@ -55,9 +57,17 @@ Offline tools that turn CC0 and CC-BY 4.0 sources into the files under `public/c
 npm run content:build          # fetch → process → validate → docs
 npm run content:fetch          # download the pack named in content/lock.json
 npm run content:pack           # tar public/content and write the lock
+npm run content:pack -- --gzip # .tar.gz even when zstd is installed (any tar extracts it)
 node scripts/content/fetch.mjs --dry-run
 node scripts/content/process.mjs --only oak-planks --webp
+node scripts/content/process.mjs --stats   # recompute texture.meanOrm from the cache, no encoding
 ```
+
+A texture manifest records `meanAlbedoSrgb` and `meanOrm` (mean AO, roughness, metalness, 0–1). The game divides the material's roughness and metalness by the ORM means so a scan keeps its variation but averages to the library value, and pulls the albedo toward the library colour (see `albedoTint`). Albedo sizes are rounded down to a multiple of 4, because WebGPU rejects block-compressed textures of any other size.
+
+Normals are UASTC with `--normal_mode`, i.e. two channels (X in RGB, Y in alpha). The game reads them with three's `NormalGAPacking`, not as an XYZ `normalMap`.
+
+In the packaged app, `public/content` ships as `Resources/content` (electron-builder `extraResources`) and is served on `nwcontent://content/`; `nwcontent://basis/` serves the KTX2 transcoder. A pack extracted to `<userData>/content` also works.
 
 Every script accepts `--help` and `--dry-run`. A failure exits non-zero.
 

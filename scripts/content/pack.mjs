@@ -7,15 +7,16 @@ import { access, readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import { log, parseArgs, run } from './lib/cli.mjs'
+import { writeIndexFile } from './lib/contentIndex.mjs'
 import { sha256File } from './lib/hash.mjs'
 import { nextArchive } from './lib/lock.mjs'
 import { commandExists } from './lib/output.mjs'
 import { paths } from './lib/paths.mjs'
 
-const HELP = `node scripts/content/pack.mjs [--dry-run]
+const HELP = `node scripts/content/pack.mjs [--dry-run] [--gzip]
 
 Archive public/content as content-vN.tar.zst when zstd is installed, otherwise
-content-vN.tar.gz. Writes the filename and sha256 to content/lock.json.
+(or with --gzip, which any tar can extract) content-vN.tar.gz. Writes the filename and sha256 to content/lock.json.
 The archive root is the content/ directory, so it extracts into public/content.
 `
 
@@ -61,8 +62,10 @@ run(async () => {
   } catch {
     throw new Error('public/content does not exist; run process first')
   }
+  // The game reads index.json, so a pack is never cut without the current one.
+  if (!args.dryRun) await writeIndexFile()
   const lock = JSON.parse(await readFile(paths.lock, 'utf8'))
-  const compression = (await commandExists('zstd')) ? 'zstd' : 'gzip'
+  const compression = !args.gzip && (await commandExists('zstd')) ? 'zstd' : 'gzip'
   const next = nextArchive(lock, compression)
   const dest = join(paths.root, next.tarball)
   if (args.dryRun) {

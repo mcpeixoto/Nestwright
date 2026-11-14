@@ -14,25 +14,30 @@
   "files": [
     {
       "path": "textures/boucle-tex/albedo.ktx2",
-      "bytes": 215034,
-      "sha256": "d5eb0cf23cf3c114e16f2af2f5c9bb14a69e40705733fb7f03268073bd023935"
+      "bytes": 214273,
+      "sha256": "f9b2aad2f1cb002e754c48bd9c472aefc354792ca905a7d46db08588279e0aca"
     },
     {
       "path": "textures/boucle-tex/normal.ktx2",
-      "bytes": 966478,
-      "sha256": "c8239b9494cd3399459c8e3db50ed7ecca6cd058318102034a474e6086c26244"
+      "bytes": 961190,
+      "sha256": "e315aac8b035de852dea56cc985d0fc0507f41d646c0de7fbc17f85ac8340e49"
     },
     {
       "path": "textures/boucle-tex/orm.ktx2",
-      "bytes": 224146,
-      "sha256": "764da5edf72f423c730ed9ad5a61105619d2d0f19e9e6c3d115b5ad0d1207e56"
+      "bytes": 223145,
+      "sha256": "da4c2645cf5e8bd206e6d217ab20a32c5367272eb5c8f5cbd2acced79c752fe3"
     }
   ],
   "texture": {
     "meanAlbedoSrgb": [
-      117.714,
-      108.712,
-      96.456
+      117.688,
+      108.687,
+      96.435
+    ],
+    "meanOrm": [
+      0.878,
+      0.657,
+      0.154
     ],
     "tileMeters": 0.314782
   }
