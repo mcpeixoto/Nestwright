@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { useSettings } from '../../settings'
+import { activeTone, rendererExposure, toneMappingFor } from '../atmosphere/toneMap'
 import { backendPreference, createRenderer } from './createRenderer'
 
 /**
@@ -43,8 +44,9 @@ export function getOffscreenRenderer(): Promise<THREE.WebGPURenderer | null> {
       gl.setPixelRatio(1)
       gl.setSize(OFFSCREEN_SIZE, OFFSCREEN_SIZE, false)
       gl.outputColorSpace = THREE.SRGBColorSpace
-      gl.toneMapping = THREE.ACESFilmicToneMapping
-      gl.toneMappingExposure = 1.05
+      const tone = activeTone()
+      gl.toneMapping = toneMappingFor(tone)
+      gl.toneMappingExposure = rendererExposure(1.05, tone)
       renderer = gl
       return gl
     } catch {

@@ -45,7 +45,7 @@ export interface PostPipelineOptions {
 /**
  * One MRT scene pass (colour, plus view normal, velocity, metal/rough and albedo when an
  * active effect reads them) → HDR effects (GTAO on Medium/High, SSR on High+, SSGI on Ultra,
- * bloom on emissive, DOF in photo mode) → ACES tone mapping and sRGB → display effects
+ * bloom on emissive, DOF in photo mode) → AgX (or ACES) tone mapping and sRGB → display effects
  * (TRAA on Medium+, FXAA on Low). One per SceneController, built lazily and rebuilt (old GPU
  * resources freed) when the tier or photo mode changes. Falls back to a plain render if a
  * build or frame throws.
@@ -81,7 +81,7 @@ export class PostPipeline {
       dofBokehScale.value = snap.aperture > 0.01 ? 1 + snap.aperture * 4 : 0
     }
     const wantDof = photo && getPhotoSnapshot().aperture > 0.01
-    const key = `${profile.tier}|${wantDof ? 1 : 0}|${postEffectRevision()}`
+    const key = `${profile.tier}|${wantDof ? 1 : 0}|${postEffectRevision()}|${this.renderer.toneMapping}`
     if (key !== this.key || !this.pipeline) {
       this.disposePipeline()
       this.key = key
@@ -94,7 +94,8 @@ export class PostPipeline {
   wantedKey(tier: GraphicsQuality): string {
     const profile = qualityProfile(this.options.tier ?? tier)
     const wantDof = isPhotoMode() && getPhotoSnapshot().aperture > 0.01
-    return `${profile.tier}|${wantDof ? 1 : 0}|${postEffectRevision()}`
+    // renderOutput bakes the renderer's tone mapper into the chain, so switching it rebuilds.
+    return `${profile.tier}|${wantDof ? 1 : 0}|${postEffectRevision()}|${this.renderer.toneMapping}`
   }
 
   /**
@@ -203,7 +204,7 @@ export class PostPipeline {
       for (const effect of postEffects()) {
         if (effect.enabled(profile, photo)) color = effect.apply(color, input)
       }
-      // Tone mapping (the renderer's ACES) and the sRGB encode happen here, so display effects
+      // Tone mapping (the renderer's AgX or ACES) and the sRGB encode happen here, so display effects
       // see final colours.
       let display = renderOutput(color) as unknown as ColorNode
       for (const effect of postDisplayEffects()) {

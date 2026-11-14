@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import type { Environment, Project } from '../../model/types'
 import { sunDirection, sunLook, TWILIGHT_RAD } from '../../model/sunLook'
 import { exteriorWindowSpills } from '../../model/windowSpill'
-import { useSettings } from '../../settings'
+import { useSettings, type ToneMapSetting } from '../../settings'
 import { castFoliageShadows } from '../lighting/foliage'
 import { shadowFocus } from '../lighting/focus'
 import { createOutdoorLights } from '../lighting/outdoorLights'
@@ -18,6 +18,7 @@ import { createGradedSky, type GradedSky, type SkyGrade } from './gradeSky'
 import { createPrecip, driftPrecip } from './precip'
 import { createSkyParams, writeSkyParams, type SkyParams } from './skyParams'
 import { createStars } from './stars'
+import { activeTone, rendererExposure, toneMappingFor } from './toneMap'
 import { dressOutdoorMesh, isOutdoorMesh, setWeatherMix } from './weather'
 
 /** PMREM fill. High values let a cyan sky tint red roofs lilac. */
@@ -78,7 +79,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   }
   if (ctx.renderer) {
     ctx.renderer.outputColorSpace = THREE.SRGBColorSpace
-    ctx.renderer.toneMapping = THREE.ACESFilmicToneMapping
+    ctx.renderer.toneMapping = toneMappingFor(activeTone())
     ctx.renderer.toneMappingExposure = 0.5
     ctx.renderer.shadowMap.enabled = true
     ctx.renderer.shadowMap.type = THREE.PCFShadowMap
@@ -162,11 +163,11 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   scene.background = background
   sky.renderOrder = -2
 
-  const applySky = (alt: number, weather: string, cloudiness: number, exposure: number) => {
-    const nextKey = `${alt.toFixed(3)}|${weather}|${cloudiness.toFixed(2)}|${exposure.toFixed(3)}`
+  const applySky = (alt: number, weather: string, cloudiness: number, exposure: number, tone: ToneMapSetting) => {
+    const nextKey = `${alt.toFixed(3)}|${weather}|${cloudiness.toFixed(2)}|${exposure.toFixed(3)}|${tone}`
     if (nextKey === skyKey) return
     skyKey = nextKey
-    writeSkyParams(alt, weather, cloudiness, exposure, skyState)
+    writeSkyParams(alt, weather, cloudiness, exposure, skyState, tone)
     paintSky(skyDome, unit, skyState.sunDisc > 0, skyGrade, false, skyState)
     paintSky(envDome, unit, false, envGrade, true, skyState)
     fog.near = skyState.fogNear
@@ -177,7 +178,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     hemi.groundColor.set(skyState.hemiGround)
     hemi.intensity = skyState.hemiIntensity
   }
-  applySky(0.7, 'clear', 0.12, 0.5)
+  applySky(0.7, 'clear', 0.12, 0.5, activeTone())
 
   const refreshEnv = (): boolean => {
     if (!pmrem || !ctx.renderer || ctx.renderer.domElement.clientWidth < 2) return false
@@ -288,13 +289,15 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     const dark = alt < 0.04
     const exposure = look.exposure * photoExposure()
     const exp = Number.isFinite(exposure) ? exposure : 0.5
+    const tone = activeTone()
     if (ctx.renderer) {
-      ctx.renderer.toneMappingExposure = exp
+      ctx.renderer.toneMapping = toneMappingFor(tone)
+      ctx.renderer.toneMappingExposure = rendererExposure(exp, tone)
       ctx.renderer.setClearColor(background)
     }
     const cloudiness = THREE.MathUtils.clamp(env.cloudiness ?? 0, 0, 1)
     const weather = env.weather ?? 'clear'
-    applySky(alt, weather, cloudiness, exp)
+    applySky(alt, weather, cloudiness, exp, tone)
 
     stars.points.renderOrder = -1
     stars.setNight(skyState.star)

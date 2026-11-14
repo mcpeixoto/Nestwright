@@ -8,6 +8,7 @@ import {
   type AppLanguage,
   type GraphicsQuality,
   type RendererBackendSetting,
+  type ToneMapSetting,
 } from '../settings'
 import { useStore } from '../store'
 import { Modal } from './Modal'
@@ -113,6 +114,13 @@ export function SettingsDialog() {
                 {backend === 'auto' ? tr('Automatic') : backend === 'webgpu' ? 'WebGPU' : 'WebGL 2'}
               </option>
             ))}
+          </select>
+        </label>
+        <label className="field">
+          <T k="Tone mapping" />
+          <select value={settings.toneMapping} onChange={(event) => set({ toneMapping: event.target.value as ToneMapSetting })}>
+            <option value="agx">{tr('Natural (AgX)')}</option>
+            <option value="aces">{tr('Filmic (ACES)')}</option>
           </select>
         </label>
         <label className="field">
