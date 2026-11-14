@@ -278,6 +278,7 @@ export const en = {
   'Pick graphics automatically': 'Pick graphics automatically',
   'Graphics set to {tier}': 'Graphics set to {tier}',
   'Show FPS': 'Show FPS',
+  'Show tool labels': 'Show tool labels',
   'UI scale': 'UI scale',
   'Continue last project': 'Continue last project',
   'Player name': 'Player name',

@@ -92,8 +92,22 @@ export function matchesShortcut(event: KeyboardEvent, keys: string): boolean {
   return true
 }
 
+const TAB_BLOCKED =
+  'input, textarea, select, button, a, [role="button"], [role="menuitem"], [role="dialog"], [contenteditable="true"], .inspector, .library, .topbar, .rail, .levelbar, .statusbar, .modal, .modal-back, .panel-slot, .menu-pop'
+const TAB_CANVAS = '.plan-canvas, .view3d-canvas, .plan-wrap, .view3d-wrap'
+
+/** Tab cycles the view only from the page body or the plan / 3D canvas, so it can still move focus everywhere else. */
+export function tabShortcutAllowed(target: EventTarget | null): boolean {
+  if (typeof document === 'undefined') return false
+  if (target === document.body) return true
+  if (!(target instanceof Element)) return false
+  if (target.closest(TAB_BLOCKED)) return false
+  return target.closest(TAB_CANVAS) !== null
+}
+
 export function shortcutMatches(event: KeyboardEvent, def: ShortcutDef): boolean {
   if (!matchesShortcut(event, def.keys)) return false
+  if (shortcutChord(def.keys) === 'tab' && !tabShortcutAllowed(event.target)) return false
   return def.when?.(event) ?? true
 }
 

@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useTranslate } from '../i18n'
+import { useSettings } from '../settings'
 import { useStore } from '../store'
 import { listTools } from '../tools/registry'
 import { togglePanel, useOpenPanelIds, usePanelList } from './panels/registry'
 import { railIconTool } from './railDefaults'
+import { Tooltip } from './Tooltip'
 
 const GROUPS = [
   { id: 'build', label: 'Build' },
@@ -23,9 +25,24 @@ useStore.subscribe((state, prev) => {
   lastToolByGroup[item.group] = item.id
 })
 
+function tipText(label: string, shortcut?: string): string {
+  return shortcut ? `${label} (${shortcut})` : label
+}
+
+function railButtons(toolbar: HTMLElement): HTMLButtonElement[] {
+  return [...toolbar.querySelectorAll<HTMLButtonElement>('button')].filter((button) => !button.closest('[role="menu"]'))
+}
+
+function groupTrigger(target: HTMLElement): HTMLButtonElement | null {
+  const group = target.closest('.rail-group')
+  if (!group) return null
+  return [...group.querySelectorAll<HTMLButtonElement>('button')].find((button) => !button.closest('[role="menu"]')) ?? null
+}
+
 export function ToolRail() {
   const tool = useStore((s) => s.tool)
   const apartment = useStore((s) => s.project.kind === 'apartment')
+  const showLabels = useSettings((s) => s.railLabels)
   const tr = useTranslate()
   const select = listTools().find((item) => item.id === 'select')
   const tools = listTools().filter((item) => {
@@ -38,18 +55,124 @@ export function ToolRail() {
     (panel) => (panel.placement === 'left' || panel.placement === 'right') && !(apartment && panel.id === 'outside'),
   )
   const open = useOpenPanelIds()
-  const [openGroup, setOpenGroup] = useState<string | null>(null)
+  const hostRef = useRef<HTMLElement>(null)
+  const pendingFocus = useRef<string | null>(null)
+  const [hoverGroup, setHoverGroup] = useState<string | null>(null)
+  const [pinnedGroup, setPinnedGroup] = useState<string | null>(null)
+  /** Click-to-close must win over a hover that is still inside the group. */
+  const [suppressHover, setSuppressHover] = useState(false)
+  const openGroup = suppressHover ? null : (pinnedGroup ?? hoverGroup)
+
+  function dismiss() {
+    setPinnedGroup(null)
+    setHoverGroup(null)
+    setSuppressHover(true)
+  }
+
+  useEffect(() => {
+    const id = pendingFocus.current
+    if (!id || id !== openGroup) return
+    const item = hostRef.current?.querySelector<HTMLElement>(`[data-group="${id}"] [role="menuitem"]`)
+    if (!item) return
+    item.focus()
+    pendingFocus.current = null
+  }, [openGroup])
+
+  useEffect(() => {
+    if (!openGroup) return
+    const onPointer = (event: PointerEvent) => {
+      const group = hostRef.current?.querySelector(`[data-group="${openGroup}"]`)
+      if (event.target instanceof Node && group?.contains(event.target)) return
+      dismiss()
+    }
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      if (event.target instanceof Element && event.target.closest('[role="dialog"]')) return
+      dismiss()
+    }
+    document.addEventListener('pointerdown', onPointer)
+    document.addEventListener('keydown', onEscape)
+    return () => {
+      document.removeEventListener('pointerdown', onPointer)
+      document.removeEventListener('keydown', onEscape)
+    }
+  }, [openGroup])
+
+  function onKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
+    const target = event.target
+    if (!(target instanceof HTMLElement)) return
+    const menu = target.closest<HTMLElement>('[role="menu"]')
+    if (menu) {
+      const items = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+      const index = items.indexOf(target)
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault()
+        const next = event.key === 'ArrowDown' ? (index + 1) % items.length : (index - 1 + items.length) % items.length
+        items[next]?.focus()
+        return
+      }
+      if (event.key === 'ArrowLeft' || event.key === 'Escape') {
+        event.preventDefault()
+        event.stopPropagation()
+        groupTrigger(target)?.focus()
+        dismiss()
+      }
+      return
+    }
+    const buttons = railButtons(event.currentTarget)
+    const index = buttons.indexOf(target as HTMLButtonElement)
+    if (index < 0) return
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const next = event.key === 'ArrowDown' ? (index + 1) % buttons.length : (index - 1 + buttons.length) % buttons.length
+      buttons[next]?.focus()
+      return
+    }
+    if (event.key === 'ArrowRight') {
+      const group = target.closest<HTMLElement>('.rail-group')
+      const id = group?.dataset.group
+      if (!id) return
+      event.preventDefault()
+      pendingFocus.current = id
+      setSuppressHover(false)
+      setPinnedGroup(id)
+      if (openGroup === id) group?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+      return
+    }
+    if (event.key === 'Escape' && openGroup) {
+      event.preventDefault()
+      event.stopPropagation()
+      dismiss()
+    }
+  }
+
+  function onFocus(event: ReactFocusEvent<HTMLElement>) {
+    const target = event.target
+    if (!(target instanceof HTMLElement) || !openGroup) return
+    if (target.closest('[role="menu"]')) return
+    const groupId = target.closest<HTMLElement>('.rail-group')?.dataset.group
+    if (groupId === openGroup) return
+    dismiss()
+  }
 
   return (
-    <aside className="rail">
+    <aside
+      ref={hostRef}
+      className={showLabels ? 'rail with-labels' : 'rail'}
+      role="toolbar"
+      aria-label={tr('Tools')}
+      aria-orientation="vertical"
+      onKeyDown={onKeyDown}
+      onFocus={onFocus}
+    >
       {select && (
-        <button
-          type="button"
+        <RailButton
+          label={tr(select.label)}
+          shortcut={select.shortcut}
           className={tool === select.id ? 'tool on' : 'tool'}
-          title={select.shortcut ? `${tr(select.label)} (${select.shortcut})` : tr(select.label)}
-          aria-label={tr(select.label)}
+          icon={select.icon}
+          caption={showLabels ? tr(select.label) : undefined}
           onClick={() => useStore.getState().setTool(select.id)}
-          dangerouslySetInnerHTML={{ __html: select.icon }}
         />
       )}
       {GROUPS.map((group) => {
@@ -57,46 +180,62 @@ export function ToolRail() {
         const iconTool = railIconTool(groupTools, group.id, tool, chosenGroups.has(group.id) ? lastToolByGroup[group.id] : undefined)
         if (!iconTool) return null
         const active = groupTools.some((item) => item.id === tool)
+        const expanded = openGroup === group.id
         return (
           <div
             key={group.id}
             className="rail-group"
-            onMouseEnter={() => setOpenGroup(group.id)}
-            onMouseLeave={() => setOpenGroup((current) => (current === group.id ? null : current))}
+            data-group={group.id}
+            onMouseEnter={() => {
+              setSuppressHover(false)
+              setHoverGroup(group.id)
+            }}
+            onMouseLeave={() => {
+              setHoverGroup((current) => (current === group.id ? null : current))
+              setSuppressHover(false)
+            }}
           >
-            <button
-              type="button"
+            <RailButton
+              label={tr(group.label)}
               className={active ? 'tool on' : 'tool'}
-              title={tr(group.label)}
-              aria-label={tr(group.label)}
-              aria-expanded={openGroup === group.id}
+              icon={iconTool.icon}
+              caption={showLabels ? tr(group.label) : undefined}
+              expanded={expanded}
               onClick={() => {
                 chosenGroups.add(group.id)
                 lastToolByGroup[group.id] = iconTool.id
                 useStore.getState().setTool(iconTool.id)
                 if (group.id === 'interior') useStore.getState().setLibraryOpen(true)
-                setOpenGroup(group.id)
+                if (pinnedGroup === group.id) {
+                  setPinnedGroup(null)
+                  setSuppressHover(true)
+                } else {
+                  setPinnedGroup(group.id)
+                  setSuppressHover(false)
+                }
               }}
-              dangerouslySetInnerHTML={{ __html: iconTool.icon }}
             />
-            {openGroup === group.id && (
+            {expanded && (
               <div className="rail-flyout" role="menu" aria-label={tr(group.label)}>
                 {groupTools.map((item) => (
-                  <button
-                    type="button"
-                    key={item.id}
-                    role="menuitem"
-                    className={tool === item.id ? 'on' : ''}
-                    onClick={() => {
-                      chosenGroups.add(group.id)
-                      lastToolByGroup[group.id] = item.id
-                      useStore.getState().setTool(item.id)
-                    }}
-                  >
-                    <span className="flyout-icon" dangerouslySetInnerHTML={{ __html: item.icon }} />
-                    <span>{tr(item.label)}</span>
-                    {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
-                  </button>
+                  <Tooltip key={item.id} label={tipText(tr(item.label), item.shortcut)}>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={tool === item.id ? 'on' : ''}
+                      aria-label={tr(item.label)}
+                      onClick={() => {
+                        chosenGroups.add(group.id)
+                        lastToolByGroup[group.id] = item.id
+                        useStore.getState().setTool(item.id)
+                        dismiss()
+                      }}
+                    >
+                      <span className="flyout-icon" dangerouslySetInnerHTML={{ __html: item.icon }} />
+                      <span>{tr(item.label)}</span>
+                      {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
+                    </button>
+                  </Tooltip>
                 ))}
               </div>
             )}
@@ -104,31 +243,59 @@ export function ToolRail() {
         )
       })}
       <div className="rail-panels">
-        {panels.map((panel) =>
-          panel.icon ? (
-            <button
-              type="button"
-              key={panel.id}
-              className={open.includes(panel.id) ? 'tool on' : 'tool'}
-              title={panel.shortcut ? `${tr(panel.title)} (${panel.shortcut})` : tr(panel.title)}
-              aria-pressed={open.includes(panel.id)}
-              onClick={() => togglePanel(panel.id)}
-              dangerouslySetInnerHTML={{ __html: panel.icon }}
-            />
-          ) : (
-            <button
-              type="button"
-              key={panel.id}
-              className={open.includes(panel.id) ? 'tool on' : 'tool'}
-              title={tr(panel.title)}
-              aria-pressed={open.includes(panel.id)}
-              onClick={() => togglePanel(panel.id)}
-            >
-              {tr(panel.title).slice(0, 1)}
-            </button>
-          ),
-        )}
+        {panels.map((panel) => (
+          <RailButton
+            key={panel.id}
+            label={tr(panel.title)}
+            shortcut={panel.shortcut}
+            className={open.includes(panel.id) ? 'tool on' : 'tool'}
+            icon={panel.icon}
+            caption={showLabels ? tr(panel.title) : undefined}
+            pressed={open.includes(panel.id)}
+            onClick={() => togglePanel(panel.id)}
+          />
+        ))}
       </div>
     </aside>
+  )
+}
+
+function RailButton({
+  label,
+  shortcut,
+  className,
+  icon,
+  caption,
+  expanded,
+  pressed,
+  onClick,
+}: {
+  label: string
+  shortcut?: string
+  className: string
+  icon?: string
+  caption?: string
+  expanded?: boolean
+  pressed?: boolean
+  onClick: () => void
+}) {
+  return (
+    <Tooltip label={tipText(label, shortcut)} disabled={expanded}>
+      <button
+        type="button"
+        className={className}
+        aria-label={label}
+        aria-expanded={expanded}
+        aria-pressed={pressed}
+        onClick={onClick}
+      >
+        {icon ? (
+          <span className="tool-glyph" dangerouslySetInnerHTML={{ __html: icon }} />
+        ) : (
+          <span className="tool-glyph">{label.slice(0, 1)}</span>
+        )}
+        {caption ? <span className="rail-label">{caption}</span> : null}
+      </button>
+    </Tooltip>
   )
 }

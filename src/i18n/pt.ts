@@ -280,6 +280,7 @@ export const pt: { [K in MessageKey]: string } = {
   'Pick graphics automatically': 'Escolher os gráficos automaticamente',
   'Graphics set to {tier}': 'Gráficos definidos para {tier}',
   'Show FPS': 'Mostrar FPS',
+  'Show tool labels': 'Mostrar nomes das ferramentas',
   'UI scale': 'Escala da interface',
   'Continue last project': 'Continuar o último projeto',
   'Player name': 'Nome do jogador',
