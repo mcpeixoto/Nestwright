@@ -9,3 +9,6 @@ coverage/
 test-results/
 playwright-report/
 visual-out/
+content/cache/
+public/content/
+content-v*.tar*

@@ -1,0 +1,14 @@
+{
+  "gltf": {
+    "1k": {
+      "gltf": {
+        "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/example/example_1k.gltf",
+        "size": 12,
+        "include": {
+          "example.bin": { "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/example/example.bin", "size": 40 },
+          "textures/example_diff_1k.jpg": { "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/example/example_diff_1k.jpg", "size": 80 }
+        }
+      }
+    }
+  }
+}

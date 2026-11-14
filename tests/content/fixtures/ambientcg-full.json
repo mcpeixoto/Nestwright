@@ -1,0 +1,27 @@
+{
+  "foundAssets": [
+    {
+      "assetId": "WoodFloor024",
+      "shortLink": "https://ambientcg.com/a/WoodFloor024",
+      "dimensionX": 2,
+      "downloadFolders": {
+        "default": {
+          "downloadFiletypeCategories": {
+            "zip": {
+              "downloads": [
+                { "attribute": "2K-PNG", "downloadLink": "https://ambientcg.com/get?file=WoodFloor024_2K-PNG.zip", "size": 9 },
+                {
+                  "attribute": "1K-JPG",
+                  "fileName": "WoodFloor024_1K-JPG.zip",
+                  "downloadLink": "https://ambientcg.com/get?file=WoodFloor024_1K-JPG.zip",
+                  "fullDownloadPath": "https://ambientcg.com/get?file=WoodFloor024_1K-JPG.zip",
+                  "size": 5403996
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}
