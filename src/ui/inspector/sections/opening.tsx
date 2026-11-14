@@ -3,7 +3,8 @@ import type { OpeningType } from '../../../model/types'
 import { selectActiveLevel, useStore } from '../../../store'
 import { DOOR_TYPES, WINDOW_TYPES } from '../../../tools/openingTool'
 import { selectionFacts } from '../facts'
-import { labelOf, NumberField, patchLevel } from '../fields'
+import { labelOf, LengthField, patchLevel } from '../fields'
+import { openingGap, setOpeningGap } from '../../../model/ops/sizes'
 import { registerInspectorSection } from '../registry'
 import { T } from '../../../i18n/T'
 import { useTranslate } from '../../../i18n'
@@ -13,7 +14,15 @@ function OpeningSection() {
   const id = useStore((s) => s.selection[0] ?? '')
   const level = useStore(selectActiveLevel)
   const opening = level?.openings.find((item) => item.id === id)
-  if (!opening) return null
+  const wall = opening ? level?.walls.find((item) => item.id === opening.wallId) : undefined
+  if (!level || !opening) return null
+  const placeGap = (side: 'a' | 'b', gap: number): boolean => {
+    if (!setOpeningGap(structuredClone(level), id, side, gap)) return false
+    patchLevel('Opening position', (draft) => {
+      setOpeningGap(draft, id, side, gap)
+    })
+    return true
+  }
   const types: OpeningType[] = [...DOOR_TYPES, ...WINDOW_TYPES]
   return (
     <div className="props">
@@ -42,36 +51,56 @@ function OpeningSection() {
           ))}
         </select>
       </label>
-      <NumberField
+      {wall ? (
+        <>
+          <LengthField
+            label="From start"
+            value={openingGap(wall, opening, 'a')}
+            allowZero
+            onCommit={(value) => placeGap('a', value)}
+          />
+          <LengthField
+            label="From end"
+            value={openingGap(wall, opening, 'b')}
+            allowZero
+            onCommit={(value) => placeGap('b', value)}
+          />
+          <p className="hint"><T k="Drag along the wall to move it" /></p>
+        </>
+      ) : null}
+      <LengthField
         label="Width"
         value={opening.width}
-        step={0.05}
+        min={0.201}
+        max={20}
         onCommit={(value) =>
           patchLevel('Opening width', (draft) => {
             const found = draft.openings.find((item) => item.id === id)
-            if (found && value > 0.2) found.width = value
+            if (found) found.width = value
           })
         }
       />
-      <NumberField
+      <LengthField
         label="Height"
         value={opening.height}
-        step={0.05}
+        min={0.201}
+        max={20}
         onCommit={(value) =>
           patchLevel('Opening height', (draft) => {
             const found = draft.openings.find((item) => item.id === id)
-            if (found && value > 0.2) found.height = value
+            if (found) found.height = value
           })
         }
       />
-      <NumberField
+      <LengthField
         label="Sill"
         value={opening.sill}
-        step={0.05}
+        allowZero
+        max={20}
         onCommit={(value) =>
           patchLevel('Opening sill', (draft) => {
             const found = draft.openings.find((item) => item.id === id)
-            if (found && value >= 0) found.sill = value
+            if (found) found.sill = value
           })
         }
       />

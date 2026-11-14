@@ -8,6 +8,8 @@ export interface PerfStats {
   fps(): number
   percentile(p: number): number
   max(): number
+  /** Samples in the window longer than `ms`. */
+  countAbove(ms: number): number
   count(): number
   reset(): void
 }
@@ -17,6 +19,52 @@ export interface CaptureTiming {
   p50: number
   p95: number
   max: number
+  /** Frames longer than HITCH_MS. */
+  hitches: number
+}
+
+/** A frame this long is a visible stall (three dropped frames at 60 Hz). */
+export const HITCH_MS = 50
+
+/**
+ * Decides when a scene has settled enough to measure: `quietFrames` frames in a row with no
+ * new GPU program and no precompile running. Gives up waiting after `maxFrames` so a scene
+ * that keeps compiling still gets a report (its `settled` is then false).
+ */
+export interface SettleTracker {
+  /** One rendered frame. True once settled (and from then on). */
+  push(programs: number, busy: boolean): boolean
+  settled(): boolean
+  /** Frames seen before settling. */
+  waited(): number
+}
+
+export function createSettleTracker(quietFrames: number, maxFrames = 600): SettleTracker {
+  const need = Math.max(0, Math.floor(quietFrames))
+  const cap = Math.max(need, Math.floor(maxFrames))
+  let quiet = 0
+  let seen = 0
+  let last = Number.NaN
+  let done = need === 0
+  let gaveUp = false
+  return {
+    push(programs, busy) {
+      if (done || gaveUp) return true
+      seen += 1
+      if (busy || programs !== last) quiet = 0
+      else quiet += 1
+      last = programs
+      if (quiet >= need) done = true
+      else if (seen >= cap) gaveUp = true
+      return done || gaveUp
+    },
+    settled() {
+      return done
+    },
+    waited() {
+      return seen
+    },
+  }
 }
 
 export interface FrameCapture {
@@ -91,6 +139,11 @@ export function createPerfStats(capacity = DEFAULT_CAPACITY): PerfStats {
       }
       return peak
     },
+    countAbove(ms) {
+      let n = 0
+      for (let i = 0; i < count; i++) if ((samples[i] ?? 0) > ms) n += 1
+      return n
+    },
     count() {
       return count
     },
@@ -136,16 +189,19 @@ export function createFrameCapture(limit = CAPTURE_MAX): FrameCapture {
     timing() {
       let sum = 0
       let peak = 0
+      let hitches = 0
       for (let i = 0; i < count; i++) {
         const dt = samples[i] ?? 0
         sum += dt
         if (dt > peak) peak = dt
+        if (dt > HITCH_MS) hitches += 1
       }
       return {
         fpsAvg: sum > 0 ? (count * 1000) / sum : 0,
         p50: percentileFrom(samples, count, scratch, 50),
         p95: percentileFrom(samples, count, scratch, 95),
         max: peak,
+        hitches,
       }
     },
   }

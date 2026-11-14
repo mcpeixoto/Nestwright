@@ -1,7 +1,12 @@
 import { selectActiveLevel, useStore, type ViewMode } from '../store'
-import { deleteSelection, duplicateSelection, rotateSelection, saveProject } from './actions'
+import { deleteSelection, duplicateSelection, rotateSelection, saveProject, saveProjectAs } from './actions'
 import { fitVisible } from './fit'
 import { registerShortcut, setHelpOpen } from './shortcuts'
+
+/** The Electron File menu registers these accelerators. Handling them here as well would save twice. */
+function appMenuOwnsShortcut(): boolean {
+  return typeof window !== 'undefined' && !!window.nestwright
+}
 
 const VIEWS: ViewMode[] = ['2d', '3d', 'split']
 
@@ -23,7 +28,16 @@ registerShortcut({
   id: 'save',
   keys: 'mod+s',
   description: 'Save',
+  when: () => !appMenuOwnsShortcut(),
   run: () => void saveProject(),
+})
+
+registerShortcut({
+  id: 'save-as',
+  keys: 'mod+shift+s',
+  description: 'Save As…',
+  when: () => !appMenuOwnsShortcut(),
+  run: () => void saveProjectAs(),
 })
 
 registerShortcut({

@@ -1,6 +1,7 @@
 import { bulgeDelta, clampBulge, curveHandle } from '../model/curve'
 import { add, dist, len, sub } from '../model/geometry'
 import { moveItems, moveRoom, moveWall, moveWallEndpoint } from '../model/ops'
+import { slideOpening } from '../model/ops/sizes'
 import { roomAt } from '../model/rooms'
 import type { Item, Level, Opening, Vec2, Wall } from '../model/types'
 import { pickOutside } from '../model/terrain'
@@ -17,6 +18,7 @@ type Drag =
   | { kind: 'wall'; wallId: string; originA: Vec2; start: Vec2 }
   | { kind: 'bulge'; wallId: string; origin: number; start: Vec2 }
   | { kind: 'room'; roomKey: string; start: Vec2 }
+  | { kind: 'opening'; openingId: string; wallId: string; grab: number }
   | { kind: 'marquee'; x0: number; y0: number; x1: number; y1: number; additive: boolean }
 
 let drag: Drag | null = null
@@ -145,6 +147,16 @@ registerTool({
     const opening = hitOpening(level, ctx.point)
     if (opening) {
       state.select([opening.id], ctx.shift)
+      const host = level.walls.find((w) => w.id === opening.wallId)
+      if (host && !ctx.shift) {
+        drag = {
+          kind: 'opening',
+          openingId: opening.id,
+          wallId: host.id,
+          grab: locateOnWall(host, ctx.point).distance - opening.offset,
+        }
+        useStore.getState().beginStroke('Move opening')
+      }
       return
     }
     const curved = hitBulge(level, ctx.point, state.selection, ctx.transform.zoom)
@@ -223,6 +235,18 @@ registerTool({
       })
       return
     }
+    if (drag.kind === 'opening') {
+      const { openingId, wallId, grab } = drag
+      const host = level.walls.find((w) => w.id === wallId)
+      const current = level.openings.find((o) => o.id === openingId)
+      if (!host || !current) return
+      const target = locateOnWall(host, ctx.point).distance - grab
+      if (Math.abs(target - current.offset) < 1e-4) return
+      applyMove('Move opening', (draft) => {
+        slideOpening(draft, openingId, target)
+      })
+      return
+    }
     if (drag.kind === 'room') {
       const roomKey = drag.roomKey
       const delta = sub(ctx.point, drag.start)
@@ -248,7 +272,7 @@ registerTool({
   onPointerUp(ctx) {
     const current = drag
     drag = null
-    if (current?.kind === 'room') {
+    if (current?.kind === 'room' || current?.kind === 'opening') {
       useStore.getState().endStroke()
       return
     }

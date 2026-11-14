@@ -7,6 +7,10 @@ directories:
   output: release
 asar: true
 publish: null
+fileAssociations:
+  - ext: nest
+    name: Nestwright Project
+    role: Editor
 files:
   - dist/**
   - dist-electron/**

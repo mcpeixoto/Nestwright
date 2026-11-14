@@ -21,6 +21,7 @@ import './panels/library'
 import './panels/OutsidePanel'
 import { SettingsDialog } from './SettingsDialog'
 import { StatusBar } from './StatusBar'
+import { installDocumentSession } from './documentSession'
 import { installShortcuts } from './installShortcuts'
 import { TopBar } from './TopBar'
 import { ToolRail } from './ToolRail'
@@ -108,6 +109,7 @@ export function App() {
   const photo = usePhotoSession().photo
 
   useEffect(() => installShortcuts(), [])
+  useEffect(() => installDocumentSession(), [])
 
   useEffect(() => {
     const apply = () => {

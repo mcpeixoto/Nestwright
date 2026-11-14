@@ -4,6 +4,8 @@ export interface RecentEntry {
   updatedAt: number
   thumb: string
   data: string
+  /** Absolute path of the .nest file, when this project was saved or opened as one. */
+  path?: string
 }
 
 export function relativeTime(updatedAt: number, now = Date.now()): { key: string; n?: number } {

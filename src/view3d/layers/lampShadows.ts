@@ -1,34 +1,37 @@
-import * as THREE from 'three'
+import type * as THREE from 'three'
+import type { Project } from '../../model/types'
+import { useSettings } from '../../settings'
 import { registerSceneLayer } from '../layers'
+import { roomAt } from '../lighting/focus'
+import { createLampPool } from '../lighting/lampPool'
+import { qualityProfile } from '../render/quality'
 
-const LIMIT = 8
+/** Cube-face size per pool light. Six faces each, so it stays small; Low (2 slots) halves it. */
+function lampMapSize(slots: number): number {
+  return slots >= 4 ? 512 : 256
+}
 
 registerSceneLayer({
   id: 'lamp-shadows',
   create(ctx) {
-    const lights: (THREE.PointLight | THREE.SpotLight)[] = []
+    const pool = createLampPool(ctx.scene, ctx.camera)
+    let revision = ''
+    let project: Project | null = null
+    let activeLevelId = ''
+    const indoor = (p: THREE.Vector3) =>
+      project != null && roomAt(project, { activeLevelId, levelDisplay: 'all' }, { x: p.x, y: p.y, z: p.z }) != null
     return {
-      sync() {},
+      sync(next, state) {
+        project = next
+        activeLevelId = state.activeLevelId
+        revision = `${next.updatedAt}`
+      },
       update() {
-        lights.length = 0
-        ctx.scene.traverse((obj) => {
-          const light = obj as THREE.Light
-          if (light.userData?.lampLight && (light instanceof THREE.PointLight || light instanceof THREE.SpotLight)) {
-            lights.push(light)
-          }
-        })
-        const camera = ctx.camera.position
-        lights.sort((a, b) => a.getWorldPosition(new THREE.Vector3()).distanceToSquared(camera) - b.getWorldPosition(new THREE.Vector3()).distanceToSquared(camera))
-        lights.forEach((light, index) => {
-          const on = index < LIMIT
-          light.castShadow = on
-          if (!on) return
-          light.shadow.mapSize.set(256, 256)
-          light.shadow.bias = -0.005
-        })
+        const slots = qualityProfile(useSettings.getState().graphicsQuality).lampShadowSlots
+        pool.update(slots, lampMapSize(slots), revision, indoor)
       },
       dispose() {
-        for (const light of lights) light.castShadow = false
+        pool.dispose()
       },
     }
   },
