@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useTranslate } from '../i18n'
 import { useSettings } from '../settings'
 import { useStore } from '../store'
@@ -146,6 +146,15 @@ export function ToolRail() {
     }
   }
 
+  function onFocus(event: ReactFocusEvent<HTMLElement>) {
+    const target = event.target
+    if (!(target instanceof HTMLElement) || !openGroup) return
+    if (target.closest('[role="menu"]')) return
+    const groupId = target.closest<HTMLElement>('.rail-group')?.dataset.group
+    if (groupId === openGroup) return
+    dismiss()
+  }
+
   return (
     <aside
       ref={hostRef}
@@ -154,6 +163,7 @@ export function ToolRail() {
       aria-label={tr('Tools')}
       aria-orientation="vertical"
       onKeyDown={onKeyDown}
+      onFocus={onFocus}
     >
       {select && (
         <RailButton
@@ -270,7 +280,7 @@ function RailButton({
   onClick: () => void
 }) {
   return (
-    <Tooltip label={tipText(label, shortcut)}>
+    <Tooltip label={tipText(label, shortcut)} disabled={expanded}>
       <button
         type="button"
         className={className}

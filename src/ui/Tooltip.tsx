@@ -8,13 +8,15 @@ const GAP = 8
  * Hover (after a short delay) or keyboard-focus hint. Portaled so a panel
  * with overflow hidden cannot clip it, then nudged back inside the window.
  * The anchor is `display: contents`, so it does not change the rail layout.
+ * `disabled` hides a hint that is already showing and ignores new hover or focus.
  */
-export function Tooltip({ label, children }: { label: string; children: ReactElement }) {
+export function Tooltip({ label, children, disabled = false }: { label: string; children: ReactElement; disabled?: boolean }) {
   const id = useId()
   const host = useRef<HTMLSpanElement>(null)
   const tip = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
   const [coords, setCoords] = useState({ top: 0, left: 0 })
+  const shown = open && !disabled
 
   useEffect(() => {
     const button = host.current?.querySelector<HTMLElement>('button')
@@ -27,12 +29,14 @@ export function Tooltip({ label, children }: { label: string; children: ReactEle
     }
     const openNow = () => {
       clear()
+      if (disabled) return
       const rect = button.getBoundingClientRect()
       setCoords({ top: rect.top, left: rect.right + GAP })
       setOpen(true)
     }
     const onEnter = () => {
       clear()
+      if (disabled) return
       timer = window.setTimeout(openNow, HOVER_MS)
     }
     const onLeave = () => {
@@ -40,6 +44,7 @@ export function Tooltip({ label, children }: { label: string; children: ReactEle
       setOpen(false)
     }
     const onFocus = () => {
+      if (disabled) return
       try {
         if (button.matches(':focus-visible')) openNow()
       } catch {
@@ -57,17 +62,17 @@ export function Tooltip({ label, children }: { label: string; children: ReactEle
       button.removeEventListener('focus', onFocus)
       button.removeEventListener('blur', onLeave)
     }
-  }, [])
+  }, [disabled])
 
   useEffect(() => {
     const button = host.current?.querySelector<HTMLElement>('button')
     if (!button) return
-    if (open) button.setAttribute('aria-describedby', id)
+    if (shown) button.setAttribute('aria-describedby', id)
     else button.removeAttribute('aria-describedby')
-  }, [open, id])
+  }, [shown, id])
 
   useLayoutEffect(() => {
-    if (!open) return
+    if (!shown) return
     const button = host.current?.querySelector<HTMLElement>('button')
     const node = tip.current
     if (!button || !node) return
@@ -83,12 +88,12 @@ export function Tooltip({ label, children }: { label: string; children: ReactEle
     if (top + height > window.innerHeight - GAP) top = Math.max(GAP, window.innerHeight - height - GAP)
     if (top < GAP) top = GAP
     setCoords((prev) => (prev.top === top && prev.left === left ? prev : { top, left }))
-  }, [open, label])
+  }, [shown, label])
 
   return (
     <span className="tip-anchor" ref={host}>
       {children}
-      {open ? <TooltipLayer tip={tip} id={id} label={label} top={coords.top} left={coords.left} /> : null}
+      {shown ? <TooltipLayer tip={tip} id={id} label={label} top={coords.top} left={coords.left} /> : null}
     </span>
   )
 }
