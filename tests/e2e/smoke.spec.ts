@@ -19,18 +19,27 @@ test('loads, draws a 4×4 room, renders 3D, and autosaves the walls', async ({ p
     },
     [AUTOSAVE_KEY, empty] as const,
   )
-  await page.goto('/')
+  const forceWebGL = test.info().project.metadata?.renderer === 'webgl'
+  await page.goto(forceWebGL ? '/?renderer=webgl' : '/')
+  // The start screen (added after this test) offers the autosave as "Continue".
+  const resume = page.getByRole('dialog', { name: 'Nestwright' }).getByRole('button', { name: 'Continue' })
+  await page.getByRole('button', { name: /^(3D|Continue)$/ }).first().waitFor()
+  if (await resume.isVisible()) await resume.click()
   await expect(page.getByRole('button', { name: '3D' })).toBeVisible()
   expect(errors, errors.join('\n')).toEqual([])
 
   const plan = page.locator('canvas.plan-canvas')
   await expect(plan).toBeVisible()
-  await page.getByTitle('Wall (W)').click()
+  // Tools now sit in grouped menus; their shortcuts are the stable handle.
+  await plan.hover()
+  await page.keyboard.press('w')
 
   const clickWorld = async (x: number, y: number) => {
     const size = await plan.evaluate((canvas) => ({ w: canvas.clientWidth, h: canvas.clientHeight }))
-    const screenX = (x - 5) * PX + size.w / 2
-    const screenY = size.h / 2 - (y - 4) * PX
+    // An empty plan is fitted to 0..10 × 0..8 m plus 1.4 m padding, centred on (5, 4).
+    const scale = PX * Math.min(size.w / (12.8 * PX), size.h / (10.8 * PX))
+    const screenX = (x - 5) * scale + size.w / 2
+    const screenY = size.h / 2 - (y - 4) * scale
     await plan.click({ position: { x: screenX, y: screenY } })
   }
   await clickWorld(3, 3)
@@ -48,7 +57,8 @@ test('loads, draws a 4×4 room, renders 3D, and autosaves the walls', async ({ p
     )
     .toBeGreaterThanOrEqual(4)
 
-  await page.getByTitle('Select (V)').click()
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('v')
   const size = await plan.evaluate((canvas) => ({ w: canvas.clientWidth, h: canvas.clientHeight }))
   await plan.click({ position: { x: size.w / 2, y: size.h / 2 } })
   await expect(page.locator('.inspector')).toContainText('16 m²')
@@ -56,31 +66,37 @@ test('loads, draws a 4×4 room, renders 3D, and autosaves the walls', async ({ p
   await page.getByRole('button', { name: '3D', exact: true }).click()
   const view = page.locator('canvas.view3d-canvas')
   await expect(view).toBeVisible()
+  // Read back through the app's own hook: a WebGPU canvas has no readable context, and its
+  // pixels only exist in the task that rendered them. Same check as before: lit, not flat.
   await expect
     .poll(async () =>
-      view.evaluate((element) => {
-        const canvas = element as HTMLCanvasElement
-        const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl')
-        if (!gl || canvas.width < 2 || canvas.height < 2) return false
-        const pixel = new Uint8Array(4)
+      page.evaluate(async () => {
+        const points: { x: number; y: number }[] = []
+        const canvas = document.querySelector('canvas.view3d-canvas') as HTMLCanvasElement | null
+        if (!canvas || canvas.clientWidth < 2 || canvas.clientHeight < 2) return false
+        for (let j = 0; j < 6; j++) {
+          for (let i = 0; i < 6; i++) {
+            points.push({ x: ((i + 0.5) / 6) * canvas.clientWidth, y: ((j + 0.5) / 6) * canvas.clientHeight })
+          }
+        }
+        const samples = (await window.__nestwright?.samplePixels?.(points)) ?? []
         let seen = -1
         let different = false
         let lit = false
-        const stepX = Math.max(1, Math.floor(canvas.width / 6))
-        const stepY = Math.max(1, Math.floor(canvas.height / 6))
-        for (let y = 1; y < canvas.height; y += stepY) {
-          for (let x = 1; x < canvas.width; x += stepX) {
-            gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel)
-            const key = (pixel[0] ?? 0) + (pixel[1] ?? 0) * 256 + (pixel[2] ?? 0) * 65536
-            if ((pixel[0] ?? 0) + (pixel[1] ?? 0) + (pixel[2] ?? 0) > 12) lit = true
-            if (seen < 0) seen = key
-            else if (key !== seen) different = true
-          }
+        for (const sample of samples) {
+          if (!sample) continue
+          const key = sample.r + sample.g * 256 + sample.b * 65536
+          if (sample.r + sample.g + sample.b > 12) lit = true
+          if (seen < 0) seen = key
+          else if (key !== seen) different = true
         }
         return lit && different
       }),
     )
     .toBe(true)
+  const backend = await page.evaluate(() => window.__nestwright?.getController?.()?.backend ?? null)
+  test.info().annotations.push({ type: 'renderer backend', description: String(backend) })
+  if (forceWebGL) expect(backend).toBe('webgl2')
 
   await expect
     .poll(async () =>

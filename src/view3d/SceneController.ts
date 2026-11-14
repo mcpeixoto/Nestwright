@@ -8,13 +8,19 @@ import { buildWall } from '../builders/walls'
 import type { Item, Level, Project } from '../model/types'
 import { gizmoOwnsPointer, releaseGizmo } from './layers/gizmo'
 import { paintFromHits, type ViewHit } from './paintPick'
-import { pixelRatioCap, useSettings } from '../settings'
+import { useSettings } from '../settings'
 import { roomsFor, useStore } from '../store'
 import { isPhotoMode } from '../ui/photoSession'
 import { getRig, type CameraRig } from './rigs'
 import { bindWalkScene } from './rigs/walk'
-import { recordFrame } from './perfMonitor'
-import { renderFrame } from './post/pipeline'
+import { recordFrame, type PerfRenderer } from './perfMonitor'
+import { PostPipeline } from './post/pipeline'
+import { backendPreference, createRenderer, type RendererBackend } from './render/createRenderer'
+import { scheduleAutoTier } from './render/autoTierRunner'
+import { holdRendering } from './render/hold'
+import { renderPixelRatio } from './render/quality'
+import type { GraphicsQuality } from '../settings'
+import { captureCanvas, samplePoints, type PixelSample, type SamplePoint } from './render/readback'
 import {
   bindSceneHost,
   listSceneLayers,
@@ -51,6 +57,12 @@ interface Bucket {
 
 let current: SceneController | null = null
 
+/**
+ * Longest a precompile may hold frames back. Rendering before compileAsync returns is unsafe
+ * (it leaves the scene pass MRT set on the renderer), so this is only a guard against a hang.
+ */
+const PRECOMPILE_CAP_MS = 60_000
+
 function bindController(controller: SceneController | null): void {
   current = controller
 }
@@ -70,8 +82,12 @@ export class SceneController {
   readonly canvas: HTMLCanvasElement
   readonly scene: THREE.Scene
   camera: THREE.PerspectiveCamera
-  renderer: THREE.WebGLRenderer | null = null
+  /** Null until `ready` resolves (and for good if neither WebGPU nor WebGL2 starts). */
+  renderer: THREE.WebGPURenderer | null = null
+  backend: RendererBackend | null = null
   controls: OrbitControls | null = null
+  /** Resolves true once the renderer is initialised and the frame loop runs. */
+  readonly ready: Promise<boolean>
 
   private root = new THREE.Group()
   private helpers = new THREE.Group()
@@ -93,6 +109,17 @@ export class SceneController {
   private unbindHost: (() => void) | null = null
   /** The compare pane must not steal the walk rig or the global controller. */
   private primary = true
+  private post: PostPipeline | null = null
+  private queued: { project: Project; state: SceneViewState } | null = null
+  /** The first-run tier benchmark owns the GPU; the frame loop only keeps ticking. */
+  private benchmarking = false
+  /** Pipelines are compiling off-thread; frames are held (the canvas keeps the last one). */
+  private compiling = false
+  private compileWanted = true
+  private compiledProject: string | null = null
+  private compiledChain = ''
+  private framesRendered = 0
+  private compileDone: Promise<void> | null = null
 
   constructor(canvas: HTMLCanvasElement, options?: { primary?: boolean }) {
     this.primary = options?.primary !== false
@@ -102,53 +129,112 @@ export class SceneController {
     this.camera = new THREE.PerspectiveCamera(48, 1, 0.2, 6000)
     this.camera.position.set(12, 10, 14)
     if (this.primary) bindController(this)
-    try {
-      // Keep the drawing buffer so a later pixel read (photo export, smoke test) is not blank.
-      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true })
-    } catch {
-      this.renderer = null
-    }
-    const renderer = this.renderer
-    if (renderer) {
-      renderer.outputColorSpace = THREE.SRGBColorSpace
-      renderer.toneMapping = THREE.ACESFilmicToneMapping
-      renderer.toneMappingExposure = 0.5
-      renderer.shadowMap.enabled = true
-      renderer.shadowMap.type = THREE.PCFShadowMap
-      renderer.setClearColor('#9ec4e4')
-      if (this.primary) {
-        // A multi-pass composer would otherwise keep only the last pass, because
-        // three resets info at the start of each render. Read after renderFrame, then reset.
-        renderer.info.autoReset = false
-      }
-    }
 
-    if (renderer) {
-      this.controls = new OrbitControls(this.camera, canvas)
-      this.controls.enableDamping = true
-      this.controls.dampingFactor = 0.08
-      this.controls.maxPolarAngle = Math.PI * 0.48
-      this.controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }
-      this.controls.target.set(5, 1, 4)
-    }
+    this.controls = new OrbitControls(this.camera, canvas)
+    this.controls.enableDamping = true
+    this.controls.dampingFactor = 0.08
+    this.controls.maxPolarAngle = Math.PI * 0.48
+    this.controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }
+    this.controls.target.set(5, 1, 4)
 
     this.scene.add(this.root)
     this.scene.add(this.helpers)
     if (this.primary) bindWalkScene(() => (this.disposed ? null : this.root))
-    this.unbindHost = bindSceneHost(this)
-    this.mountAll()
 
     if (this.primary) {
       canvas.addEventListener('pointerdown', this.onDown, true)
       canvas.addEventListener('pointerup', this.onUp)
     }
+    this.ready = this.start()
+  }
+
+  /** Async renderer init. Layers mount only after it, so each one sees a live renderer. */
+  private async start(): Promise<boolean> {
+    const search = typeof location === 'undefined' ? '' : location.search
+    const preference = backendPreference(useSettings.getState().backend, search)
+    let created: Awaited<ReturnType<typeof createRenderer>> = null
+    try {
+      created = await createRenderer(this.canvas, preference)
+    } catch (err) {
+      console.warn(err)
+    }
+    if (this.disposed) {
+      created?.renderer.dispose()
+      return false
+    }
+    if (!created) {
+      this.failed = true
+      return false
+    }
+    const renderer = created.renderer
+    this.renderer = renderer
+    this.backend = created.backend
+    renderer.outputColorSpace = THREE.SRGBColorSpace
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 0.5
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFShadowMap
+    renderer.setClearColor('#9ec4e4')
+    // A post chain renders several passes per frame. Read the totals after it, then reset.
+    renderer.info.autoReset = false
+    this.post = new PostPipeline(renderer, this.scene, this.camera, this.primary ? { post: true } : { post: false, tier: 'low' })
+
+    this.unbindHost = bindSceneHost(this)
+    this.mountAll()
+    const queued = this.queued
+    this.queued = null
+    if (queued) this.sync(queued.project, queued.state)
     this.lastTime = performance.now()
     this.frameLoop()
+    if (this.primary) scheduleAutoTier(this)
+    return true
+  }
+
+  isDisposed(): boolean {
+    return this.disposed
+  }
+
+  setBenchmarking(on: boolean): void {
+    this.benchmarking = on
+  }
+
+  /** One frame on `tier`'s profile (render scale and post chain), for the tier benchmark. */
+  benchmarkFrame(tier: GraphicsQuality): void {
+    if (!this.renderer || !this.post || this.disposed) return
+    const width = this.canvas.clientWidth
+    const height = this.canvas.clientHeight
+    if (width < 2 || height < 2) return
+    const ratio = renderPixelRatio(window.devicePixelRatio || 1, tier, 0)
+    if (this.renderer.getPixelRatio() !== ratio) {
+      this.renderer.setPixelRatio(ratio)
+      this.renderer.setSize(width, height, false)
+    }
+    this.post.render(tier)
+    this.renderer.info.reset()
+  }
+
+  /** Benchmark host: compile `tier`'s chain at its render scale before the timed frames. */
+  async prepareTier(tier: GraphicsQuality): Promise<void> {
+    if (!this.renderer || !this.post || this.disposed) return
+    const width = this.canvas.clientWidth
+    const height = this.canvas.clientHeight
+    if (width < 2 || height < 2) return
+    const ratio = renderPixelRatio(window.devicePixelRatio || 1, tier, 0)
+    if (this.renderer.getPixelRatio() !== ratio) {
+      this.renderer.setPixelRatio(ratio)
+      this.renderer.setSize(width, height, false)
+    }
+    holdRendering(true)
+    try {
+      await this.post.precompile(tier)
+    } finally {
+      holdRendering(false)
+    }
   }
 
   /** Scene-layer host. Recreates one layer after replaceSceneLayer. */
   remountLayer(id: string): void {
-    if (this.disposed) return
+    if (this.disposed || !this.renderer) return
     this.mountLayer(id)
   }
 
@@ -163,10 +249,18 @@ export class SceneController {
     }
     this.rig?.deactivate?.()
     this.controls?.dispose()
-    for (const layer of this.layers.values()) layer.dispose()
-    this.layers.clear()
-    this.clearLevels()
-    this.renderer?.dispose()
+    // GPU teardown waits for a running precompile: freeing geometry or the renderer under
+    // three's compileAsync makes it build pipelines against dead resources.
+    const teardown = () => {
+      for (const layer of this.layers.values()) layer.dispose()
+      this.layers.clear()
+      this.clearLevels()
+      this.post?.dispose()
+      this.post = null
+      this.renderer?.dispose()
+    }
+    if (this.compileDone) void this.compileDone.then(teardown)
+    else teardown()
     if (current === this) bindController(null)
   }
 
@@ -244,7 +338,11 @@ export class SceneController {
   }
 
   sync(project: Project, state: SceneViewState): void {
-    if (!this.renderer || this.disposed) return
+    if (this.disposed) return
+    if (!this.renderer) {
+      this.queued = { project, state }
+      return
+    }
     const prev = this.signature
     if (
       this.seenProject === project &&
@@ -258,6 +356,12 @@ export class SceneController {
       return
     }
     this.seenProject = project
+    if (project.id !== this.compiledProject) {
+      // A template or file load brings a scene full of new render objects: compile them
+      // before the next frame instead of inside it.
+      this.compiledProject = project.id
+      this.compileWanted = true
+    }
     this.reconcile(project)
     this.applyVisibility(project, state)
     this.updateHelpers(state.selection)
@@ -465,11 +569,15 @@ export class SceneController {
     this.elapsed += dt
     const width = this.canvas.clientWidth
     const height = this.canvas.clientHeight
-    if (width < 2 || height < 2) return
+    if (width < 2 || height < 2 || this.benchmarking) return
     try {
+      // While pipelines compile the frame is held whole: a resize would recreate the render
+      // targets being compiled against, and layers (sky capture) must not render meanwhile.
+      if (this.compiling) return
       if (this.pendingFrame && this.seenProject) this.frameOn(this.seenProject, this.signature)
-      const cap = pixelRatioCap(useSettings.getState().graphicsQuality)
-      const ratio = Math.min(window.devicePixelRatio || 1, cap)
+      const settings = useSettings.getState()
+      const tier = this.primary ? settings.graphicsQuality : 'low'
+      const ratio = renderPixelRatio(window.devicePixelRatio || 1, tier, this.primary ? settings.renderScale : 0)
       if (
         this.canvas.width !== Math.floor(width * ratio) ||
         this.camera.aspect !== width / height ||
@@ -494,12 +602,85 @@ export class SceneController {
         const helper = child as THREE.BoxHelper
         helper.update()
       }
-      renderFrame(this.renderer, this.scene, this.camera)
-      if (this.primary) recordFrame(this.renderer, this.scene, rawMs)
+      if (this.primary && this.post) {
+        const chain = this.post.wantedKey(tier)
+        if (chain !== this.compiledChain) {
+          this.compiledChain = chain
+          this.compileWanted = true
+        }
+        // Not before the first real frame: three's compileAsync then builds pipelines for render
+        // targets that do not exist yet (invalid pipelines, "format undefined").
+        if (this.compileWanted && !this.compiling && this.framesRendered > 0) this.precompile(tier)
+        if (this.compiling) return
+      }
+      this.renderOnce()
+      this.framesRendered += 1
+      if (this.primary) recordFrame(this.renderer as unknown as PerfRenderer, this.scene, rawMs, this.backend ?? undefined)
+      else this.renderer.info.reset()
     } catch (err) {
       this.failed = true
       console.error(err)
     }
+  }
+
+  /**
+   * Compile the scene's pipelines for `tier` off the main thread, holding frames meanwhile.
+   * A cap keeps a compile that never settles from freezing the view.
+   */
+  private precompile(tier: GraphicsQuality): void {
+    const post = this.post
+    if (!post) return
+    this.compileWanted = false
+    this.compiling = true
+    holdRendering(true)
+    const started = performance.now()
+    const cap = new Promise<void>((resolve) => window.setTimeout(resolve, PRECOMPILE_CAP_MS))
+    this.compileDone = Promise.race([post.precompile(tier), cap]).finally(() => {
+      this.compileDone = null
+      this.compiling = false
+      holdRendering(false)
+      // Time spent holding frames would read as one giant frame.
+      this.lastTime = performance.now()
+      if (import.meta.env?.DEV) console.info(`[nestwright] precompile ${tier}: ${Math.round(performance.now() - started)} ms`)
+    })
+  }
+
+  /** Draw one frame through this view's post chain at the renderer's current size. */
+  renderOnce(): void {
+    if (!this.renderer || !this.post) return
+    this.post.render(useSettings.getState().graphicsQuality)
+  }
+
+  /**
+   * Render a frame and copy it into a 2D canvas in the same task. A WebGPU (or non-preserved
+   * WebGL) canvas only holds its pixels until the frame is presented, so this is the one
+   * readback that works on both backends and sees exactly what the screen shows.
+   */
+  capture(): HTMLCanvasElement | null {
+    if (!this.renderer || this.disposed) return null
+    // A still waits for temporal AA to converge after a resize or camera cut.
+    if (this.post) this.post.renderStill(useSettings.getState().graphicsQuality)
+    return captureCanvas(this.canvas)
+  }
+
+  /** sRGB bytes at world points ([x,y,z]) or canvas CSS points ({x,y}); null when off screen. */
+  async samplePixels(points: readonly SamplePoint[]): Promise<(PixelSample | null)[]> {
+    if (!(await this.ready)) return points.map(() => null)
+    const frame = this.capture()
+    if (!frame) return points.map(() => null)
+    return samplePoints(frame, this.canvas, this.camera, points)
+  }
+
+  /** Largest square texture the backend can render, for photo export. */
+  maxTextureSize(): number {
+    const backend = this.renderer?.backend as
+      | { device?: { limits?: { maxTextureDimension2D?: number } }; gl?: WebGL2RenderingContext }
+      | undefined
+    const gpu = backend?.device?.limits?.maxTextureDimension2D
+    if (typeof gpu === 'number' && gpu > 0) return gpu
+    const gl = backend?.gl
+    const size = gl ? Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) : 0
+    return Number.isFinite(size) && size > 0 ? size : 4096
   }
 
   private onDown = (e: PointerEvent) => {

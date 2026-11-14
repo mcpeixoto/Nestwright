@@ -11,6 +11,9 @@ export function parseArgs(argv: string[]): {
   views: string[] | null
   serve: boolean
   ref: string
+  backend: 'webgpu' | 'webgl'
+  quality: string | null
+  novsync: boolean
   help: boolean
 }
 export function escapeHtml(value: unknown): string

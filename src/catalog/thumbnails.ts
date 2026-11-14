@@ -1,12 +1,11 @@
 import * as THREE from 'three'
-import { getMaterial } from '../materials/materialCache'
+import { getMaterial, isCachedMaterial } from '../materials/materialCache'
+import { getOffscreenRenderer } from '../view3d/render/offscreen'
 import { getEntry } from './registry'
 
 const thumbs = new Map<string, string>()
 const listeners = new Set<() => void>()
 let revision = 0
-let renderer: THREE.WebGLRenderer | null = null
-let failed = false
 const queue: string[] = []
 let pumping = false
 
@@ -28,77 +27,94 @@ function notify() {
   for (const listener of listeners) listener()
 }
 
-function ensureRenderer(): THREE.WebGLRenderer | null {
-  if (failed || renderer) return renderer
-  if (typeof document === 'undefined') {
-    failed = true
-    return null
-  }
-  try {
-    const canvas = document.createElement('canvas')
-    canvas.width = 128
-    canvas.height = 128
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true })
-    renderer.setSize(128, 128, false)
-    renderer.outputColorSpace = THREE.SRGBColorSpace
-    renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1.05
-    return renderer
-  } catch {
-    failed = true
-    return null
+/** One scene, rig and set of lights for every thumbnail; only the item changes. */
+interface Stage {
+  scene: THREE.Scene
+  camera: THREE.PerspectiveCamera
+}
+
+let stage: Stage | null = null
+
+function getStage(): Stage {
+  if (stage) return stage
+  const scene = new THREE.Scene()
+  scene.background = new THREE.Color('#e4e0d8')
+  scene.add(new THREE.HemisphereLight('#fffaf2', '#c9c3b8', 0.9))
+  const key = new THREE.DirectionalLight('#ffffff', 1.5)
+  key.position.set(2.4, 4.2, 3.2)
+  scene.add(key)
+  const fill = new THREE.DirectionalLight('#d5deea', 0.55)
+  fill.position.set(-3, 2, -2)
+  scene.add(fill)
+  stage = { scene, camera: new THREE.PerspectiveCamera(32, 1, 0.02, 40) }
+  return stage
+}
+
+/**
+ * Free what one thumbnail build allocated: every geometry, and the materials and textures the
+ * builder marked `userData.owned` (the same rule the live scene uses). Library materials and
+ * builder-level shared ones stay: the live scene uses them too.
+ */
+export function disposeThumbObject(root: THREE.Object3D): void {
+  const materials = new Set<THREE.Material>()
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh
+    mesh.geometry?.dispose()
+    const listed = mesh.material
+    for (const material of Array.isArray(listed) ? listed : listed ? [listed] : []) {
+      if (material.userData?.owned && !isCachedMaterial(material)) materials.add(material)
+    }
+  })
+  for (const material of materials) {
+    const map = (material as THREE.MeshStandardMaterial).map
+    if (map?.userData?.owned) map.dispose()
+    material.dispose()
   }
 }
 
-function renderOne(id: string) {
+function renderOne(id: string, gl: THREE.WebGPURenderer | null) {
   if (thumbs.has(id)) return
   const entry = getEntry(id)
-  const gl = ensureRenderer()
   if (!entry || !gl) {
     thumbs.set(id, '')
     return
   }
+  const { scene, camera } = getStage()
+  let built: THREE.Object3D | null = null
   try {
-    const scene = new THREE.Scene()
-    scene.background = new THREE.Color('#e4e0d8')
     const materials: Record<string, THREE.MeshStandardMaterial> = {}
     for (const [slot, ref] of Object.entries(entry.materialSlots)) materials[slot] = getMaterial(ref)
-    const built = entry.build({ size: entry.defaultSize, materials, params: {} })
+    built = entry.build({ size: entry.defaultSize, materials, params: {} })
     scene.add(built)
-    scene.add(new THREE.HemisphereLight('#fffaf2', '#c9c3b8', 0.9))
-    const key = new THREE.DirectionalLight('#ffffff', 1.5)
-    key.position.set(2.4, 4.2, 3.2)
-    scene.add(key)
-    const fill = new THREE.DirectionalLight('#d5deea', 0.55)
-    fill.position.set(-3, 2, -2)
-    scene.add(fill)
     const box = new THREE.Box3().setFromObject(built)
     const sphere = box.getBoundingSphere(new THREE.Sphere())
     if (!Number.isFinite(sphere.radius) || sphere.radius < 1e-3) {
       sphere.center.set(0, entry.defaultSize.h * 0.4, 0)
       sphere.radius = Math.max(entry.defaultSize.w, entry.defaultSize.d, entry.defaultSize.h, 0.4) * 0.6
     }
-    const camera = new THREE.PerspectiveCamera(32, 1, 0.02, 40)
     const dist = sphere.radius / Math.sin(THREE.MathUtils.degToRad(16))
     camera.position.copy(sphere.center).add(new THREE.Vector3(0.72, 0.48, 0.9).normalize().multiplyScalar(dist))
     camera.lookAt(sphere.center)
+    // Same task as the render: a WebGPU canvas drops its pixels once the frame is presented.
     gl.render(scene, camera)
     thumbs.set(id, gl.domElement.toDataURL('image/png'))
-    built.traverse((obj) => {
-      const mesh = obj as THREE.Mesh
-      mesh.geometry?.dispose()
-    })
   } catch {
     thumbs.set(id, '')
+  } finally {
+    if (built) {
+      scene.remove(built)
+      disposeThumbObject(built)
+    }
   }
 }
 
-function pump() {
+async function pump() {
+  const gl = await getOffscreenRenderer()
   let budget = 4
   while (budget > 0 && queue.length > 0) {
     const id = queue.shift()
     if (!id) break
-    renderOne(id)
+    renderOne(id, gl)
     budget -= 1
   }
   notify()
@@ -106,8 +122,13 @@ function pump() {
     pumping = false
     return
   }
-  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(pump)
-  else setTimeout(pump, 16)
+  schedule(16)
+}
+
+function schedule(ms: number) {
+  const run = () => void pump()
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run)
+  else setTimeout(run, ms)
 }
 
 /** Queue a 128px thumbnail. Safe when WebGL is missing: the library still places the item. */
@@ -129,7 +150,6 @@ export function requestThumb(id: string, urgent = false): void {
   else queue.push(id)
   if (!pumping) {
     pumping = true
-    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(pump)
-    else setTimeout(pump, 0)
+    schedule(0)
   }
 }

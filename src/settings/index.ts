@@ -1,7 +1,10 @@
 import { create } from 'zustand'
+import { qualityProfile, RENDER_SCALE_MAX, RENDER_SCALE_MIN } from '../view3d/render/quality'
 
 export type GraphicsQuality = 'low' | 'medium' | 'high' | 'ultra'
 export type AppLanguage = 'en' | 'pt-PT'
+/** `auto` tries WebGPU and falls back to WebGL2; `webgl` forces the fallback. */
+export type RendererBackendSetting = 'auto' | 'webgpu' | 'webgl'
 
 export interface Settings {
   units: 'metric' | 'imperial'
@@ -17,11 +20,22 @@ export interface Settings {
   autosaveInterval: number
   /** 0.9–1.25, applied to the root font size. */
   uiScale: number
+  /** Read when a 3D view is created. */
+  backend: RendererBackendSetting
+  /** 0 follows the graphics tier; otherwise 0.25–1 of the device pixel ratio. */
+  renderScale: number
+  /**
+   * Pick the tier from a short benchmark the next time a 3D view opens. On for a fresh install
+   * only (see `initialSettings`); the benchmark turns it off once it has chosen, and choosing a
+   * tier by hand turns it off too, so it never runs again unless switched back on in Settings.
+   */
+  qualityAuto: boolean
 }
 
 const KEY = 'nestwright:settings'
 
 const QUALITIES: readonly GraphicsQuality[] = ['low', 'medium', 'high', 'ultra']
+const BACKENDS: readonly RendererBackendSetting[] = ['auto', 'webgpu', 'webgl']
 export const AUTOSAVE_CHOICES = [0, 5, 15, 30, 60, 120] as const
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -36,6 +50,9 @@ export const DEFAULT_SETTINGS: Settings = {
   invertY: false,
   autosaveInterval: 15,
   uiScale: 1,
+  backend: 'auto',
+  renderScale: 0,
+  qualityAuto: false,
 }
 
 function clamp(value: number, min: number, max: number, fallback: number): number {
@@ -66,15 +83,39 @@ export function normalizeSettings(partial: Partial<Settings> | null | undefined)
     invertY: source.invertY === true,
     autosaveInterval,
     uiScale: clamp(source.uiScale ?? 1, 0.9, 1.25, 1),
+    backend: BACKENDS.includes(source.backend as RendererBackendSetting)
+      ? (source.backend as RendererBackendSetting)
+      : DEFAULT_SETTINGS.backend,
+    renderScale: normalizeRenderScale(source.renderScale),
+    qualityAuto: source.qualityAuto === true,
   }
+}
+
+function normalizeRenderScale(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return 0
+  return Math.min(RENDER_SCALE_MAX, Math.max(RENDER_SCALE_MIN, value))
+}
+
+/**
+ * Settings from the stored JSON. Nothing stored means a fresh install, which gets the
+ * first-launch tier benchmark; a saved file without the field keeps the tier its user chose.
+ */
+export function initialSettings(raw: string | null): Settings {
+  if (!raw) return { ...DEFAULT_SETTINGS, qualityAuto: true }
+  return normalizeSettings(JSON.parse(raw) as Partial<Settings>)
+}
+
+/** A tier picked by hand ends the automatic choice, unless the same change re-enables it. */
+export function mergeSettings(current: Settings, partial: Partial<Settings>): Settings {
+  const next: Partial<Settings> = { ...current, ...partial }
+  if (partial.graphicsQuality !== undefined && partial.qualityAuto === undefined) next.qualityAuto = false
+  return normalizeSettings(next)
 }
 
 function load(): Settings {
   try {
     if (typeof localStorage === 'undefined') return { ...DEFAULT_SETTINGS }
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return { ...DEFAULT_SETTINGS }
-    return normalizeSettings(JSON.parse(raw) as Partial<Settings>)
+    return initialSettings(localStorage.getItem(KEY))
   } catch {
     return { ...DEFAULT_SETTINGS }
   }
@@ -97,28 +138,22 @@ interface SettingsState extends Settings {
 export const useSettings = create<SettingsState>((set, get) => ({
   ...load(),
   setSettings(partial) {
-    const next = normalizeSettings({ ...get(), ...partial })
+    const next = mergeSettings(get(), partial)
     set(next)
     persist(next)
   },
 }))
 
+/** Thin wrappers over the tier profiles in `view3d/render/quality`. */
 export function shadowMapSize(quality: GraphicsQuality): number {
-  if (quality === 'low') return 512
-  if (quality === 'medium') return 1024
-  return 2048
+  return qualityProfile(quality).shadowMapSize
 }
 
 export function pixelRatioCap(quality: GraphicsQuality): number {
-  if (quality === 'low') return 1
-  if (quality === 'medium') return 1.5
-  return 2
+  return qualityProfile(quality).pixelRatioCap
 }
 
 /** Scatter budgets read this. Placed furniture is unaffected. */
 export function plantDensityMultiplier(quality: GraphicsQuality): number {
-  if (quality === 'low') return 0.35
-  if (quality === 'medium') return 0.65
-  if (quality === 'ultra') return 1.35
-  return 1
+  return qualityProfile(quality).plantDensity
 }

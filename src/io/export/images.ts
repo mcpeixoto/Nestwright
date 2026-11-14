@@ -4,7 +4,6 @@ import { useStore } from '../../store'
 import type { Level, Project } from '../../model/types'
 import { listPlanLayers, type PlanDrawContext } from '../../plan2d/layers'
 import '../../plan2d/layers/builtin'
-import { renderFrame } from '../../view3d/post/pipeline'
 import { getController } from '../../view3d/SceneController'
 import { buildPlanPdf } from './planPdf'
 import { bytesToDataUrl } from './binary'
@@ -39,7 +38,7 @@ export async function exportViewImage(width: number, height: number): Promise<vo
   const clientW = Math.max(2, canvas.clientWidth)
   const clientH = Math.max(2, canvas.clientHeight)
   const prevAspect = camera.aspect
-  const max = renderer.capabilities?.maxTextureSize ?? 4096
+  const max = controller.maxTextureSize()
   let w = Math.max(2, Math.round(width))
   let h = Math.max(2, Math.round(height))
   if (Math.max(w, h) > max) {
@@ -53,8 +52,10 @@ export async function exportViewImage(width: number, height: number): Promise<vo
     renderer.setSize(w, h, false)
     camera.aspect = w / h
     camera.updateProjectionMatrix()
-    renderFrame(renderer, controller.scene, camera, { width: w, height: h })
-    url = canvas.toDataURL('image/png')
+    // capture() renders and copies in one task; the WebGPU canvas is empty once presented.
+    const frame = controller.capture()
+    if (!frame) throw new Error('3D frame could not be captured')
+    url = frame.toDataURL('image/png')
   } catch (err) {
     console.error(err)
     useStore.getState().setMessage('Could not render the image')
@@ -65,9 +66,9 @@ export async function exportViewImage(width: number, height: number): Promise<vo
     camera.aspect = prevAspect > 0.05 ? prevAspect : clientW / clientH
     camera.updateProjectionMatrix()
     try {
-      renderFrame(renderer, controller.scene, camera)
+      controller.renderOnce()
     } catch {
-      renderer.render(controller.scene, camera)
+      /* the frame loop redraws on the next tick */
     }
   }
   const saved = await save(fileName(useStore.getState().project.name, 'png'), url)

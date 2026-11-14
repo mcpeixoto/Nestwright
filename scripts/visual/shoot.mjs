@@ -2,9 +2,13 @@
  * Baseline screenshots of the named views in views.json.
  *
  *   node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181]
- *     [--views a,b] [--serve] [--ref <dir>]
+ *     [--views a,b] [--serve] [--ref <dir>] [--backend webgpu|webgl]
+ *     [--quality low|medium|high|ultra] [--novsync]
  *
+ * --backend webgl loads the page with ?renderer=webgl (forced WebGL2 fallback).
  * --serve starts vite on a free port and stops it when the run ends.
+ * --quality overrides every view's tier; --novsync drops vsync and the frame cap (headroom timing).
+ * Each view is timed by perf.report after the scene settled: 30 frames with no new GPU program.
  * Chromium is launched with a GPU. This machine's sandbox cannot do that;
  * a failure to launch is reported and the process exits non-zero.
  */
@@ -24,7 +28,7 @@ const root = fileURLToPath(new globalThis.URL('../..', import.meta.url))
 const here = dirname(fileURLToPath(import.meta.url))
 
 function help() {
-  return `node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181] [--views a,b] [--serve] [--ref <dir>]
+  return `node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181] [--views a,b] [--serve] [--ref <dir>] [--backend webgpu|webgl] [--quality low|medium|high|ultra] [--novsync]
 Default reference folder: ${join(homedir(), 'Documents', 'Coding', '_assets', 'architecture-design-steam-screenshots')}`
 }
 
@@ -205,8 +209,8 @@ async function shootView(page, view, outDir) {
   await prepare(page, view)
   await delay(2000)
   const report = await withTimeout(
-    page.evaluate(() => globalThis.__nestwright.perf.report(90)),
-    30_000,
+    page.evaluate(() => globalThis.__nestwright.perf.report(90, { settle: 30 })),
+    60_000,
     `${view.name} perf.report`,
   )
   const png = join(outDir, `${view.name}.png`)
@@ -225,11 +229,11 @@ async function main() {
   const views = JSON.parse(await readFile(join(here, 'views.json'), 'utf8'))
   const problems = validateViews(views)
   if (problems.length) throw new Error(problems.join('\n'))
-  let selected = views
+  let selected = opts.quality ? views.map((view) => ({ ...view, quality: opts.quality })) : views
   if (opts.views) {
     const missing = opts.views.filter((name) => !views.some((view) => view.name === name))
     if (missing.length) throw new Error(`Unknown view: ${missing.join(', ')}`)
-    selected = views.filter((view) => opts.views.includes(view.name))
+    selected = selected.filter((view) => opts.views.includes(view.name))
   }
 
   let server = null
@@ -244,12 +248,14 @@ async function main() {
       server = startVite(port)
       await waitForUrl(url, server.child, server.log)
     }
+    // The full Chromium build (channel 'chromium'); the default headless shell has no WebGPU.
     const args =
       process.platform === 'darwin'
-        ? ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
-        : ['--enable-gpu', '--ignore-gpu-blocklist']
+        ? ['--enable-unsafe-webgpu', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
+        : ['--enable-unsafe-webgpu', '--enable-gpu', '--ignore-gpu-blocklist']
+    if (opts.novsync) args.push('--disable-gpu-vsync', '--disable-frame-rate-limit')
     try {
-      browser = await chromium.launch({ headless: true, timeout: 45_000, args })
+      browser = await chromium.launch({ channel: 'chromium', headless: true, timeout: 45_000, args })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       throw new Error(`Chromium did not start. A GPU browser is required for these shots. ${message}`, { cause: err })
@@ -267,7 +273,9 @@ async function main() {
     page.on('console', (msg) => {
       if (msg.type() === 'error') errors.push(`console: ${msg.text()}`)
     })
-    await page.goto(url, { waitUntil: 'domcontentloaded' })
+    const target = new globalThis.URL(url)
+    if (opts.backend === 'webgl') target.searchParams.set('renderer', 'webgl')
+    await page.goto(target.toString(), { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => typeof globalThis.__nestwright?.loadTemplate === 'function')
     await mkdir(opts.out, { recursive: true })
     for (const view of selected) {
@@ -283,7 +291,7 @@ async function main() {
     await writeFile(join(opts.out, 'contact.html'), contactHtml({ shots, refs }))
     await writeFile(
       join(opts.out, 'summary.json'),
-      JSON.stringify({ createdAt: new Date().toISOString(), url, errors, shots }, null, 2),
+      JSON.stringify({ createdAt: new Date().toISOString(), url, backend: opts.backend, errors, shots }, null, 2),
     )
     if (errors.length) {
       process.stderr.write(`${errors.join('\n')}\n`)
