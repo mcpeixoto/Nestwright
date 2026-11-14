@@ -47,7 +47,7 @@ PRE
 echo "▸ copying builds"
 DIRS=(linux-unpacked)
 [ "$WIN" = 1 ] && DIRS+=(win-unpacked)
-tar -C release -cf - "${DIRS[@]}" | "${SSH[@]}" 'rm -rf ~/nestwright-smoke && mkdir -p ~/nestwright-smoke && tar -xf - -C ~/nestwright-smoke'
+COPYFILE_DISABLE=1 tar --no-mac-metadata --no-xattrs -C release -cf - "${DIRS[@]}" | "${SSH[@]}" 'rm -rf ~/nestwright-smoke && mkdir -p ~/nestwright-smoke && tar -xf - -C ~/nestwright-smoke'
 
 echo "▸ running"
 set +e
