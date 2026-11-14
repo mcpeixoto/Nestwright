@@ -80,7 +80,7 @@ export function StartScreen() {
     if (!entry) return
     const project = projectFromRecent(entry)
     if (!project) return
-    beginProject(project)
+    beginProject(project, entry.path ?? null)
   }
 
   return (
