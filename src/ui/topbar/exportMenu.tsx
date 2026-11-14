@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { exportHouseGlb } from '../../io/export/glb'
-import { exportPlanPdf, exportPlanPng, exportViewImage } from '../../io/export/images'
+import { exportPlanPng, exportViewImage } from '../../io/export/images'
 import { registerTopBarAction } from './registry'
+import { PlanPdfDialog } from './PlanPdfDialog'
 import { T } from '../../i18n/T'
 
 function ExportMenu() {
   const [open, setOpen] = useState(false)
+  const [pdfOpen, setPdfOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -32,7 +34,10 @@ function ExportMenu() {
           <button type="button" role="menuitem" onClick={() => run(() => exportViewImage(1920, 1080))}>
             <T k="Image" />
           </button>
-          <button type="button" role="menuitem" onClick={() => run(() => exportPlanPdf())}>
+          <button type="button" role="menuitem" onClick={() => {
+              setOpen(false)
+              setPdfOpen(true)
+            }}>
             <T k="Floor plan PDF" />
           </button>
           <button type="button" role="menuitem" onClick={() => run(() => exportPlanPng())}>
@@ -43,6 +48,7 @@ function ExportMenu() {
           </button>
         </div>
       )}
+      {pdfOpen && <PlanPdfDialog onClose={() => setPdfOpen(false)} />}
     </div>
   )
 }

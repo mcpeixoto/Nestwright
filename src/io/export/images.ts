@@ -6,6 +6,7 @@ import { listPlanLayers, type PlanDrawContext } from '../../plan2d/layers'
 import '../../plan2d/layers/builtin'
 import { getController } from '../../view3d/SceneController'
 import { buildPlanPdf } from './planPdf'
+import type { PlanSheetOptions } from './planSheet'
 import { bytesToDataUrl } from './binary'
 
 const PX = 50
@@ -173,9 +174,8 @@ export async function exportPlanPng(): Promise<void> {
   await save(fileName(state.project.name, 'png').replace(/\.png$/, '-plan.png'), url ?? '')
 }
 
-export async function exportPlanPdf(): Promise<void> {
+export async function exportPlanPdf(options: PlanSheetOptions): Promise<boolean> {
   const project = useStore.getState().project
-  const pdf = buildPlanPdf(project)
-  const bytes = new TextEncoder().encode(pdf)
-  await save(fileName(project.name, 'pdf'), bytesToDataUrl(bytes, 'application/pdf'))
+  const bytes = buildPlanPdf(project, options)
+  return save(fileName(project.name, 'pdf'), bytesToDataUrl(bytes, 'application/pdf'))
 }
