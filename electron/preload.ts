@@ -26,6 +26,12 @@ contextBridge.exposeInMainWorld('nestwright', {
     playerName: () => ipcRenderer.invoke('nestwright:steam-player') as Promise<string>,
     unlock: (id: string) => ipcRenderer.invoke('nestwright:steam-unlock', id) as Promise<boolean>,
     overlayUrl: (url: string) => ipcRenderer.invoke('nestwright:steam-overlay', url) as Promise<void>,
+    getStat: (name: string) => ipcRenderer.invoke('nestwright:steam-stat-get', name) as Promise<number | null>,
+    setStat: (name: string, value: number) => ipcRenderer.invoke('nestwright:steam-stat-set', name, value) as Promise<boolean>,
+    setPresence: (status: string | null) => ipcRenderer.invoke('nestwright:steam-presence', status) as Promise<boolean>,
+    showKeyboard: (req: { mode: 'single' | 'multi' | 'email' | 'numeric'; x: number; y: number; width: number; height: number }) =>
+      ipcRenderer.invoke('nestwright:steam-keyboard', req) as Promise<boolean>,
+    isSteamDeck: () => ipcRenderer.invoke('nestwright:steam-deck') as Promise<boolean>,
   },
   reportCrash: (payload: { kind: 'error' | 'rejection'; message: string; stack?: string }) =>
     ipcRenderer.invoke('nestwright:crash', payload) as Promise<void>,

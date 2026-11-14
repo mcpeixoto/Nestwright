@@ -9,11 +9,24 @@ export interface CoopHostInfo {
   code: string
 }
 
+export interface SteamKeyboardRequest {
+  mode: 'single' | 'multi' | 'email' | 'numeric'
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 export interface SteamApi {
   available(): Promise<boolean>
   playerName(): Promise<string>
   unlock(id: string): Promise<boolean>
   overlayUrl(url: string): Promise<void>
+  getStat?(name: string): Promise<number | null>
+  setStat?(name: string, value: number): Promise<boolean>
+  setPresence?(status: string | null): Promise<boolean>
+  showKeyboard?(req: SteamKeyboardRequest): Promise<boolean>
+  isSteamDeck?(): Promise<boolean>
 }
 
 export interface Platform {
