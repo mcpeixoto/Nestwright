@@ -17,8 +17,10 @@ export function scheduleThumb(then: (thumb: string) => void): void {
 /** Small JPEG of the live 3D view. Returns '' when there is nothing to capture. */
 export function captureThumb(): string {
   try {
-    const canvas = getController()?.renderer?.domElement
-    if (!canvas || canvas.width < 2 || canvas.height < 2 || typeof document === 'undefined') return ''
+    if (typeof document === 'undefined') return ''
+    // Re-render and copy in one task: the WebGPU canvas has no pixels between frames.
+    const canvas = getController()?.capture()
+    if (!canvas || canvas.width < 2 || canvas.height < 2) return ''
     const out = document.createElement('canvas')
     out.width = 160
     out.height = 100

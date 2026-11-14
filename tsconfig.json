@@ -14,7 +14,10 @@
     "resolveJsonModule": true,
     "useDefineForClassFields": true,
     "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "three": ["./node_modules/@types/three/build/three.webgpu.d.ts"]
+    }
   },
   "include": [
     "src",
@@ -22,6 +25,7 @@
     "electron",
     "scripts",
     "vite.config.ts",
+    "vite.three.ts",
     "vitest.config.ts",
     "playwright.config.ts"
   ]

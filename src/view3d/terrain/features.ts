@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { materialColor, positionWorld, sin, uniform, vec4 } from 'three/tsl'
 import { getMaterial } from '../../materials/materialCache'
 import { srgbByteToLinear } from '../colorLinear'
 import { dist, normalize, perp, polygonArea, sub } from '../../model/geometry'
@@ -28,28 +29,16 @@ const POOL_WATER = '#2f8f9a'
 const POOL_FLOOR = '#1a5c66'
 const COPING_STONE = '#e4ddd2'
 
-function bindRipple(
-  mat: THREE.Material,
-  time: { value: number },
-  cacheKey: string,
-  slot: 'normal' | 'color',
-  fragmentExtra: string,
-): void {
-  const token = slot === 'normal' ? '#include <normal_fragment_maps>' : '#include <color_fragment>'
-  mat.customProgramCacheKey = () => cacheKey
-  mat.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = time
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vW;\nuniform float uTime;')
-      .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvW = worldPosition.xyz;')
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vW;\nuniform float uTime;')
-      .replace(token, `${token}\n${fragmentExtra}`)
-  }
+type TimeUniform = THREE.Node<'float'>
+
+// PHASE1-PORT: colour-only ripple and caustic, as in the GLSL; real water is a later step.
+/** Scale the base colour by a world-space ripple; `time` is shared by every pool. */
+function bindRipple(mat: THREE.MeshStandardNodeMaterial, ripple: THREE.Node<'float'>): void {
+  mat.colorNode = vec4(materialColor.rgb.mul(ripple), 1)
 }
 
-function waterMaterial(time: { value: number }): THREE.MeshStandardMaterial {
-  const mat = new THREE.MeshStandardMaterial({
+function waterMaterial(time: TimeUniform): THREE.MeshStandardNodeMaterial {
+  const mat = new THREE.MeshStandardNodeMaterial({
     color: POOL_WATER,
     roughness: 0.64,
     metalness: 0,
@@ -63,13 +52,8 @@ function waterMaterial(time: { value: number }): THREE.MeshStandardMaterial {
     emissive: new THREE.Color(0x000000),
     emissiveIntensity: 0,
   })
-  bindRipple(
-    mat,
-    time,
-    'nestwright-water',
-    'color',
-    `diffuseColor.rgb *= 0.95 + 0.05 * sin(vW.x * 7.4 + uTime * 1.2) * sin(vW.z * 6.1 - uTime);`,
-  )
+  const w = positionWorld
+  bindRipple(mat, sin(w.x.mul(7.4).add(time.mul(1.2))).mul(sin(w.z.mul(6.1).sub(time))).mul(0.05).add(0.95))
   return mat
 }
 
@@ -114,8 +98,8 @@ function insetConvex(polygon: readonly Vec2[], amount: number): Vec2[] {
   return out
 }
 
-function floorMaterial(time: { value: number }): THREE.MeshStandardMaterial {
-  const mat = new THREE.MeshStandardMaterial({
+function floorMaterial(time: TimeUniform): THREE.MeshStandardNodeMaterial {
+  const mat = new THREE.MeshStandardNodeMaterial({
     color: POOL_FLOOR,
     roughness: 0.74,
     metalness: 0,
@@ -123,14 +107,8 @@ function floorMaterial(time: { value: number }): THREE.MeshStandardMaterial {
     emissive: new THREE.Color(0x000000),
     emissiveIntensity: 0,
   })
-  bindRipple(
-    mat,
-    time,
-    'nestwright-pool-floor',
-    'color',
-    `float caustic = 0.84 + 0.16 * sin(vW.x * 6.0 + uTime * 1.4) * sin(vW.z * 5.2 - uTime);
-     diffuseColor.rgb *= caustic;`,
-  )
+  const w = positionWorld
+  bindRipple(mat, sin(w.x.mul(6.0).add(time.mul(1.4))).mul(sin(w.z.mul(5.2).sub(time))).mul(0.16).add(0.84))
   return mat
 }
 
@@ -512,9 +490,9 @@ function buildIvy(project: Project, display: LevelDisplay, activeId: string): TH
 
 export class OutsideFeatures {
   readonly group = new THREE.Group()
-  private waterMat: THREE.MeshStandardMaterial
-  private floorMat: THREE.MeshStandardMaterial
-  private time = { value: 0 }
+  private waterMat: THREE.MeshStandardNodeMaterial
+  private floorMat: THREE.MeshStandardNodeMaterial
+  private time = uniform(0)
   private waterRef: Terrain['water'] | null = null
   private fenceRef: Terrain['fences'] | null = null
   private boundaryRef: Terrain['boundary'] | null = null
