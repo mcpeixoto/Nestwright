@@ -1,7 +1,9 @@
 import { selectActiveLevel, useStore } from '../../../store'
 import { MaterialPicker } from '../../MaterialPicker'
 import { selectionFacts } from '../facts'
-import { NumberField, patchLevel } from '../fields'
+import { LengthField, NumberField, patchLevel } from '../fields'
+import { MIN_WALL_LENGTH, setWallLength } from '../../../model/ops/sizes'
+import { wallLength } from '../../../model/walls'
 import { registerInspectorSection } from '../registry'
 import { T } from '../../../i18n/T'
 
@@ -13,25 +15,37 @@ function WallSection() {
   return (
     <div className="props">
       <h2><T k="Wall" /></h2>
-      <NumberField
-        label="Thickness"
-        value={wall.thickness}
-        step={0.01}
+      <LengthField
+        label="Length"
+        value={wallLength(wall)}
+        min={MIN_WALL_LENGTH}
         onCommit={(value) =>
-          patchLevel('Wall thickness', (draft) => {
-            const found = draft.walls.find((item) => item.id === id)
-            if (found && value > 0.02) found.thickness = value
+          patchLevel('Wall length', (draft) => {
+            setWallLength(draft, id, value)
           })
         }
       />
-      <NumberField
+      <LengthField
+        label="Thickness"
+        value={wall.thickness}
+        min={0.021}
+        max={2}
+        onCommit={(value) =>
+          patchLevel('Wall thickness', (draft) => {
+            const found = draft.walls.find((item) => item.id === id)
+            if (found) found.thickness = value
+          })
+        }
+      />
+      <LengthField
         label="Height"
         value={wall.height}
-        step={0.05}
+        min={0.201}
+        max={30}
         onCommit={(value) =>
           patchLevel('Wall height', (draft) => {
             const found = draft.walls.find((item) => item.id === id)
-            if (found && value > 0.2) found.height = value
+            if (found) found.height = value
           })
         }
       />
