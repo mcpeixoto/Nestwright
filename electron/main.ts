@@ -3,6 +3,7 @@ import fs from 'node:fs/promises'
 import fsSync from 'node:fs'
 import path from 'node:path'
 import { coopSend, coopUsername, setCoopSink, startCoopHost, stopCoopHost } from './coop/server'
+import { handleContentScheme, registerContentScheme } from './contentProtocol'
 import { crashFileName, formatCrash, sanitizeCrash } from './crashLog'
 import {
   safeAchievementId,
@@ -22,6 +23,7 @@ declare const __dirname: string
 const here = __dirname
 
 app.setName('Nestwright')
+registerContentScheme()
 
 function windowStatePath(): string {
   return path.join(app.getPath('userData'), 'window-state.json')
@@ -342,6 +344,7 @@ if (!gotLock) {
   } else {
     app.whenReady().then(() => {
       installMenu()
+      handleContentScheme()
       registerIpc(steam)
       createWindow()
       app.on('activate', () => {
