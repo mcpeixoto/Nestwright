@@ -16,7 +16,9 @@ import { bindWalkScene } from './rigs/walk'
 import { recordFrame, type PerfRenderer } from './perfMonitor'
 import { PostPipeline } from './post/pipeline'
 import { backendPreference, createRenderer, type RendererBackend } from './render/createRenderer'
+import { scheduleAutoTier } from './render/autoTierRunner'
 import { renderPixelRatio } from './render/quality'
+import type { GraphicsQuality } from '../settings'
 import { captureCanvas, samplePoints, type PixelSample, type SamplePoint } from './render/readback'
 import {
   bindSceneHost,
@@ -102,6 +104,8 @@ export class SceneController {
   private primary = true
   private post: PostPipeline | null = null
   private queued: { project: Project; state: SceneViewState } | null = null
+  /** The first-run tier benchmark owns the GPU; the frame loop only keeps ticking. */
+  private benchmarking = false
 
   constructor(canvas: HTMLCanvasElement, options?: { primary?: boolean }) {
     this.primary = options?.primary !== false
@@ -168,7 +172,31 @@ export class SceneController {
     if (queued) this.sync(queued.project, queued.state)
     this.lastTime = performance.now()
     this.frameLoop()
+    if (this.primary) scheduleAutoTier(this)
     return true
+  }
+
+  isDisposed(): boolean {
+    return this.disposed
+  }
+
+  setBenchmarking(on: boolean): void {
+    this.benchmarking = on
+  }
+
+  /** One frame on `tier`'s profile (render scale and post chain), for the tier benchmark. */
+  benchmarkFrame(tier: GraphicsQuality): void {
+    if (!this.renderer || !this.post || this.disposed) return
+    const width = this.canvas.clientWidth
+    const height = this.canvas.clientHeight
+    if (width < 2 || height < 2) return
+    const ratio = renderPixelRatio(window.devicePixelRatio || 1, tier, 0)
+    if (this.renderer.getPixelRatio() !== ratio) {
+      this.renderer.setPixelRatio(ratio)
+      this.renderer.setSize(width, height, false)
+    }
+    this.post.render(tier)
+    this.renderer.info.reset()
   }
 
   /** Scene-layer host. Recreates one layer after replaceSceneLayer. */
@@ -496,7 +524,7 @@ export class SceneController {
     this.elapsed += dt
     const width = this.canvas.clientWidth
     const height = this.canvas.clientHeight
-    if (width < 2 || height < 2) return
+    if (width < 2 || height < 2 || this.benchmarking) return
     try {
       if (this.pendingFrame && this.seenProject) this.frameOn(this.seenProject, this.signature)
       const settings = useSettings.getState()

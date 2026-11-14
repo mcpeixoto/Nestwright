@@ -34,8 +34,18 @@ function logBackend(backend: RendererBackend): void {
   console.info(`[nestwright] renderer backend: ${backend}`)
 }
 
-async function attempt(canvas: HTMLCanvasElement, forceWebGL: boolean): Promise<THREE.WebGPURenderer> {
-  const renderer = new THREE.WebGPURenderer({ canvas, antialias: false, alpha: false, forceWebGL })
+export interface RendererOptions {
+  antialias?: boolean
+  alpha?: boolean
+}
+
+async function attempt(canvas: HTMLCanvasElement, forceWebGL: boolean, options: RendererOptions): Promise<THREE.WebGPURenderer> {
+  const renderer = new THREE.WebGPURenderer({
+    canvas,
+    antialias: options.antialias ?? false,
+    alpha: options.alpha ?? false,
+    forceWebGL,
+  })
   try {
     await renderer.init()
     return renderer
@@ -50,16 +60,20 @@ async function attempt(canvas: HTMLCanvasElement, forceWebGL: boolean): Promise<
  * still throws, one forced-WebGL try follows; a canvas that already holds a WebGPU context
  * cannot give a WebGL one, so that second try can fail too. Resolves null when neither works,
  * which the caller treats as "3D unavailable".
+ *
+ * Pass a canvas factory instead of a canvas (an offscreen renderer) and each try gets a fresh
+ * canvas, so the WebGL retry can work too.
  */
 export async function createRenderer(
-  canvas: HTMLCanvasElement,
+  canvas: HTMLCanvasElement | (() => HTMLCanvasElement),
   preference: RendererBackendSetting,
+  options: RendererOptions = {},
 ): Promise<CreatedRenderer | null> {
   const order = preference === 'webgl' ? [true] : [false, true]
   let lastError: unknown = null
   for (const forceWebGL of order) {
     try {
-      const renderer = await attempt(canvas, forceWebGL)
+      const renderer = await attempt(typeof canvas === 'function' ? canvas() : canvas, forceWebGL, options)
       const backend = rendererBackend(renderer)
       logBackend(backend)
       return { renderer, backend }

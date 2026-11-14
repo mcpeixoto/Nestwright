@@ -24,7 +24,11 @@ export interface Settings {
   backend: RendererBackendSetting
   /** 0 follows the graphics tier; otherwise 0.25–1 of the device pixel ratio. */
   renderScale: number
-  /** Let the game pick the tier from a first-launch benchmark. */
+  /**
+   * Pick the tier from a short benchmark the next time a 3D view opens. On for a fresh install
+   * only (see `initialSettings`); the benchmark turns it off once it has chosen, and choosing a
+   * tier by hand turns it off too, so it never runs again unless switched back on in Settings.
+   */
   qualityAuto: boolean
 }
 
@@ -92,12 +96,26 @@ function normalizeRenderScale(value: unknown): number {
   return Math.min(RENDER_SCALE_MAX, Math.max(RENDER_SCALE_MIN, value))
 }
 
+/**
+ * Settings from the stored JSON. Nothing stored means a fresh install, which gets the
+ * first-launch tier benchmark; a saved file without the field keeps the tier its user chose.
+ */
+export function initialSettings(raw: string | null): Settings {
+  if (!raw) return { ...DEFAULT_SETTINGS, qualityAuto: true }
+  return normalizeSettings(JSON.parse(raw) as Partial<Settings>)
+}
+
+/** A tier picked by hand ends the automatic choice, unless the same change re-enables it. */
+export function mergeSettings(current: Settings, partial: Partial<Settings>): Settings {
+  const next: Partial<Settings> = { ...current, ...partial }
+  if (partial.graphicsQuality !== undefined && partial.qualityAuto === undefined) next.qualityAuto = false
+  return normalizeSettings(next)
+}
+
 function load(): Settings {
   try {
     if (typeof localStorage === 'undefined') return { ...DEFAULT_SETTINGS }
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return { ...DEFAULT_SETTINGS }
-    return normalizeSettings(JSON.parse(raw) as Partial<Settings>)
+    return initialSettings(localStorage.getItem(KEY))
   } catch {
     return { ...DEFAULT_SETTINGS }
   }
@@ -120,7 +138,7 @@ interface SettingsState extends Settings {
 export const useSettings = create<SettingsState>((set, get) => ({
   ...load(),
   setSettings(partial) {
-    const next = normalizeSettings({ ...get(), ...partial })
+    const next = mergeSettings(get(), partial)
     set(next)
     persist(next)
   },
