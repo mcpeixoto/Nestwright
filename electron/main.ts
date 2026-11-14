@@ -4,6 +4,7 @@ import fsSync from 'node:fs'
 import path from 'node:path'
 import { coopSend, coopUsername, setCoopSink, startCoopHost, stopCoopHost } from './coop/server'
 import { crashFileName, formatCrash, sanitizeCrash } from './crashLog'
+import { RENDERER_PROBE, SMOKE_TIMEOUT_MS, judgeSmoke, smokeDir, type RendererProbe, type SmokeReport } from './smoke'
 import {
   safeAchievementId,
   safeKeyboardRequest,
@@ -36,6 +37,10 @@ declare const __dirname: string
 const here = __dirname
 
 app.setName('Nestwright')
+
+const smoke = smokeDir(process.argv)
+// A smoke run loads a template; keep it out of the player's real autosave and settings.
+if (smoke) app.setPath('userData', path.resolve(smoke, 'userdata'))
 
 const allowedPaths = new Set<string>()
 const pendingOpens: string[] = []
@@ -368,7 +373,54 @@ function createWindow(): BrowserWindow {
       }, 4000)
     })
   }
+  if (smoke) runSmoke(win, path.resolve(smoke))
   return win
+}
+
+function runSmoke(win: BrowserWindow, dir: string): void {
+  const started = Date.now()
+  const log: string[] = []
+  win.webContents.on('console-message', (details) => {
+    log.push(`[${details.level}] ${details.message}`)
+  })
+  const finish = async (probe: RendererProbe | null, extra: string[] = []) => {
+    const verdict = judgeSmoke(probe)
+    const report: SmokeReport = {
+      ok: verdict.ok && extra.length === 0,
+      reasons: [...verdict.reasons, ...extra],
+      platform: process.platform,
+      arch: process.arch,
+      versions: { electron: process.versions.electron, chrome: process.versions.chrome, app: app.getVersion() },
+      gpuFeatureStatus: app.getGPUFeatureStatus(),
+      gpuInfo: await app.getGPUInfo('basic').catch((err: unknown) => String(err)),
+      renderer: probe,
+      elapsedMs: Date.now() - started,
+    }
+    await fs.mkdir(dir, { recursive: true })
+    if (!win.isDestroyed()) {
+      await win.webContents
+        .capturePage()
+        .then((image) => fs.writeFile(path.join(dir, 'smoke.png'), image.toPNG()))
+        .catch((err: unknown) => report.reasons.push(`capture failed: ${String(err)}`))
+    }
+    await fs.writeFile(path.join(dir, 'smoke.json'), JSON.stringify(report, null, 2), 'utf8')
+    await fs.writeFile(path.join(dir, 'console.log'), log.join('\n'), 'utf8')
+    console.log(`smoke ${report.ok ? 'ok' : 'FAILED'}: ${report.renderer?.perf?.backend ?? 'no backend'} ${report.reasons.join('; ')}`)
+    app.exit(report.ok ? 0 : 1)
+  }
+  const timer = setTimeout(() => void finish(null, [`timed out after ${SMOKE_TIMEOUT_MS} ms`]), SMOKE_TIMEOUT_MS)
+  win.webContents.once('did-finish-load', () => {
+    win.webContents
+      .executeJavaScript(RENDERER_PROBE, true)
+      .then((probe: RendererProbe) => {
+        clearTimeout(timer)
+        return finish(probe)
+      })
+      .catch((err: unknown) => {
+        clearTimeout(timer)
+        return finish(null, [`probe threw: ${String(err)}`])
+      })
+  })
 }
 
 function showAbout(): void {

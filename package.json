@@ -24,7 +24,11 @@
     "content:build": "node scripts/content/fetch.mjs && node scripts/content/process.mjs && node scripts/content/validate.mjs && node scripts/content/docs.mjs",
     "content:pack": "node scripts/content/pack.mjs",
     "electron:dev": "npm run build:electron && concurrently -k \"vite --strictPort\" \"wait-on tcp:5173 && cross-env NESTWRIGHT_DEV_URL=http://localhost:5173 electron .\"",
-    "dist:mac": "npm run build && electron-builder --mac --arm64"
+    "dist:mac": "npm run build && node scripts/dist.mjs mac",
+    "dist:mac:signed": "scripts/packaging/dist-mac-signed.sh",
+    "dist:win": "npm run build && node scripts/dist.mjs win",
+    "dist:linux": "npm run build && node scripts/dist.mjs linux",
+    "size:check": "node scripts/packaging/check-size.mjs"
   },
   "dependencies": {
     "@types/ws": "^8.18.2",
