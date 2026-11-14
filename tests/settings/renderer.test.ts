@@ -44,7 +44,7 @@ describe('renderer settings', () => {
 describe('quality profiles', () => {
   it('scales render resolution and lamp shadows by tier', () => {
     expect(['low', 'medium', 'high', 'ultra'].map((t) => qualityProfile(t as never).renderScale)).toEqual([0.5, 0.67, 0.8, 1])
-    expect(['low', 'medium', 'high', 'ultra'].map((t) => qualityProfile(t as never).lampShadowSlots)).toEqual([2, 4, 6, 6])
+    expect(['low', 'medium', 'high', 'ultra'].map((t) => qualityProfile(t as never).lampShadowSlots)).toEqual([2, 4, 4, 4])
     expect(qualityProfile('low').effects.fxaa).toBe(true)
     expect(qualityProfile('low').effects.bloom).toBe(false)
     expect(qualityProfile('ultra').effects.ssgi).toBe(true)

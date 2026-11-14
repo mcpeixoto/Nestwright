@@ -555,6 +555,8 @@ export const en = {
   'Set a budget target and stay under it.': 'Set a budget target and stay under it.',
   'p50 {n} ms': 'p50 {n} ms',
   'p95 {n} ms': 'p95 {n} ms',
+  'max {n} ms': 'max {n} ms',
+  'Hitches {n}': 'Hitches {n}',
   'Draws {n}': 'Draws {n}',
   'Triangles {n}': 'Triangles {n}',
   'Geometries {n}': 'Geometries {n}',

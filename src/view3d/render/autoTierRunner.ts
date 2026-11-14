@@ -13,6 +13,8 @@ export interface AutoTierView {
   setBenchmarking(on: boolean): void
   /** Render one frame on `tier`'s profile at the current canvas size. */
   benchmarkFrame(tier: GraphicsQuality): void
+  /** Compile `tier`'s pipelines off the main thread before the timed frames. */
+  prepareTier?(tier: GraphicsQuality): Promise<void>
 }
 
 const TIER_KEYS: Record<GraphicsQuality, string> = { low: 'Low', medium: 'Medium', high: 'High', ultra: 'Ultra' }
@@ -73,6 +75,7 @@ async function run(view: AutoTierView): Promise<void> {
     finish: gpuFinish(renderer),
     now: () => performance.now(),
     alive,
+    prepare: view.prepareTier ? (tier) => view.prepareTier?.(tier) ?? Promise.resolve() : undefined,
   }
   view.setBenchmarking(true)
   let result = null

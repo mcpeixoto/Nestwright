@@ -17,6 +17,7 @@ import { recordFrame, type PerfRenderer } from './perfMonitor'
 import { PostPipeline } from './post/pipeline'
 import { backendPreference, createRenderer, type RendererBackend } from './render/createRenderer'
 import { scheduleAutoTier } from './render/autoTierRunner'
+import { holdRendering } from './render/hold'
 import { renderPixelRatio } from './render/quality'
 import type { GraphicsQuality } from '../settings'
 import { captureCanvas, samplePoints, type PixelSample, type SamplePoint } from './render/readback'
@@ -55,6 +56,12 @@ interface Bucket {
 }
 
 let current: SceneController | null = null
+
+/**
+ * Longest a precompile may hold frames back. Rendering before compileAsync returns is unsafe
+ * (it leaves the scene pass MRT set on the renderer), so this is only a guard against a hang.
+ */
+const PRECOMPILE_CAP_MS = 60_000
 
 function bindController(controller: SceneController | null): void {
   current = controller
@@ -106,6 +113,13 @@ export class SceneController {
   private queued: { project: Project; state: SceneViewState } | null = null
   /** The first-run tier benchmark owns the GPU; the frame loop only keeps ticking. */
   private benchmarking = false
+  /** Pipelines are compiling off-thread; frames are held (the canvas keeps the last one). */
+  private compiling = false
+  private compileWanted = true
+  private compiledProject: string | null = null
+  private compiledChain = ''
+  private framesRendered = 0
+  private compileDone: Promise<void> | null = null
 
   constructor(canvas: HTMLCanvasElement, options?: { primary?: boolean }) {
     this.primary = options?.primary !== false
@@ -199,6 +213,25 @@ export class SceneController {
     this.renderer.info.reset()
   }
 
+  /** Benchmark host: compile `tier`'s chain at its render scale before the timed frames. */
+  async prepareTier(tier: GraphicsQuality): Promise<void> {
+    if (!this.renderer || !this.post || this.disposed) return
+    const width = this.canvas.clientWidth
+    const height = this.canvas.clientHeight
+    if (width < 2 || height < 2) return
+    const ratio = renderPixelRatio(window.devicePixelRatio || 1, tier, 0)
+    if (this.renderer.getPixelRatio() !== ratio) {
+      this.renderer.setPixelRatio(ratio)
+      this.renderer.setSize(width, height, false)
+    }
+    holdRendering(true)
+    try {
+      await this.post.precompile(tier)
+    } finally {
+      holdRendering(false)
+    }
+  }
+
   /** Scene-layer host. Recreates one layer after replaceSceneLayer. */
   remountLayer(id: string): void {
     if (this.disposed || !this.renderer) return
@@ -216,12 +249,18 @@ export class SceneController {
     }
     this.rig?.deactivate?.()
     this.controls?.dispose()
-    for (const layer of this.layers.values()) layer.dispose()
-    this.layers.clear()
-    this.clearLevels()
-    this.post?.dispose()
-    this.post = null
-    this.renderer?.dispose()
+    // GPU teardown waits for a running precompile: freeing geometry or the renderer under
+    // three's compileAsync makes it build pipelines against dead resources.
+    const teardown = () => {
+      for (const layer of this.layers.values()) layer.dispose()
+      this.layers.clear()
+      this.clearLevels()
+      this.post?.dispose()
+      this.post = null
+      this.renderer?.dispose()
+    }
+    if (this.compileDone) void this.compileDone.then(teardown)
+    else teardown()
     if (current === this) bindController(null)
   }
 
@@ -317,6 +356,12 @@ export class SceneController {
       return
     }
     this.seenProject = project
+    if (project.id !== this.compiledProject) {
+      // A template or file load brings a scene full of new render objects: compile them
+      // before the next frame instead of inside it.
+      this.compiledProject = project.id
+      this.compileWanted = true
+    }
     this.reconcile(project)
     this.applyVisibility(project, state)
     this.updateHelpers(state.selection)
@@ -526,6 +571,9 @@ export class SceneController {
     const height = this.canvas.clientHeight
     if (width < 2 || height < 2 || this.benchmarking) return
     try {
+      // While pipelines compile the frame is held whole: a resize would recreate the render
+      // targets being compiled against, and layers (sky capture) must not render meanwhile.
+      if (this.compiling) return
       if (this.pendingFrame && this.seenProject) this.frameOn(this.seenProject, this.signature)
       const settings = useSettings.getState()
       const tier = this.primary ? settings.graphicsQuality : 'low'
@@ -554,13 +602,47 @@ export class SceneController {
         const helper = child as THREE.BoxHelper
         helper.update()
       }
+      if (this.primary && this.post) {
+        const chain = this.post.wantedKey(tier)
+        if (chain !== this.compiledChain) {
+          this.compiledChain = chain
+          this.compileWanted = true
+        }
+        // Not before the first real frame: three's compileAsync then builds pipelines for render
+        // targets that do not exist yet (invalid pipelines, "format undefined").
+        if (this.compileWanted && !this.compiling && this.framesRendered > 0) this.precompile(tier)
+        if (this.compiling) return
+      }
       this.renderOnce()
+      this.framesRendered += 1
       if (this.primary) recordFrame(this.renderer as unknown as PerfRenderer, this.scene, rawMs, this.backend ?? undefined)
       else this.renderer.info.reset()
     } catch (err) {
       this.failed = true
       console.error(err)
     }
+  }
+
+  /**
+   * Compile the scene's pipelines for `tier` off the main thread, holding frames meanwhile.
+   * A cap keeps a compile that never settles from freezing the view.
+   */
+  private precompile(tier: GraphicsQuality): void {
+    const post = this.post
+    if (!post) return
+    this.compileWanted = false
+    this.compiling = true
+    holdRendering(true)
+    const started = performance.now()
+    const cap = new Promise<void>((resolve) => window.setTimeout(resolve, PRECOMPILE_CAP_MS))
+    this.compileDone = Promise.race([post.precompile(tier), cap]).finally(() => {
+      this.compileDone = null
+      this.compiling = false
+      holdRendering(false)
+      // Time spent holding frames would read as one giant frame.
+      this.lastTime = performance.now()
+      if (import.meta.env?.DEV) console.info(`[nestwright] precompile ${tier}: ${Math.round(performance.now() - started)} ms`)
+    })
   }
 
   /** Draw one frame through this view's post chain at the renderer's current size. */

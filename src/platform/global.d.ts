@@ -30,7 +30,11 @@ declare global {
       loadTemplate?: (id: string) => boolean
       roomCameraPose?: typeof import('../model/roomCamera').roomCameraPose
       perf?: {
-        report: (frames?: number) => Promise<import('../view3d/perfMonitor').PerfReport>
+        /** Waits for 30 quiet frames (no compiles) unless `options.settle` says otherwise. */
+        report: (
+          frames?: number,
+          options?: import('../view3d/perfMonitor').PerfReportOptions,
+        ) => Promise<import('../view3d/perfMonitor').PerfReport>
       }
       /**
        * Render the live view and read sRGB bytes (as displayed) at world points [x, y, z] or

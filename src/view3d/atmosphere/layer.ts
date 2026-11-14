@@ -6,8 +6,10 @@ import { useSettings } from '../../settings'
 import { castFoliageShadows } from '../lighting/foliage'
 import { shadowFocus } from '../lighting/focus'
 import { createOutdoorLights } from '../lighting/outdoorLights'
+import { pickSpills, SPILL_SLOTS } from '../lighting/spillPool'
 import { createSunShadow } from '../lighting/sunShadow'
 import { rendererBackend } from '../render/createRenderer'
+import { renderingHeld } from '../render/hold'
 import type { SceneLayer, SceneLayerContext, SceneViewState } from '../layers'
 import { photoExposure } from '../../ui/photoSession'
 import { clockTime } from './clock'
@@ -125,6 +127,16 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   const autoLights = new THREE.Group()
   autoLights.name = 'auto-lights'
   scene.add(autoLights)
+  const spillLights: THREE.PointLight[] = []
+  for (let i = 0; i < SPILL_SLOTS; i++) {
+    const lamp = new THREE.PointLight('#ffb15a', 0, 8.5, 2)
+    lamp.castShadow = false
+    lamp.name = `window-spill-${i}`
+    autoLights.add(lamp)
+    spillLights.push(lamp)
+  }
+  let spills: { x: number; y: number; z: number }[] = []
+  let autoOn = false
 
   const pmrem = ctx.renderer ? new THREE.PMREMGenerator(ctx.renderer) : null
   let envTarget: { texture: THREE.Texture; dispose(): void } | null = null
@@ -134,7 +146,9 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   let view: SceneViewState | null = null
   const unit = new THREE.Vector3(0.35, 0.78, 0.25).normalize()
   let autoKey = ''
-  let spillKey = ''
+  let lastGlow: boolean | null = null
+  // Layers that sync after this one (ground, outside) build their meshes then; the next frame dresses them.
+  let dirty = true
   let foliageFrame = 0
   const moonDir = new THREE.Vector3()
   const camPos = new THREE.Vector3()
@@ -167,6 +181,8 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
 
   const refreshEnv = (): boolean => {
     if (!pmrem || !ctx.renderer || ctx.renderer.domElement.clientWidth < 2) return false
+    // A precompile owns the renderer state; update() retries once it is done (envReady stays false).
+    if (renderingHeld()) return false
     try {
       const next = pmrem.fromScene(envScene, 0.04, 0.1, 200)
       scene.environment = next.texture
@@ -204,24 +220,21 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
    * (scene.userData.lampNight) instead of getting a twin light here.
    */
   const syncAutoLights = (source: Project, night: boolean) => {
-    const on = source.environment.autoLights !== false && night
-    scene.userData.lampNight = on
-    const spills = source.levels.flatMap((level) => exteriorWindowSpills(level))
-    const key = spills.map((spill) => `${spill.x.toFixed(2)},${spill.y.toFixed(2)},${spill.z.toFixed(2)}`).join('|')
-    if (key !== spillKey || autoLights.children.length !== spills.length) {
-      spillKey = key
-      const lights = autoLights.children as THREE.PointLight[]
-      if (lights.length !== spills.length) {
-        for (const child of [...autoLights.children]) autoLights.remove(child)
-        for (let i = 0; i < spills.length; i++) {
-          const lamp = new THREE.PointLight('#ffb15a', 0, 8.5, 2)
-          lamp.castShadow = false
-          autoLights.add(lamp)
-        }
-      }
-      spills.forEach((spill, i) => autoLights.children[i]?.position.set(spill.x, spill.y, spill.z))
-    }
-    for (const child of autoLights.children) (child as THREE.PointLight).intensity = on ? 14 : 0
+    autoOn = source.environment.autoLights !== false && night
+    scene.userData.lampNight = autoOn
+    spills = source.levels.flatMap((level) => exteriorWindowSpills(level))
+    placeSpills()
+  }
+
+  /** Move the fixed spill lights onto the spills nearest the camera (see spillPool). */
+  const placeSpills = () => {
+    ctx.camera.getWorldPosition(camPos)
+    const chosen = pickSpills(spills, camPos, spillLights.length)
+    spillLights.forEach((lamp, i) => {
+      const spill = spills[chosen[i] ?? -1]
+      if (spill) lamp.position.set(spill.x, spill.y, spill.z)
+      lamp.intensity = spill && autoOn ? 14 : 0
+    })
   }
 
   const dressOutdoor = () => {
@@ -241,7 +254,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     })
   }
 
-  const apply = () => {
+  const apply = (full: boolean) => {
     if (!project || !view) return
     const env = project.environment ?? fallbackEnv
     const time = clockTime(env.time ?? 12)
@@ -312,14 +325,19 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
       revision: `${project.updatedAt}`,
     })
 
+    // Both walk the whole scene, so they run when something changed (a sync, the glow flipping,
+    // the periodic catch-up for meshes other layers build later), not every frame.
     const glow = dark && project.environment.autoLights !== false
-    paintWindows(glow)
+    if (full || glow !== lastGlow) {
+      lastGlow = glow
+      paintWindows(glow)
+    }
     const autoSig = `${dark ? 1 : 0}|${env.autoLights ? 1 : 0}|${project.updatedAt}`
     if (autoSig !== autoKey) {
       autoKey = autoSig
       syncAutoLights(project, dark)
     }
-    dressOutdoor()
+    if (full) dressOutdoor()
 
     const bucket = Math.round(time * 2) / 2
     const cloudBucket = Math.round(cloudiness * 10) / 10
@@ -345,7 +363,8 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
       project = next
       view = state
       try {
-        apply()
+        apply(true)
+        dirty = true
       } catch (err) {
         console.error(err)
       }
@@ -359,9 +378,13 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
         driftPrecip(precip.group, elapsed)
         if (!project || !view) return
         if (!envReady) envReady = refreshEnv()
-        if (foliageFrame++ % 30 === 0) castFoliageShadows(scene)
+        const tick = foliageFrame++
+        if (tick % 30 === 0) castFoliageShadows(scene)
+        if (tick % 15 === 0 && spills.length > spillLights.length) placeSpills()
         outdoorLights.update()
-        apply()
+        // A full pass every second picks up meshes other layers built after the last sync.
+        apply(dirty || tick % 60 === 0)
+        dirty = false
       } catch (err) {
         console.error(err)
       }

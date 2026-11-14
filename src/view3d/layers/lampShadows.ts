@@ -6,9 +6,9 @@ import { roomAt } from '../lighting/focus'
 import { createLampPool } from '../lighting/lampPool'
 import { qualityProfile } from '../render/quality'
 
-/** Cube-face size per pool light. Six faces each, so it stays small. */
+/** Cube-face size per pool light. Six faces each, so it stays small; Low (2 slots) halves it. */
 function lampMapSize(slots: number): number {
-  return slots >= 6 ? 512 : 256
+  return slots >= 4 ? 512 : 256
 }
 
 registerSceneLayer({

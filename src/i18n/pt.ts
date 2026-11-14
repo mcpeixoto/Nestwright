@@ -557,6 +557,8 @@ export const pt: { [K in MessageKey]: string } = {
   'Set a budget target and stay under it.': 'Defina uma meta de orçamento e fique abaixo dela.',
   'p50 {n} ms': 'p50 {n} ms',
   'p95 {n} ms': 'p95 {n} ms',
+  'max {n} ms': 'máx {n} ms',
+  'Hitches {n}': 'Engasgos {n}',
   'Draws {n}': 'Desenhos {n}',
   'Triangles {n}': 'Triângulos {n}',
   'Geometries {n}': 'Geometrias {n}',

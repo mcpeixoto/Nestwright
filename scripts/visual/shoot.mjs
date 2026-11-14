@@ -3,9 +3,12 @@
  *
  *   node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181]
  *     [--views a,b] [--serve] [--ref <dir>] [--backend webgpu|webgl]
+ *     [--quality low|medium|high|ultra] [--novsync]
  *
  * --backend webgl loads the page with ?renderer=webgl (forced WebGL2 fallback).
  * --serve starts vite on a free port and stops it when the run ends.
+ * --quality overrides every view's tier; --novsync drops vsync and the frame cap (headroom timing).
+ * Each view is timed by perf.report after the scene settled: 30 frames with no new GPU program.
  * Chromium is launched with a GPU. This machine's sandbox cannot do that;
  * a failure to launch is reported and the process exits non-zero.
  */
@@ -25,7 +28,7 @@ const root = fileURLToPath(new globalThis.URL('../..', import.meta.url))
 const here = dirname(fileURLToPath(import.meta.url))
 
 function help() {
-  return `node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181] [--views a,b] [--serve] [--ref <dir>] [--backend webgpu|webgl]
+  return `node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181] [--views a,b] [--serve] [--ref <dir>] [--backend webgpu|webgl] [--quality low|medium|high|ultra] [--novsync]
 Default reference folder: ${join(homedir(), 'Documents', 'Coding', '_assets', 'architecture-design-steam-screenshots')}`
 }
 
@@ -206,8 +209,8 @@ async function shootView(page, view, outDir) {
   await prepare(page, view)
   await delay(2000)
   const report = await withTimeout(
-    page.evaluate(() => globalThis.__nestwright.perf.report(90)),
-    30_000,
+    page.evaluate(() => globalThis.__nestwright.perf.report(90, { settle: 30 })),
+    60_000,
     `${view.name} perf.report`,
   )
   const png = join(outDir, `${view.name}.png`)
@@ -226,11 +229,11 @@ async function main() {
   const views = JSON.parse(await readFile(join(here, 'views.json'), 'utf8'))
   const problems = validateViews(views)
   if (problems.length) throw new Error(problems.join('\n'))
-  let selected = views
+  let selected = opts.quality ? views.map((view) => ({ ...view, quality: opts.quality })) : views
   if (opts.views) {
     const missing = opts.views.filter((name) => !views.some((view) => view.name === name))
     if (missing.length) throw new Error(`Unknown view: ${missing.join(', ')}`)
-    selected = views.filter((view) => opts.views.includes(view.name))
+    selected = selected.filter((view) => opts.views.includes(view.name))
   }
 
   let server = null
@@ -250,6 +253,7 @@ async function main() {
       process.platform === 'darwin'
         ? ['--enable-unsafe-webgpu', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
         : ['--enable-unsafe-webgpu', '--enable-gpu', '--ignore-gpu-blocklist']
+    if (opts.novsync) args.push('--disable-gpu-vsync', '--disable-frame-rate-limit')
     try {
       browser = await chromium.launch({ channel: 'chromium', headless: true, timeout: 45_000, args })
     } catch (err) {

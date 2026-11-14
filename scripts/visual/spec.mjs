@@ -138,6 +138,10 @@ export function parseArgs(argv) {
     ref: defaultRefDir(),
     /** 'webgpu' (default: auto, which is WebGPU on a GPU browser) or 'webgl' (forced fallback). */
     backend: 'webgpu',
+    /** Overrides every view's quality tier (low, medium, high, ultra); null keeps views.json. */
+    quality: /** @type {string | null} */ (null),
+    /** Launch Chromium without vsync or a frame-rate cap, for headroom timings. */
+    novsync: false,
     help: false,
   }
   for (let i = 0; i < argv.length; i++) {
@@ -161,7 +165,11 @@ export function parseArgs(argv) {
       const value = next()
       if (value !== 'webgpu' && value !== 'webgl') throw new Error(`--backend must be webgpu or webgl, got ${value}`)
       opts.backend = value
-    }
+    } else if (arg === '--quality') {
+      const value = next()
+      if (!QUALITIES.includes(value)) throw new Error(`--quality must be one of ${QUALITIES.join(', ')}, got ${value}`)
+      opts.quality = value
+    } else if (arg === '--novsync') opts.novsync = true
     else if (arg === '--help' || arg === '-h') opts.help = true
     else throw new Error(`Unknown argument ${arg}`)
   }
@@ -191,6 +199,7 @@ function shotCard(shot) {
         ['p50 ms', fmt(report.p50, 2)],
         ['p95 ms', fmt(report.p95, 2)],
         ['max ms', fmt(report.max, 2)],
+        ['hitches', fmt(report.hitches, 0)],
         ['draws', fmt(report.drawCalls, 0)],
         ['triangles', fmt(report.triangles, 0)],
         ['gpu MB', fmt(report.gpuMemMB, 1)],

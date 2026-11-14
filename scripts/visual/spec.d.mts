@@ -12,6 +12,8 @@ export function parseArgs(argv: string[]): {
   serve: boolean
   ref: string
   backend: 'webgpu' | 'webgl'
+  quality: string | null
+  novsync: boolean
   help: boolean
 }
 export function escapeHtml(value: unknown): string

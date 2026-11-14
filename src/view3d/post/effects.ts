@@ -64,11 +64,11 @@ function occlude(color: ColorNode, occlusion: FloatNode, albedo: THREE.Node): Co
  * an M-series GPU (its march length grows with resolution), so it stays at half on Ultra too.
  */
 export const postTuning = {
-  gtaoResolution: { low: 0.5, medium: 0.5, high: 0.5, ultra: 0.5 } as Record<GraphicsQuality, number>,
+  gtaoResolution: { low: 0.5, medium: 0.5, high: 0.4, ultra: 0.4 } as Record<GraphicsQuality, number>,
   gtaoSamples: { low: 8, medium: 8, high: 12, ultra: 12 } as Record<GraphicsQuality, number>,
   denoiseRadius: { low: 8, medium: 8, high: 6, ultra: 6 } as Record<GraphicsQuality, number>,
   ssrResolution: { low: 0.5, medium: 0.5, high: 0.5, ultra: 0.5 } as Record<GraphicsQuality, number>,
-  ssrQuality: { low: 0.4, medium: 0.4, high: 0.4, ultra: 0.5 } as Record<GraphicsQuality, number>,
+  ssrQuality: { low: 0.4, medium: 0.4, high: 0.3, ultra: 0.35 } as Record<GraphicsQuality, number>,
   /**
    * SSGI is wired but off. Measured on Ultra (M-series, 1440p ×2): +5–6 ms a frame at half
    * resolution, and its AO term dimmed open sunlit facade plaster by 14 sRGB (limit 12). Phase 3

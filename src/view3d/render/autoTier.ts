@@ -49,6 +49,8 @@ export interface BenchmarkHost {
   now(): number
   /** False once the view went away or the user took over; the run stops early. */
   alive(): boolean
+  /** Compile `tier`'s pipelines before the warm-up, so no frame stalls on a shader compile. */
+  prepare?(tier: GraphicsQuality): Promise<void>
 }
 
 export interface BenchmarkResult {
@@ -63,6 +65,10 @@ export interface BenchmarkResult {
  * Null when the host died or too few frames were timed to trust.
  */
 export async function runBenchmark(host: BenchmarkHost): Promise<BenchmarkResult | null> {
+  if (host.prepare) {
+    if (!host.alive()) return null
+    await host.prepare(BENCHMARK_TIER)
+  }
   for (let i = 0; i < WARMUP_FRAMES; i++) {
     if (!host.alive()) return null
     host.render(BENCHMARK_TIER)

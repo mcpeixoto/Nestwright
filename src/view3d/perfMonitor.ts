@@ -1,6 +1,7 @@
 import { useSettings } from '../settings'
+import { renderingHeld } from './render/hold'
 import { estimateGpuBytes, type GpuScene } from './gpuEstimate'
-import { createFrameCapture, frameStats, type CaptureTiming } from './perfStats'
+import { createFrameCapture, createSettleTracker, frameStats, HITCH_MS, type CaptureTiming, type SettleTracker } from './perfStats'
 
 export interface PerfReport {
   backend: string
@@ -12,6 +13,14 @@ export interface PerfReport {
   p50: number
   p95: number
   max: number
+  /** Captured frames longer than HITCH_MS (50 ms). */
+  hitches: number
+  /** Frames waited for the scene to settle (no new programs, no precompile) before capturing. */
+  settleFrames: number
+  /** False when the settle wait gave up: the capture may include compile stalls. */
+  settled: boolean
+  /** GPU programs created during the capture; anything above 0 is a compile inside the window. */
+  newPrograms: number
   drawCalls: number
   triangles: number
   geometries: number
@@ -21,10 +30,21 @@ export interface PerfReport {
   jsHeapMB?: number
 }
 
+export interface PerfReportOptions {
+  /**
+   * Quiet frames (no new GPU program, no precompile running) required before the capture
+   * starts. 0 measures from the next frame.
+   */
+  settle?: number
+}
+
 export interface PerfHudSnapshot {
   fps: number
   p50: number
   p95: number
+  /** Longest frame and frames over 50 ms in the HUD window (last 300 frames). */
+  max: number
+  hitches: number
   drawCalls: number
   triangles: number
   geometries: number
@@ -53,7 +73,15 @@ const latest = {
 
 const capture = createFrameCapture()
 let gpuTick = 0
-let pending: { resolve: (report: PerfReport) => void; reject: (error: Error) => void } | null = null
+interface PendingReport {
+  resolve: (report: PerfReport) => void
+  reject: (error: Error) => void
+  frames: number
+  settle: SettleTracker
+  capturing: boolean
+  programsAtStart: number
+}
+let pending: PendingReport | null = null
 
 function jsHeapMB(): number | undefined {
   const memory = (performance as Performance & { memory?: { usedJSHeapSize?: number } }).memory
@@ -62,7 +90,7 @@ function jsHeapMB(): number | undefined {
   return bytes / (1024 * 1024)
 }
 
-function buildReport(timing: CaptureTiming): PerfReport {
+function buildReport(timing: CaptureTiming, waiter: PendingReport): PerfReport {
   const report: PerfReport = {
     backend: latest.backend,
     width: latest.width,
@@ -73,6 +101,10 @@ function buildReport(timing: CaptureTiming): PerfReport {
     p50: timing.p50,
     p95: timing.p95,
     max: timing.max,
+    hitches: timing.hitches,
+    settleFrames: waiter.settle.waited(),
+    settled: waiter.settle.settled(),
+    newPrograms: Math.max(0, latest.programs - waiter.programsAtStart),
     drawCalls: latest.drawCalls,
     triangles: latest.triangles,
     geometries: latest.geometries,
@@ -124,7 +156,14 @@ export function recordFrame(renderer: PerfRenderer, scene: GpuScene, dtMs: numbe
   latest.width = renderer.domElement.width
   latest.height = renderer.domElement.height
   latest.pixelRatio = renderer.getPixelRatio()
-  const finishing = capture.push(dtMs)
+  let finishing = false
+  if (pending && !pending.capturing && pending.settle.push(latest.programs, renderingHeld())) {
+    pending.capturing = true
+    pending.programsAtStart = latest.programs
+    capture.start(pending.frames)
+  } else if (pending?.capturing) {
+    finishing = capture.push(dtMs)
+  }
   gpuTick += 1
   // The walk is not free. Do it on the sample that closes a report (its cost
   // lands on the next frame, outside the captured window) and, while the HUD
@@ -141,17 +180,25 @@ export function recordFrame(renderer: PerfRenderer, scene: GpuScene, dtMs: numbe
   if (!finishing || !pending) return
   const waiter = pending
   pending = null
-  waiter.resolve(buildReport(capture.timing()))
+  waiter.resolve(buildReport(capture.timing(), waiter))
 }
 
-/** Wait until `frames` rendered frames (default 120) have been recorded, then resolve. */
-export function perfReport(frames?: number): Promise<PerfReport> {
+/**
+ * Wait until the scene has settled (`options.settle` quiet frames, default 0), then record
+ * `frames` rendered frames (default 120) and resolve.
+ */
+export function perfReport(frames?: number, options: PerfReportOptions = {}): Promise<PerfReport> {
   const raw = frames == null || !Number.isFinite(frames) ? 120 : Math.floor(frames)
   const count = Math.max(1, Math.min(4096, raw))
+  const settle = options.settle != null && Number.isFinite(options.settle) ? Math.max(0, Math.floor(options.settle)) : 0
   if (pending) pending.reject(new Error('perf report superseded'))
   return new Promise((resolve, reject) => {
-    pending = { resolve, reject }
-    capture.start(count)
+    const tracker = createSettleTracker(settle)
+    pending = { resolve, reject, frames: count, settle: tracker, capturing: false, programsAtStart: latest.programs }
+    if (settle === 0) {
+      pending.capturing = true
+      capture.start(count)
+    }
   })
 }
 
@@ -160,6 +207,8 @@ export function readPerfHud(): PerfHudSnapshot {
     fps: frameStats.fps(),
     p50: frameStats.percentile(50),
     p95: frameStats.percentile(95),
+    max: frameStats.max(),
+    hitches: frameStats.countAbove(HITCH_MS),
     drawCalls: latest.drawCalls,
     triangles: latest.triangles,
     geometries: latest.geometries,
