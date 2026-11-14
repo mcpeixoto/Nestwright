@@ -548,7 +548,8 @@ export class SceneController {
    */
   capture(): HTMLCanvasElement | null {
     if (!this.renderer || this.disposed) return null
-    this.renderOnce()
+    // A still waits for temporal AA to converge after a resize or camera cut.
+    if (this.post) this.post.renderStill(useSettings.getState().graphicsQuality)
     return captureCanvas(this.canvas)
   }
 
