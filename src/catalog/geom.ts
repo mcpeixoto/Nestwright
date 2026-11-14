@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
+import { metricUVs } from '../builders/uv'
 
 export function part(
   parent: THREE.Object3D,
@@ -16,7 +17,7 @@ export function part(
   const hh = Math.max(h, 0.01)
   const dd = Math.max(d, 0.01)
   const r = Math.min(radius, ww / 2 - 1e-4, hh / 2 - 1e-4, dd / 2 - 1e-4)
-  const geo = r > 0.004 ? new RoundedBoxGeometry(ww, hh, dd, 2, r) : new THREE.BoxGeometry(ww, hh, dd)
+  const geo = metricUVs(r > 0.004 ? new RoundedBoxGeometry(ww, hh, dd, 2, r) : new THREE.BoxGeometry(ww, hh, dd))
   const mesh = new THREE.Mesh(geo, mat)
   mesh.position.set(x, y, z)
   mesh.castShadow = true
@@ -36,7 +37,7 @@ export function tube(
   segments = 12,
 ): THREE.Mesh {
   const mesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(Math.max(radius, 0.005), Math.max(radius, 0.005), Math.max(height, 0.01), segments),
+    metricUVs(new THREE.CylinderGeometry(Math.max(radius, 0.005), Math.max(radius, 0.005), Math.max(height, 0.01), segments)),
     mat,
   )
   mesh.position.set(x, y, z)

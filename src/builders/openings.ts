@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { getMaterial } from '../materials/materialCache'
 import type { Opening, Wall } from '../model/types'
 import { sampleFrame, wallFrame } from '../model/walls'
+import { metricUVs } from './uv'
 
 let windowGlassMat: THREE.MeshStandardMaterial | null = null
 
@@ -28,7 +29,7 @@ function tag(obj: THREE.Object3D, opening: Opening) {
 }
 
 function box(mat: THREE.Material, w: number, h: number, d: number, x: number, y: number, z: number): THREE.Mesh {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(Math.max(w, 0.01), Math.max(h, 0.01), Math.max(d, 0.01)), mat)
+  const mesh = new THREE.Mesh(metricUVs(new THREE.BoxGeometry(Math.max(w, 0.01), Math.max(h, 0.01), Math.max(d, 0.01))), mat)
   mesh.position.set(x, y, z)
   return mesh
 }
@@ -89,10 +90,10 @@ export function buildOpening(opening: Opening, wall: Wall, elevation: number): T
     const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false })
     geo.translate(0, 0, -depth / 2)
     group.add(new THREE.Mesh(geo, getMaterial(wall.left)))
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(radius - border / 2, border / 2, 8, 24), frameMat)
+    const ring = new THREE.Mesh(metricUVs(new THREE.TorusGeometry(radius - border / 2, border / 2, 8, 24)), frameMat)
     ring.position.set(0, h / 2, 0)
     group.add(ring)
-    const disk = new THREE.Mesh(new THREE.CircleGeometry(Math.max(0.05, radius - border), 24), windowGlass())
+    const disk = new THREE.Mesh(metricUVs(new THREE.CircleGeometry(Math.max(0.05, radius - border), 24)), windowGlass())
     disk.position.set(0, h / 2, 0)
     group.add(disk)
   } else if (kind === 'sliding-door') {

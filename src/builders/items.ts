@@ -4,6 +4,7 @@ import type { CatalogEntry } from '../catalog/types'
 import { getMaterial } from '../materials/materialCache'
 import { clampKelvin, kelvinToHex } from '../model/light'
 import type { Item, MaterialRef } from '../model/types'
+import { metricUVs } from './uv'
 
 function tag(obj: THREE.Object3D, id: string) {
   obj.traverse((child) => {
@@ -14,7 +15,7 @@ function tag(obj: THREE.Object3D, id: string) {
 
 function fallback(item: Item): THREE.Object3D {
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(item.size.w, item.size.h, item.size.d),
+    metricUVs(new THREE.BoxGeometry(item.size.w, item.size.h, item.size.d)),
     getMaterial({ id: 'oak-planks' }),
   )
   mesh.position.y = item.size.h / 2

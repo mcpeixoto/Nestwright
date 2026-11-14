@@ -1,3 +1,4 @@
+import { fitUVsToScale } from '../builders/uv'
 import { occupy } from './parts'
 import type { CatalogEntry } from './types'
 import { CATEGORIES } from './types'
@@ -10,6 +11,7 @@ function sized(entry: CatalogEntry): CatalogEntry {
     ...entry,
     build(ctx) {
       const group = build(ctx)
+      fitUVsToScale(group)
       occupy(group, ctx.size)
       return group
     },

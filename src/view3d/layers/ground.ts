@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { getMaterialDef } from '../../materials/library'
+import { metricUVs } from '../../builders/uv'
 import { getMaterial } from '../../materials/materialCache'
 import type { Project } from '../../model/types'
 import { registerSceneLayer, type SceneLayer, type SceneLayerContext } from '../layers'
@@ -14,7 +14,6 @@ export function distantGroundMode(kind: string | undefined): 'meadow' | 'asphalt
  * somewhere to land. The plot itself stays inside the fog's near distance.
  */
 export function createGroundLayer(ctx: SceneLayerContext): SceneLayer {
-  const tile = getMaterialDef('grass')?.tileSize ?? 1.2
   const source = getMaterial({ id: 'grass' })
   const material = source.clone()
   if (material.map) {
@@ -44,14 +43,10 @@ export function createGroundLayer(ctx: SceneLayerContext): SceneLayer {
   const resize = (next: number) => {
     size = next
     mesh.geometry.dispose()
-    const geo = new THREE.PlaneGeometry(next, next)
+    // Metric UVs, so the cloned maps keep the library's 1/tileSize repeat at any plane size.
+    const geo = metricUVs(new THREE.PlaneGeometry(next, next))
     geo.rotateX(-Math.PI / 2)
     mesh.geometry = geo
-    const repeat = next / tile
-    material.map?.repeat.set(repeat, repeat)
-    material.roughnessMap?.repeat.set(repeat, repeat)
-    if (material.map) material.map.needsUpdate = true
-    if (material.roughnessMap) material.roughnessMap.needsUpdate = true
   }
   resize(840)
 

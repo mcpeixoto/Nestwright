@@ -3,6 +3,7 @@ import { getMaterial } from '../materials/materialCache'
 import { dist } from '../model/geometry'
 import type { Level, Wall } from '../model/types'
 import { wallFrame } from '../model/walls'
+import { metricUVs } from './uv'
 
 /** Posts, a top rail, and glass infill when either face is the glass material. */
 export function buildRailing(wall: Wall, level: Level): THREE.Group {
@@ -27,7 +28,7 @@ export function buildRailing(wall: Wall, level: Level): THREE.Group {
   }
   posts.push(postAt(points, 1, y0, height))
   for (const base of posts) {
-    const geo = new THREE.BoxGeometry(0.04, height, 0.04)
+    const geo = metricUVs(new THREE.BoxGeometry(0.04, height, 0.04))
     const mesh = new THREE.Mesh(geo, postMat)
     mesh.position.set(base.x, y0 + height / 2, base.z)
     tag(mesh, wall.id)
@@ -58,7 +59,7 @@ function railBetween(a: THREE.Vector3, b: THREE.Vector3, y: number, material: TH
   const dx = b.x - a.x
   const dz = b.z - a.z
   const length = Math.hypot(dx, dz)
-  const geo = new THREE.BoxGeometry(Math.max(length, 0.02), 0.04, 0.04)
+  const geo = metricUVs(new THREE.BoxGeometry(Math.max(length, 0.02), 0.04, 0.04))
   const mesh = new THREE.Mesh(geo, material)
   mesh.position.set((a.x + b.x) / 2, y, (a.z + b.z) / 2)
   mesh.rotation.y = -Math.atan2(dz, dx)
@@ -70,7 +71,7 @@ function glassBetween(a: THREE.Vector3, b: THREE.Vector3, y0: number, y1: number
   const dx = b.x - a.x
   const dz = b.z - a.z
   const length = Math.max(0.02, Math.hypot(dx, dz))
-  const geo = new THREE.BoxGeometry(length, Math.max(0.05, y1 - y0), 0.012)
+  const geo = metricUVs(new THREE.BoxGeometry(length, Math.max(0.05, y1 - y0), 0.012))
   const mesh = new THREE.Mesh(geo, getMaterial({ id: 'glass' }))
   mesh.position.set((a.x + b.x) / 2, (y0 + y1) / 2, (a.z + b.z) / 2)
   mesh.rotation.y = -Math.atan2(dz, dx)

@@ -3,6 +3,7 @@ import { getMaterial } from '../materials/materialCache'
 import { dist, dot, normalize, perp, polygonArea, sub } from '../model/geometry'
 import { computeStairSteps, type StairStep } from '../model/stairs'
 import type { Level, Stair, Vec2 } from '../model/types'
+import { metricUVs } from './uv'
 
 const TREAD = 0.045
 
@@ -32,7 +33,7 @@ export function buildStair(stair: Stair, level: Level): THREE.Group {
     group.add(stringer(side, base, material, stair.id))
   }
   if (stair.shape === 'spiral') {
-    const column = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, Math.max(0.2, layout.rise), 16), material)
+    const column = new THREE.Mesh(metricUVs(new THREE.CylinderGeometry(0.15, 0.15, Math.max(0.2, layout.rise), 16)), material)
     column.position.set(stair.position.x, base + layout.rise / 2, stair.position.y)
     tag(column, stair.id)
     group.add(column)
@@ -179,7 +180,7 @@ function board(
 function addRail(group: THREE.Group, chain: { x: number; y: number; h: number }[], base: number, material: THREE.Material, id: string) {
   const tops: THREE.Vector3[] = []
   for (const p of chain) {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.9, 0.04), material)
+    const post = new THREE.Mesh(metricUVs(new THREE.BoxGeometry(0.04, 0.9, 0.04)), material)
     post.position.set(p.x, base + p.h + 0.45, p.y)
     tag(post, id)
     group.add(post)
@@ -194,7 +195,7 @@ function addRail(group: THREE.Group, chain: { x: number; y: number; h: number }[
     const dz = b.z - a.z
     const length = Math.hypot(dx, dy, dz)
     if (length < 1e-3) continue
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(length, 0.04, 0.04), material)
+    const rail = new THREE.Mesh(metricUVs(new THREE.BoxGeometry(length, 0.04, 0.04)), material)
     rail.position.set((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2)
     rail.rotation.y = Math.atan2(dz, dx)
     rail.rotation.z = Math.atan2(dy, Math.hypot(dx, dz))
