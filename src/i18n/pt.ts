@@ -255,6 +255,8 @@ export const pt: { [K in MessageKey]: string } = {
   'Match graphics': 'Igual aos gráficos',
   'Renderer (applies on restart)': 'Renderizador (aplica-se ao reiniciar)',
   'Automatic': 'Automático',
+  'Pick graphics automatically': 'Escolher os gráficos automaticamente',
+  'Graphics set to {tier}': 'Gráficos definidos para {tier}',
   'Show FPS': 'Mostrar FPS',
   'UI scale': 'Escala da interface',
   'Continue last project': 'Continuar o último projeto',

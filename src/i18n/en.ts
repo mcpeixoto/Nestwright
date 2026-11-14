@@ -253,6 +253,8 @@ export const en = {
   'Match graphics': 'Match graphics',
   'Renderer (applies on restart)': 'Renderer (applies on restart)',
   'Automatic': 'Automatic',
+  'Pick graphics automatically': 'Pick graphics automatically',
+  'Graphics set to {tier}': 'Graphics set to {tier}',
   'Show FPS': 'Show FPS',
   'UI scale': 'UI scale',
   'Continue last project': 'Continue last project',

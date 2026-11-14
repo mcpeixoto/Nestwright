@@ -84,6 +84,14 @@ export function SettingsDialog() {
             ))}
           </select>
         </label>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={settings.qualityAuto}
+            onChange={(event) => set({ qualityAuto: event.target.checked })}
+          />
+          <T k="Pick graphics automatically" />
+        </label>
         <label className="field">
           <T k="Render scale" />
           <select value={String(settings.renderScale)} onChange={(event) => set({ renderScale: Number(event.target.value) })}>

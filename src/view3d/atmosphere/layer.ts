@@ -13,7 +13,7 @@ import { createGradedSky, type GradedSky, type SkyGrade } from './gradeSky'
 import { createPrecip, driftPrecip } from './precip'
 import { createSkyParams, writeSkyParams, type SkyParams } from './skyParams'
 import { createStars } from './stars'
-import { attachWeather, setWeatherMix } from './weather'
+import { dressOutdoorMesh, isOutdoorMesh, setWeatherMix } from './weather'
 
 /** PMREM fill. High values let a cyan sky tint red roofs lilac. */
 const ENV_INTENSITY = 0.7
@@ -226,10 +226,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh
       if (!mesh.isMesh) return
-      const outdoor = mesh.name === 'ground' || mesh.userData.roof === true || mesh.userData.outdoor === true
-      if (!outdoor) return
-      const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-      for (const material of list) if (material) attachWeather(material)
+      if (isOutdoorMesh(mesh)) dressOutdoorMesh(mesh)
     })
   }
 

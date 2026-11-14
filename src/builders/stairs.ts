@@ -71,15 +71,46 @@ function placeTop(geo: THREE.BufferGeometry, topY: number) {
   geo.translate(0, topY - maxY, 0)
 }
 
+/** Vertical board on a plan edge, both faces. UVs in metres: u along the edge, v up (world y). */
 function riser(a: Vec2, b: Vec2, y0: number, y1: number, material: THREE.Material, id: string): THREE.Mesh {
-  const geo = new THREE.BufferGeometry()
-  const positions = [a.x, y0, a.y, b.x, y0, b.y, b.x, y1, b.y, a.x, y1, a.y]
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-  geo.setIndex([0, 1, 2, 0, 2, 3, 0, 2, 1, 0, 3, 2])
-  geo.computeVertexNormals()
-  const mesh = new THREE.Mesh(geo, material)
+  const length = Math.hypot(b.x - a.x, b.y - a.y)
+  const quads = new QuadBuilder()
+  // Front then back, each with its own vertices so the two normals do not cancel.
+  quads.quad(
+    [a.x, y0, a.y, b.x, y0, b.y, b.x, y1, b.y, a.x, y1, a.y],
+    [0, y0, length, y0, length, y1, 0, y1],
+  )
+  quads.quad(
+    [a.x, y0, a.y, a.x, y1, a.y, b.x, y1, b.y, b.x, y0, b.y],
+    [0, y0, 0, y1, length, y1, length, y0],
+  )
+  const mesh = new THREE.Mesh(quads.build(), material)
   tag(mesh, id)
   return mesh
+}
+
+/** Flat-shaded quads with their own vertices and metric UVs. */
+class QuadBuilder {
+  private pos: number[] = []
+  private uv: number[] = []
+  private index: number[] = []
+
+  /** Four corners (x,y,z ×4) wound counter-clockwise seen from the front, and their UVs. */
+  quad(corners: readonly number[], uvs: readonly number[]): void {
+    const base = this.pos.length / 3
+    this.pos.push(...corners)
+    this.uv.push(...uvs)
+    this.index.push(base, base + 1, base + 2, base, base + 2, base + 3)
+  }
+
+  build(): THREE.BufferGeometry {
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3))
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2))
+    geo.setIndex(this.index)
+    geo.computeVertexNormals()
+    return geo
+  }
 }
 
 function stringer(chain: { x: number; y: number; h: number }[], base: number, material: THREE.Material, id: string): THREE.Group {
@@ -111,21 +142,35 @@ function board(
   const drop = 0.22
   const yA = base + a.h
   const yB = base + b.h
-  const verts = [
-    a.x + nx * w, yA, a.y + nz * w,
-    a.x - nx * w, yA, a.y - nz * w,
-    a.x - nx * w, yA - drop, a.y - nz * w,
-    a.x + nx * w, yA - drop, a.y + nz * w,
-    b.x + nx * w, yB, b.y + nz * w,
-    b.x - nx * w, yB, b.y - nz * w,
-    b.x - nx * w, yB - drop, b.y - nz * w,
-    b.x + nx * w, yB - drop, b.y + nz * w,
+  // Corners 0–3 at a, 4–7 at b: +side top, −side top, −side bottom, +side bottom.
+  const corner = (end: 0 | 1, side: 1 | -1, top: boolean): [number, number, number] => {
+    const p = end === 0 ? a : b
+    const y = (end === 0 ? yA : yB) - (top ? 0 : drop)
+    return [p.x + nx * w * side, y, p.y + nz * w * side]
+  }
+  const c = [
+    corner(0, 1, true), corner(0, -1, true), corner(0, -1, false), corner(0, 1, false),
+    corner(1, 1, true), corner(1, -1, true), corner(1, -1, false), corner(1, 1, false),
   ]
-  const idx = [0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7, 3, 2, 1, 3, 1, 0, 4, 5, 6, 4, 6, 7]
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3))
-  geo.setIndex(idx)
-  geo.computeVertexNormals()
+  // Metres: u runs along the sloped board, v across it (width on top/bottom, depth on the sides).
+  const along = Math.hypot(length, yB - yA)
+  const u = (i: number) => (i < 4 ? 0 : along)
+  const across = (i: number) => (i % 4 === 0 || i % 4 === 3 ? 0 : 2 * w)
+  const depth = (i: number) => (i % 4 < 2 ? drop : 0)
+  const quads = new QuadBuilder()
+  const face = (ids: readonly [number, number, number, number], uvOf: (i: number) => [number, number]) => {
+    quads.quad(
+      ids.flatMap((i) => c[i] ?? [0, 0, 0]),
+      ids.flatMap((i) => uvOf(i)),
+    )
+  }
+  face([0, 1, 5, 4], (i) => [u(i), across(i)])
+  face([1, 2, 6, 5], (i) => [u(i), depth(i)])
+  face([2, 3, 7, 6], (i) => [u(i), across(i)])
+  face([3, 0, 4, 7], (i) => [u(i), depth(i)])
+  face([3, 2, 1, 0], (i) => [across(i), depth(i)])
+  face([4, 5, 6, 7], (i) => [across(i), depth(i)])
+  const geo = quads.build()
   const mesh = new THREE.Mesh(geo, material)
   tag(mesh, id)
   return mesh
