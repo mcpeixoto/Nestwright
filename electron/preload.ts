@@ -1,8 +1,93 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 
+interface BootPayload {
+  autosave: string | null
+  hasAutosaveFile: boolean
+  recent: { id: string; name: string; updatedAt: number; path?: string }[]
+  hasRecentFile: boolean
+  recentCorrupt: boolean
+}
+
+const EMPTY_BOOT: BootPayload = {
+  autosave: null,
+  hasAutosaveFile: false,
+  recent: [],
+  hasRecentFile: false,
+  recentCorrupt: false,
+}
+
+function readBoot(): BootPayload {
+  try {
+    const value = ipcRenderer.sendSync('nestwright:boot') as Partial<BootPayload> | null
+    if (!value || typeof value !== 'object') return EMPTY_BOOT
+    return {
+      autosave: typeof value.autosave === 'string' ? value.autosave : null,
+      hasAutosaveFile: value.hasAutosaveFile === true,
+      recent: Array.isArray(value.recent) ? value.recent : [],
+      hasRecentFile: value.hasRecentFile === true,
+      recentCorrupt: value.recentCorrupt === true,
+    }
+  } catch {
+    return EMPTY_BOOT
+  }
+}
+
+const boot = readBoot()
+
+let saveHandler: (() => Promise<boolean>) | null = null
+ipcRenderer.on('nestwright:request-save', () => {
+  const run = saveHandler ? saveHandler() : Promise.resolve(false)
+  void Promise.resolve(run).then(
+    (ok) => ipcRenderer.send('nestwright:save-result', ok === true),
+    () => ipcRenderer.send('nestwright:save-result', false),
+  )
+})
+
 contextBridge.exposeInMainWorld('nestwright', {
-  openFile: (accept: string) => ipcRenderer.invoke('nestwright:open-file', accept) as Promise<{ name: string; data: string } | null>,
-  saveFile: (name: string, data: string) => ipcRenderer.invoke('nestwright:save-file', name, data) as Promise<boolean>,
+  boot,
+  openFile: (accept: string) =>
+    ipcRenderer.invoke('nestwright:open-file', accept) as Promise<{ name: string; data: string; path: string } | null>,
+  saveFile: (name: string, data: string) =>
+    ipcRenderer.invoke('nestwright:save-file', name, data) as Promise<{ path: string } | null>,
+  saveToPath: (filePath: string, data: string) =>
+    ipcRenderer.invoke('nestwright:save-to-path', filePath, data) as Promise<boolean>,
+  writeAutosave: (data: string) => ipcRenderer.invoke('nestwright:write-autosave', data) as Promise<boolean>,
+  writeRecent: (payload: {
+    id: string
+    name: string
+    updatedAt: number
+    path?: string
+    project: string
+    thumb?: string
+  }) => ipcRenderer.invoke('nestwright:write-recent', payload) as Promise<boolean>,
+  readRecentProject: (id: string) => ipcRenderer.invoke('nestwright:read-recent-project', id) as Promise<string | null>,
+  readRecentThumb: (id: string) => ipcRenderer.invoke('nestwright:read-recent-thumb', id) as Promise<string | null>,
+  setEditorState: (state: {
+    dirty: boolean
+    prompt: { message: string; save: string; dontSave: string; cancel: string }
+    menu: { file: string; new: string; open: string; save: string; saveAs: string; close: string }
+  }) => {
+    ipcRenderer.send('nestwright:editor-state', state)
+  },
+  notifyReady: () => {
+    ipcRenderer.send('nestwright:renderer-ready')
+  },
+  onMenu: (cb: (action: 'new' | 'open' | 'save' | 'save-as') => void) => {
+    const listener = (_event: IpcRendererEvent, action: 'new' | 'open' | 'save' | 'save-as') => cb(action)
+    ipcRenderer.on('nestwright:menu', listener)
+    return () => ipcRenderer.removeListener('nestwright:menu', listener)
+  },
+  onRequestSave: (cb: () => Promise<boolean> | boolean) => {
+    saveHandler = () => Promise.resolve(cb())
+    return () => {
+      saveHandler = null
+    }
+  },
+  onOpenPath: (cb: (file: { name: string; data: string; path: string }) => void) => {
+    const listener = (_event: IpcRendererEvent, file: { name: string; data: string; path: string }) => cb(file)
+    ipcRenderer.on('nestwright:open-path', listener)
+    return () => ipcRenderer.removeListener('nestwright:open-path', listener)
+  },
   username: () => ipcRenderer.invoke('nestwright:username') as Promise<string>,
   hostSession: () =>
     ipcRenderer.invoke('nestwright:host-session') as Promise<{ addresses: string[]; port: number; code: string }>,

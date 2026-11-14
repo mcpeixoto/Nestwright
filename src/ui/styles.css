@@ -90,7 +90,22 @@ input, select {
   font-size: 14px;
 }
 
-.project-name { max-width: 180px; min-width: 48px; flex: 1 1 80px; }
+.project-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 80px;
+  max-width: 210px;
+}
+.project-title .project-name { max-width: none; min-width: 0; flex: 1 1 auto; width: auto; }
+.unsaved-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sand);
+  flex: none;
+}
 
 .view-switch, .top-actions { display: flex; gap: 4px; flex-wrap: nowrap; flex: none; }
 .view-switch button, .top-actions button { white-space: nowrap; }

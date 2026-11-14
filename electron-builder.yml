@@ -3,6 +3,10 @@ productName: Nestwright
 directories:
   output: release
 asar: true
+fileAssociations:
+  - ext: nest
+    name: Nestwright Project
+    role: Editor
 files:
   - dist/**
   - dist-electron/**

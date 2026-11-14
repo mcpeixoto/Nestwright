@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { isDirty, subscribeDirty } from '../io/dirty'
 import { useStore } from '../store'
 import { noteReturnView } from '../view3d/rigs/walk'
 import { useOpenPanelIds, usePanelList, togglePanel } from './panels/registry'
@@ -68,6 +69,7 @@ function OverflowMenu({ actions, panels }: { actions: TopBarAction[]; panels: Pa
 export function TopBar() {
   const tr = useTranslate()
   const name = useStore((s) => s.project.name)
+  const dirty = useSyncExternalStore(subscribeDirty, isDirty, () => false)
   const view = useStore((s) => s.view)
   const canUndo = useStore((s) => s.canUndo)
   const canRedo = useStore((s) => s.canRedo)
@@ -82,17 +84,20 @@ export function TopBar() {
   return (
     <header className="topbar">
       <div className="wordmark">Nestwright</div>
-      <input
-        className="project-name"
-        aria-label={tr('Project name')}
-        value={name}
-        onChange={(event) => {
-          const next = event.target.value
-          useStore.getState().apply('Rename', (draft) => {
-            draft.name = next
-          })
-        }}
-      />
+      <div className="project-title">
+        <input
+          className="project-name"
+          aria-label={tr('Project name')}
+          value={name}
+          onChange={(event) => {
+            const next = event.target.value
+            useStore.getState().apply('Rename', (draft) => {
+              draft.name = next
+            })
+          }}
+        />
+        {dirty && <span className="unsaved-dot" role="img" aria-label={tr('Unsaved changes')} title={tr('Unsaved changes')} />}
+      </div>
       <div className="view-switch" role="group" aria-label={tr('View')}>
         {VIEWS.map((item) => (
           <button
