@@ -32,7 +32,11 @@ export function createOutdoorLights(scene: THREE.Scene): OutdoorLights {
     const list: THREE.Light[] = []
     scene.traverse((obj) => {
       const light = obj as THREE.Light
-      if (light.isLight && !light.userData.lampPool && shown(light)) list.push(light)
+      // Probe volumes light interiors only, and each one is a 3D texture the splat ground
+      // has no sampler left for; the probe bake sun exists only inside a capture.
+      if (light.isLight && !light.userData.lampPool && !light.userData.probeVolume && !light.userData.probeBake && shown(light)) {
+        list.push(light)
+      }
     })
     const next = list.map((light) => light.id).join(',')
     if (next === key) return

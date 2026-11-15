@@ -638,7 +638,18 @@ export class SceneController {
     holdRendering(true)
     const started = performance.now()
     const cap = new Promise<void>((resolve) => window.setTimeout(resolve, PRECOMPILE_CAP_MS))
-    this.compileDone = Promise.race([post.precompile(tier), cap]).finally(() => {
+    const compile = async () => {
+      await post.precompile(tier)
+      for (const layer of this.eachLayer()) {
+        if (this.disposed) return
+        try {
+          await layer.precompile?.()
+        } catch (err) {
+          console.warn('[nestwright] layer precompile failed', err)
+        }
+      }
+    }
+    this.compileDone = Promise.race([compile(), cap]).finally(() => {
       this.compileDone = null
       this.compiling = false
       holdRendering(false)

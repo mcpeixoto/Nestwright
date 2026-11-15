@@ -17,8 +17,12 @@ export interface EvRange {
 
 /** Correction range with the camera outside. */
 export const OUTDOOR_RANGE: EvRange = { min: -0.3, max: 0.3 }
-/** Correction range with the camera inside a room by day. */
-export const INDOOR_RANGE: EvRange = { min: -0.75, max: 2.5 }
+/**
+ * Correction range with the camera inside a room by day. The ceiling is modest: an average
+ * meter reads dark furniture as a dark room (the family kitchen's black sculptures asked
+ * for +1.7 EV and burnt its white walls).
+ */
+export const INDOOR_RANGE: EvRange = { min: -0.75, max: 1.25 }
 /**
  * Highest indoor correction at night. A lamp-lit room metered to grey reads as daytime; a
  * camera at night is let open up only a little, so the room stays a night room.
