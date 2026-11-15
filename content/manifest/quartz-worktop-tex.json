@@ -14,8 +14,8 @@
   "files": [
     {
       "path": "textures/quartz-worktop-tex/albedo.ktx2",
-      "bytes": 629880,
-      "sha256": "07d221e5d6885ffae096ba05aa8f494259c672dbd4dd96d0dde673e67c5020ec"
+      "bytes": 478106,
+      "sha256": "961576c8b2de1c446da64fdf8cabb167f033c467aece237cbcd9edf328106ee9"
     },
     {
       "path": "textures/quartz-worktop-tex/normal.ktx2",
@@ -30,15 +30,17 @@
   ],
   "texture": {
     "meanAlbedoSrgb": [
-      175.513,
-      182.554,
-      201.245
+      175.568,
+      182.621,
+      201.45
     ],
-    "tileMeters": 1.4,
     "meanOrm": [
       1,
       0.176,
       0
-    ]
+    ],
+    "tileMeters": 1.4,
+    "albedoContrast": 0.5,
+    "normalScale": 0.5
   }
 }

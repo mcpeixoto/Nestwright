@@ -14,8 +14,8 @@
   "files": [
     {
       "path": "textures/render-stucco-tex/albedo.ktx2",
-      "bytes": 687619,
-      "sha256": "613dd7769c57102ece60f5ccd81f06a26848f5d87a237325a4c27acb9aa53181"
+      "bytes": 262481,
+      "sha256": "f2094a376408ddb5ca1c4683286c7b0684930106805aa69ddc2c29422b95d7c8"
     },
     {
       "path": "textures/render-stucco-tex/normal.ktx2",
@@ -24,21 +24,23 @@
     },
     {
       "path": "textures/render-stucco-tex/orm.ktx2",
-      "bytes": 363995,
-      "sha256": "5a5379c5a7c846c76a263d2501673a7be0a7f29298e7710d77810b49b8e8b8c5"
+      "bytes": 176373,
+      "sha256": "617ed28629cf047f64083d5d907ee03a2f83ab8db9475e66ce63b2862997bf4a"
     }
   ],
   "texture": {
     "meanAlbedoSrgb": [
-      215.09,
-      210.974,
-      207.669
+      215.157,
+      211.123,
+      207.792
     ],
-    "tileMeters": 1.998063,
     "meanOrm": [
-      0.983,
+      0.996,
       0.881,
       0
-    ]
+    ],
+    "tileMeters": 1.998063,
+    "albedoContrast": 0.25,
+    "normalScale": 0.6
   }
 }

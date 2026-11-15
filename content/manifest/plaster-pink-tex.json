@@ -14,8 +14,8 @@
   "files": [
     {
       "path": "textures/plaster-pink-tex/albedo.ktx2",
-      "bytes": 500670,
-      "sha256": "d96f73d4497b779a15965cf2db08a598854969521975875c3d8a6e870b970c52"
+      "bytes": 117895,
+      "sha256": "738ea2707774c294355f7105afe14fcb6fcd4b8cbac1c9f8c05057612e83dc0d"
     },
     {
       "path": "textures/plaster-pink-tex/normal.ktx2",
@@ -24,21 +24,23 @@
     },
     {
       "path": "textures/plaster-pink-tex/orm.ktx2",
-      "bytes": 288501,
-      "sha256": "0cbff2d26134560b15f5279c4e127242d14515a5db826522bcc8ef9541f7470a"
+      "bytes": 319994,
+      "sha256": "f634301393fa4b3cde87dd0aeb157f54e769e3606ca7cd62aa7d5a24edf4a9dd"
     }
   ],
   "texture": {
     "meanAlbedoSrgb": [
-      114.293,
-      89.962,
-      59.866
+      114.448,
+      90.111,
+      59.861
     ],
-    "tileMeters": 2,
     "meanOrm": [
-      0.973,
+      0.994,
       0.923,
       0
-    ]
+    ],
+    "tileMeters": 2,
+    "albedoContrast": 0.25,
+    "normalScale": 0.5
   }
 }

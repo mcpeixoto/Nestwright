@@ -79,11 +79,13 @@ async function processOne(entry, { webp, library }) {
     const tileMeters = tileFor(entry, meta, library)
     if (!tileMeters) throw new Error(`${entry.key}: tileMeters unknown; set tileMeters on the source entry`)
     const dest = join(paths.output, 'textures', entry.key)
-    const stats = await processTexture(meta, dest)
+    const stats = await processTexture(meta, dest, { albedoContrast: entry.albedoContrast ?? 1 })
     const names = ['albedo.ktx2', 'orm.ktx2']
     if (meta.files.some((file) => file.role === 'normal')) names.splice(1, 0, 'normal.ktx2')
     for (const name of names) manifest.files.push(await outputRecord(join(dest, name)))
     manifest.texture = { meanAlbedoSrgb: stats.meanAlbedoSrgb, meanOrm: stats.meanOrm, tileMeters }
+    if (entry.albedoContrast != null && entry.albedoContrast < 1) manifest.texture.albedoContrast = entry.albedoContrast
+    if (entry.normalScale != null) manifest.texture.normalScale = entry.normalScale
   } else if (entry.kind === 'model') {
     if (!meta.modelFile) throw new Error(`${entry.key}: cache meta has no modelFile`)
     const dest = join(paths.output, 'models', entry.key)
@@ -158,7 +160,7 @@ async function backfillStats(entry, dryRun) {
     log(`skip ${entry.key}: no manifest`)
     return
   }
-  const meanOrm = await textureOrmMeans(await loadMeta(entry))
+  const meanOrm = await textureOrmMeans(await loadMeta(entry), entry.albedoContrast ?? 1)
   if (dryRun) {
     log(`${entry.key} meanOrm ${meanOrm.join(', ')}`)
     return

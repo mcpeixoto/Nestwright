@@ -18,6 +18,12 @@ export function assertEntry(entry, index = 0) {
   if (!RESOLUTIONS.has(entry.resolution)) throw new Error(`${where} resolution must be 1k, 2k or 4k`)
   if (!entry.targets || typeof entry.targets !== 'object') throw new Error(`${where} targets must be an object`)
   assertAllowedLicence(entry.licence, where)
+  if (entry.albedoContrast != null && !(typeof entry.albedoContrast === 'number' && entry.albedoContrast >= 0 && entry.albedoContrast <= 1)) {
+    throw new Error(`${where} albedoContrast must be a number from 0 to 1`)
+  }
+  if (entry.normalScale != null && !(typeof entry.normalScale === 'number' && entry.normalScale > 0 && entry.normalScale <= 2)) {
+    throw new Error(`${where} normalScale must be a number above 0 and at most 2`)
+  }
   const manual = entry.provider === 'sketchfab' || entry.provider === 'local'
   if (entry.licence === 'CC-BY-4.0' && (!entry.author || !entry.url)) {
     throw new Error(`${where} CC-BY-4.0 needs author and url`)

@@ -5,7 +5,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import sharp from 'sharp'
-import { meanSrgb, ormFillByte, ormPlan } from './image.mjs'
+import { applyAlbedoContrast, meanSrgb, ormFillByte, ormPlan } from './image.mjs'
 import { encodeCommand, resolveEncoder } from './ktx.mjs'
 import { resolutionPixels } from './tile.mjs'
 
@@ -50,8 +50,9 @@ async function grey(input, width, height, fill) {
   return data
 }
 
-export async function buildOrmPng(maps, width, height) {
-  const rgb = await buildOrmRaw(maps, width, height)
+/** `aoStrength` < 1 lerps AO toward white: a flattened plaster's AO blotches would undo it. */
+export async function buildOrmPng(maps, width, height, aoStrength = 1) {
+  const rgb = await buildOrmRaw(maps, width, height, aoStrength)
   return sharp(rgb, { raw: { width, height, channels: 3 } }).png().toBuffer()
 }
 
@@ -59,12 +60,12 @@ export async function buildOrmPng(maps, width, height) {
  * Mean AO / roughness / metalness of the packed ORM, 0–1. The game divides the material's
  * scalar by these so the scan's variation is kept but its average lands on the library value.
  */
-export async function ormMeans(maps, width, height) {
-  const rgb = await buildOrmRaw(maps, width, height)
+export async function ormMeans(maps, width, height, aoStrength = 1) {
+  const rgb = await buildOrmRaw(maps, width, height, aoStrength)
   return meanSrgb(rgb, 3).map((value) => Math.round((value / 255) * 1000) / 1000)
 }
 
-async function buildOrmRaw(maps, width, height) {
+async function buildOrmRaw(maps, width, height, aoStrength = 1) {
   const plan = ormPlan({
     ao: Boolean(maps.ao),
     roughness: Boolean(maps.roughness),
@@ -74,8 +75,9 @@ async function buildOrmRaw(maps, width, height) {
   const green = await grey(maps.roughness, width, height, ormFillByte(plan.g) ?? 128)
   const blue = await grey(maps.metalness, width, height, ormFillByte(plan.b) ?? 0)
   const rgb = Buffer.alloc(width * height * 3)
+  const k = Math.min(1, Math.max(0, aoStrength))
   for (let i = 0; i < width * height; i++) {
-    rgb[i * 3] = red[i]
+    rgb[i * 3] = k === 1 ? red[i] : Math.round(255 - (255 - red[i]) * k)
     rgb[i * 3 + 1] = green[i]
     rgb[i * 3 + 2] = blue[i]
   }
@@ -87,7 +89,7 @@ export function blockAligned(size) {
   return Math.max(4, Math.floor(size / 4) * 4)
 }
 
-export async function readAlbedo(input, pixels) {
+export async function readAlbedo(input, pixels, albedoContrast = 1) {
   const fitted = await sharp(input)
     .resize(pixels, pixels, { fit: 'inside', withoutEnlargement: true })
     .removeAlpha()
@@ -95,14 +97,18 @@ export async function readAlbedo(input, pixels) {
     .toBuffer({ resolveWithObject: true })
   const width = blockAligned(fitted.info.width)
   const height = blockAligned(fitted.info.height)
-  if (width === fitted.info.width && height === fitted.info.height) {
-    return { data: fitted.data, width, height, meanAlbedoSrgb: meanSrgb(fitted.data, fitted.info.channels) }
+  let data = fitted.data
+  let channels = fitted.info.channels
+  if (width !== fitted.info.width || height !== fitted.info.height) {
+    const resized = await sharp(fitted.data, { raw: fitted.info })
+      .resize(width, height, { fit: 'fill' })
+      .raw()
+      .toBuffer({ resolveWithObject: true })
+    data = resized.data
+    channels = resized.info.channels
   }
-  const { data, info } = await sharp(fitted.data, { raw: fitted.info })
-    .resize(width, height, { fit: 'fill' })
-    .raw()
-    .toBuffer({ resolveWithObject: true })
-  return { data, width: info.width, height: info.height, meanAlbedoSrgb: meanSrgb(data, info.channels) }
+  applyAlbedoContrast(data, channels, albedoContrast)
+  return { data, width, height, meanAlbedoSrgb: meanSrgb(data, channels) }
 }
 
 /**
@@ -115,12 +121,13 @@ export async function processTexture(meta, destDir, options = {}) {
   const byRole = Object.fromEntries(meta.files.filter((file) => file.role).map((file) => [file.role, file.abs]))
   if (!byRole.roughness) throw new Error(`${meta.key}: cache has no roughness map`)
   const pixels = resolutionPixels(meta.resolution)
-  const albedo = await readAlbedo(byRole.albedo, pixels)
+  const albedo = await readAlbedo(byRole.albedo, pixels, options.albedoContrast ?? 1)
   const png = await sharp(albedo.data, { raw: { width: albedo.width, height: albedo.height, channels: 3 } }).png().toBuffer()
   const orm = await buildOrmPng(
     { ao: byRole.ao, roughness: byRole.roughness, metalness: byRole.metalness },
     albedo.width,
     albedo.height,
+    options.albedoContrast ?? 1,
   )
   let normal = null
   if (byRole.normal) {
@@ -147,13 +154,18 @@ export async function processTexture(meta, destDir, options = {}) {
   } finally {
     await rm(scratch, { recursive: true, force: true })
   }
-  const meanOrm = await ormMeans({ ao: byRole.ao, roughness: byRole.roughness, metalness: byRole.metalness }, 256, 256)
+  const meanOrm = await ormMeans(
+    { ao: byRole.ao, roughness: byRole.roughness, metalness: byRole.metalness },
+    256,
+    256,
+    options.albedoContrast ?? 1,
+  )
   return { meanAlbedoSrgb: albedo.meanAlbedoSrgb, meanOrm, width: albedo.width, height: albedo.height }
 }
 
 /** ORM means from the cached maps alone, for manifests written before `meanOrm` existed. */
-export async function textureOrmMeans(meta) {
+export async function textureOrmMeans(meta, aoStrength = 1) {
   const byRole = Object.fromEntries(meta.files.filter((file) => file.role).map((file) => [file.role, file.abs]))
   if (!byRole.roughness) throw new Error(`${meta.key}: cache has no roughness map`)
-  return ormMeans({ ao: byRole.ao, roughness: byRole.roughness, metalness: byRole.metalness }, 256, 256)
+  return ormMeans({ ao: byRole.ao, roughness: byRole.roughness, metalness: byRole.metalness }, 256, 256, aoStrength)
 }

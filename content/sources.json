@@ -2,6 +2,8 @@
   "entries": [
     {
       "key": "plaster-white-tex",
+      "albedoContrast": 0.2,
+      "normalScale": 0.45,
       "kind": "texture",
       "provider": "polyhaven",
       "sourceId": "white_plaster_02",
@@ -14,6 +16,8 @@
     },
     {
       "key": "plaster-warm-tex",
+      "albedoContrast": 0.25,
+      "normalScale": 0.5,
       "kind": "texture",
       "provider": "polyhaven",
       "sourceId": "beige_wall_001",
@@ -26,6 +30,8 @@
     },
     {
       "key": "plaster-pink-tex",
+      "albedoContrast": 0.25,
+      "normalScale": 0.5,
       "kind": "texture",
       "provider": "polyhaven",
       "sourceId": "clay_plaster",
@@ -62,6 +68,8 @@
     },
     {
       "key": "concrete-tex",
+      "albedoContrast": 0.5,
+      "normalScale": 0.6,
       "kind": "texture",
       "provider": "ambientcg",
       "sourceId": "Concrete034",
@@ -74,6 +82,8 @@
     },
     {
       "key": "polished-concrete-tex",
+      "albedoContrast": 0.5,
+      "normalScale": 0.4,
       "kind": "texture",
       "provider": "polyhaven",
       "sourceId": "smooth_concrete_floor",
@@ -472,6 +482,8 @@
     },
     {
       "key": "microcement-tex",
+      "albedoContrast": 0.45,
+      "normalScale": 0.5,
       "kind": "texture",
       "provider": "ambientcg",
       "sourceId": "Concrete016",
@@ -485,6 +497,8 @@
     },
     {
       "key": "microcement-dark-tex",
+      "albedoContrast": 0.45,
+      "normalScale": 0.5,
       "kind": "texture",
       "provider": "ambientcg",
       "sourceId": "Concrete017",
@@ -602,6 +616,7 @@
     },
     {
       "key": "porcelain-large-grey-tex",
+      "albedoContrast": 0.6,
       "kind": "texture",
       "provider": "polyhaven",
       "sourceId": "large_grey_tiles",
@@ -615,6 +630,7 @@
     },
     {
       "key": "porcelain-large-sand-tex",
+      "albedoContrast": 0.6,
       "kind": "texture",
       "provider": "polyhaven",
       "sourceId": "large_floor_tiles_02",
@@ -836,6 +852,8 @@
     },
     {
       "key": "quartz-worktop-tex",
+      "albedoContrast": 0.5,
+      "normalScale": 0.5,
       "kind": "texture",
       "provider": "ambientcg",
       "sourceId": "Marble003",
@@ -979,6 +997,8 @@
     },
     {
       "key": "render-stucco-tex",
+      "albedoContrast": 0.25,
+      "normalScale": 0.6,
       "kind": "texture",
       "provider": "polyhaven",
       "sourceId": "white_stucco",
@@ -992,6 +1012,8 @@
     },
     {
       "key": "lime-plaster-tex",
+      "albedoContrast": 0.35,
+      "normalScale": 0.6,
       "kind": "texture",
       "provider": "polyhaven",
       "sourceId": "rough_plaster_03",

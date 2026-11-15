@@ -14,8 +14,8 @@
   "files": [
     {
       "path": "textures/lime-plaster-tex/albedo.ktx2",
-      "bytes": 910160,
-      "sha256": "de99b728418ebc173000be91cf7c262c509e3d4f1c572b2678252c57bcf8677d"
+      "bytes": 715037,
+      "sha256": "eaf6b9dfece165d9222c47fca74c4d52cd5852c7e6b81650599ca0b90f930f95"
     },
     {
       "path": "textures/lime-plaster-tex/normal.ktx2",
@@ -24,21 +24,23 @@
     },
     {
       "path": "textures/lime-plaster-tex/orm.ktx2",
-      "bytes": 791682,
-      "sha256": "85005e582d8aff470905eabefc0f36b623190948583c4fc78040c7c4f1656bca"
+      "bytes": 693815,
+      "sha256": "ed37e25688f2891580690ff1420d04415a166f9acd1bc4e1dba543afa1fb4f98"
     }
   ],
   "texture": {
     "meanAlbedoSrgb": [
-      144.767,
-      128.098,
-      111.933
+      147.646,
+      131.325,
+      115.566
     ],
-    "tileMeters": 1.5,
     "meanOrm": [
-      0.658,
+      0.88,
       0.938,
       0
-    ]
+    ],
+    "tileMeters": 1.5,
+    "albedoContrast": 0.35,
+    "normalScale": 0.6
   }
 }

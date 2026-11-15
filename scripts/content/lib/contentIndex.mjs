@@ -26,6 +26,7 @@ export function buildContentIndex(manifests) {
       tileMeters: manifest.texture.tileMeters,
       meanAlbedoSrgb: manifest.texture.meanAlbedoSrgb,
       ...(manifest.texture.meanOrm ? { meanOrm: manifest.texture.meanOrm } : {}),
+      ...(manifest.texture.normalScale ? { normalScale: manifest.texture.normalScale } : {}),
       maps,
     }
   }

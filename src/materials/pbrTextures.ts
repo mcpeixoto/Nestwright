@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
-import { normalMap, texture } from 'three/tsl'
+import { normalMap, texture, vec2 } from 'three/tsl'
 import { srgbByteToLinear } from '../view3d/colorLinear'
 import { contentUrl, transcoderPath } from './contentUrl'
 
@@ -11,6 +11,8 @@ export interface ContentTexture {
   meanAlbedoSrgb: [number, number, number]
   /** Mean AO, roughness, metalness of the ORM map, 0–1. */
   meanOrm?: [number, number, number]
+  /** Normal-map strength (default 1); plaster and render sit near 0.5. */
+  normalScale?: number
   maps: { albedo: string; normal?: string; orm?: string }
 }
 
@@ -31,10 +33,13 @@ export interface PbrMaps {
   normalNode: THREE.Node | null
 }
 
-/** Tangent-space normal from a two-channel (X in G, Y in A) KTX2 normal map. */
-export function packedNormalNode(normal: THREE.Texture | null): THREE.Node | null {
+/**
+ * Tangent-space normal from a two-channel (X in G, Y in A) KTX2 normal map. `scale` < 1 keeps
+ * plaster to fine relief; a full-strength plaster scan reads as rough stone.
+ */
+export function packedNormalNode(normal: THREE.Texture | null, scale = 1): THREE.Node | null {
   if (!normal) return null
-  const node = normalMap(texture(normal))
+  const node = scale === 1 ? normalMap(texture(normal)) : normalMap(texture(normal), vec2(scale, scale))
   node.unpackNormalMode = THREE.NormalGAPacking
   return node as unknown as THREE.Node
 }
@@ -235,7 +240,7 @@ async function loadSet(materialId: string): Promise<PbrMaps | null> {
       albedo: prepare(albedo, THREE.SRGBColorSpace, repeat),
       normal: normalMapTexture,
       orm: orm ? prepare(orm, THREE.NoColorSpace, repeat) : null,
-      normalNode: packedNormalNode(normalMapTexture),
+      normalNode: packedNormalNode(normalMapTexture, info.normalScale ?? 1),
     }
   } catch (err) {
     note(`content textures for ${materialId} failed to load; procedural materials (${err instanceof Error ? err.message : String(err)})`)
@@ -262,7 +267,7 @@ function withRepeat(base: PbrMaps, materialId: string, scale: number): PbrMaps {
     albedo: copy(base.albedo)!,
     normal,
     orm: copy(base.orm),
-    normalNode: packedNormalNode(normal),
+    normalNode: packedNormalNode(normal, base.info.normalScale ?? 1),
   }
   scaled.set(key, next)
   return next

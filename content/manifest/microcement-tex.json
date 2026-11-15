@@ -14,8 +14,8 @@
   "files": [
     {
       "path": "textures/microcement-tex/albedo.ktx2",
-      "bytes": 659807,
-      "sha256": "d136ede1bf1646421bd841070541bfe19a8e9ac62c3938faa2102145edd2b65e"
+      "bytes": 428122,
+      "sha256": "f597e2a1a21b6e52edc637dcab994ecc0f50c83ae8bcb134ef7aa606b1e436c5"
     },
     {
       "path": "textures/microcement-tex/normal.ktx2",
@@ -30,15 +30,17 @@
   ],
   "texture": {
     "meanAlbedoSrgb": [
-      125.806,
-      130.828,
-      134.766
+      125.962,
+      131.007,
+      134.939
     ],
-    "tileMeters": 1.4,
     "meanOrm": [
       1,
       0.627,
       0
-    ]
+    ],
+    "tileMeters": 1.4,
+    "albedoContrast": 0.45,
+    "normalScale": 0.5
   }
 }

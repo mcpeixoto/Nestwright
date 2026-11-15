@@ -14,8 +14,8 @@
   "files": [
     {
       "path": "textures/porcelain-large-sand-tex/albedo.ktx2",
-      "bytes": 834320,
-      "sha256": "56501859d49c56613c1b280926c71b540da7c2985a4a34f0d017db9ac25928d4"
+      "bytes": 754602,
+      "sha256": "6d280ce461163fe63cac17e98edc1b4a3c44106391599662154c24b8322ab2bb"
     },
     {
       "path": "textures/porcelain-large-sand-tex/normal.ktx2",
@@ -24,21 +24,22 @@
     },
     {
       "path": "textures/porcelain-large-sand-tex/orm.ktx2",
-      "bytes": 774441,
-      "sha256": "54169691ad7e0c182c738e18913ccc69cd0764d3b471532ec688ec63058b9096"
+      "bytes": 754936,
+      "sha256": "ce0f9114bb4d0b71ca29c01358022da4ea25c9a5666685561b80e2f0e02db101"
     }
   ],
   "texture": {
     "meanAlbedoSrgb": [
-      117.431,
-      118.373,
-      114.903
+      118.822,
+      119.687,
+      116.134
     ],
-    "tileMeters": 3,
     "meanOrm": [
-      0.792,
+      0.875,
       0.836,
       0
-    ]
+    ],
+    "tileMeters": 3,
+    "albedoContrast": 0.6
   }
 }

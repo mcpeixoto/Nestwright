@@ -14,8 +14,8 @@
   "files": [
     {
       "path": "textures/polished-concrete-tex/albedo.ktx2",
-      "bytes": 796019,
-      "sha256": "d9d93e98dd54b74f63f73ffdbeb5af5a0dc488b13705e741abf65bd203fab520"
+      "bytes": 683845,
+      "sha256": "6b9bf018925ec4bab376fecb204cbc627e4984aae25863cc5dd28476cd64ec7a"
     },
     {
       "path": "textures/polished-concrete-tex/normal.ktx2",
@@ -24,21 +24,23 @@
     },
     {
       "path": "textures/polished-concrete-tex/orm.ktx2",
-      "bytes": 702721,
-      "sha256": "7a22b2f8a65f73a43cbbafb3ec3667b8d164e041169c4f44422705ee47240308"
+      "bytes": 629595,
+      "sha256": "69526e24de4d5dfbed277f74b706cc04a28067a1a273d2b7ae0dd380b7b33a0e"
     }
   ],
   "texture": {
     "meanAlbedoSrgb": [
-      84.912,
-      60.278,
-      40.732
+      85.987,
+      61.098,
+      41.32
     ],
-    "tileMeters": 2,
     "meanOrm": [
-      0.901,
+      0.952,
       0.68,
       0
-    ]
+    ],
+    "tileMeters": 2,
+    "albedoContrast": 0.5,
+    "normalScale": 0.4
   }
 }
