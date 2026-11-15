@@ -1,4 +1,6 @@
 import { useSettings } from '../settings'
+import { installAmbience } from './ambience'
+import { sceneAmbienceInput } from './ambienceScene'
 import { applyBusGains, bindAudioGesture, releaseAudioGesture } from './engine'
 import { installEditSounds } from './edits'
 import { sfx } from './sfx'
@@ -29,6 +31,7 @@ export function installAudio(): () => void {
     stops.push(() => releaseAudioGesture())
   }
   stops.push(installEditSounds())
+  stops.push(installAmbience(sceneAmbienceInput))
   stops.push(useSettings.subscribe(() => applyBusGains()))
   applyBusGains()
   return () => {

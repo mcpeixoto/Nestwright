@@ -532,6 +532,7 @@ export const en = {
   '{n} h ago': '{n} h ago',
   '{n} d ago': '{n} d ago',
   'Unlocked: {name}': 'Unlocked: {name}',
+  'Room complete: {name}': 'Room complete: {name}',
   'Playing as {name}': 'Playing as {name}',
   'Current against {name}. Switching files the live design as “{before}”. {summary}':
     'Current against {name}. Switching files the live design as “{before}”. {summary}',

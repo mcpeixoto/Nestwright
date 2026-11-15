@@ -56,6 +56,20 @@ export function gainedRooms(before: readonly Level[], after: readonly Level[]): 
   return false
 }
 
+/** Names of rooms whose keys were not on that level before. Same detection as {@link gainedRooms}. */
+export function newRoomNames(before: readonly Level[], after: readonly Level[]): string[] {
+  const previous = new Map<string, Set<string>>()
+  for (const level of before) previous.set(level.id, new Set(detectRooms(level).map((room) => room.key)))
+  const names: string[] = []
+  for (const level of after) {
+    const seen = previous.get(level.id) ?? new Set<string>()
+    for (const room of detectRooms(level)) {
+      if (!seen.has(room.key)) names.push(room.name)
+    }
+  }
+  return names
+}
+
 export interface SnapCue {
   /** Millimetre key of the point the pointer is on, snapped or not. */
   key: string
