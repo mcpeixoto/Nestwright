@@ -30,6 +30,7 @@ export function serialize(project: Project): string {
   return JSON.stringify(project)
 }
 
+/** Older files omit optional Budget.overrides and Budget.extras; they pass through unset. */
 export function deserialize(json: string): Project {
   let parsed: unknown
   try {
