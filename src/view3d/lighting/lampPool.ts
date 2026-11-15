@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { lampSceneGain } from '../../model/light'
 
 export interface LampCandidate {
   key: string
@@ -55,20 +56,25 @@ export function assignLampSlots(
   return out
 }
 
-/** Night with auto lights doubles lamps and widens their reach (it used to add a twin light). */
-export const NIGHT_BOOST = 2
+/** Night with auto lights widens lamps' reach (their brightness follows lampSceneGain). */
 export const NIGHT_MIN_DISTANCE = 6
 
 interface LampState {
+  /** Scene intensity at the current daylight. */
   base: number
   distance: number
 }
 
-function lampState(light: THREE.PointLight): LampState {
-  const data = light.userData as { lampBase?: number; lampDistance?: number }
+/**
+ * A lamp light's scene intensity: its candela (set by the item builder) times the scene's
+ * scale for the current daylight. Lights without a candela keep the intensity they came with.
+ */
+function lampState(light: THREE.PointLight | THREE.SpotLight, gain: number): LampState {
+  const data = light.userData as { lampBase?: number; lampDistance?: number; lampCandela?: number }
   if (data.lampBase === undefined) data.lampBase = light.intensity
   if (data.lampDistance === undefined) data.lampDistance = light.distance
-  return { base: data.lampBase, distance: data.lampDistance }
+  const base = typeof data.lampCandela === 'number' ? data.lampCandela * gain : data.lampBase
+  return { base, distance: data.lampDistance }
 }
 
 function shown(obj: THREE.Object3D, root: THREE.Object3D): boolean {
@@ -105,6 +111,10 @@ export function createLampPool(scene: THREE.Scene, camera: THREE.PerspectiveCame
   let pool: THREE.PointLight[] = []
   let keys: (string | null)[] = []
   let lamps: THREE.PointLight[] = []
+  /** Spot lamps take part in the daylight scaling only (no shadow slots). */
+  let spots: THREE.SpotLight[] = []
+  /** Lit lamp shades (userData.shadeNits): their glow follows the same scale. */
+  let shades: THREE.Mesh[] = []
   let frame = 0
   let lastSlots = -1
   // Lamp shadow maps are re-rendered only when their lamp, its place or the project changes;
@@ -145,9 +155,14 @@ export function createLampPool(scene: THREE.Scene, camera: THREE.PerspectiveCame
 
   const collect = () => {
     lamps = []
+    spots = []
+    shades = []
     scene.traverse((obj) => {
-      const light = obj as THREE.PointLight
-      if (light.isPointLight && light.userData?.lampLight) lamps.push(light)
+      if (typeof obj.userData?.shadeNits === 'number') shades.push(obj as THREE.Mesh)
+      const light = obj as THREE.PointLight & THREE.SpotLight
+      if (!light.userData?.lampLight) return
+      if (light.isPointLight) lamps.push(light)
+      else if (light.isSpotLight) spots.push(light)
     })
   }
 
@@ -161,16 +176,29 @@ export function createLampPool(scene: THREE.Scene, camera: THREE.PerspectiveCame
       }
       const refresh = dirtyFrames > 0
       if (dirtyFrames > 0) dirtyFrames--
-      if (frame++ % 10 === 0) collect()
+      // A rebuilt item brings new lamp lights: pick them up at once, so they are not shown
+      // for a few frames at their build-time (daylight) intensity.
+      if (frame++ % 10 === 0 || refresh) collect()
       const night = scene.userData.lampNight === true
+      const daylight = scene.userData.lampDaylight
+      const gain = lampSceneGain(typeof daylight === 'number' ? daylight : 1)
+      for (const spot of spots) {
+        const state = lampState(spot, gain)
+        spot.intensity = state.base
+      }
+      for (const shade of shades) {
+        const material = shade.material as THREE.MeshStandardMaterial
+        const nits = shade.userData.shadeNits as number
+        if (material?.isMeshStandardMaterial) material.emissiveIntensity = nits * gain
+      }
       camera.updateMatrixWorld()
       matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
       frustum.setFromProjectionMatrix(matrix, camera.coordinateSystem)
       const byKey = new Map<string, { light: THREE.PointLight; intensity: number; distance: number }>()
       const candidates: LampCandidate[] = []
       for (const light of lamps) {
-        const state = lampState(light)
-        const intensity = night ? state.base * NIGHT_BOOST : state.base
+        const state = lampState(light, gain)
+        const intensity = state.base
         const distance = night ? Math.max(state.distance, NIGHT_MIN_DISTANCE) : state.distance
         const live = light.parent != null && shown(light, scene) && intensity > 1e-3
         if (!live) {

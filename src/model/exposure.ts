@@ -20,9 +20,11 @@ export const OUTDOOR_RANGE: EvRange = { min: -0.3, max: 0.3 }
 /**
  * Correction range with the camera inside a room by day. The lift is small on purpose:
  * archviz interiors read real through contrast (sun patches, falloff into the corners), and
- * a meter that opens a room up to grey washes that out.
+ * a meter that opens a room up to grey washes that out. Downwards it has room for a lamp-lit
+ * room at night (three bright lamps meter ~3 stops over the bare room) and for more lamps
+ * than that: the frame darkens before the walls burn.
  */
-export const INDOOR_RANGE: EvRange = { min: -0.75, max: 0.6 }
+export const INDOOR_RANGE: EvRange = { min: -2.5, max: 0.6 }
 /**
  * Highest indoor correction at night. A lamp-lit room metered to grey reads as daytime; a
  * camera at night is let open up only a little, so the room stays a night room.

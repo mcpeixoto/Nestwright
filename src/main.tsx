@@ -7,6 +7,7 @@ import { getPlatform } from './platform'
 import { useSettings } from './settings'
 import { useStore } from './store'
 import './tools'
+import { getEntry } from './catalog/registry'
 import { roomCameraPose } from './model/roomCamera'
 import { App } from './ui/App'
 import { loadTemplate } from './ui/start/loadTemplate'
@@ -25,6 +26,7 @@ window.__nestwright = {
   getController,
   loadTemplate,
   roomCameraPose,
+  getEntry,
   perf: { report: (frames, options) => perfReport(frames, { settle: 30, ...options }) },
   async samplePixels(points) {
     const controller = getController()

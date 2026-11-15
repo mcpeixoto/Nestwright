@@ -303,6 +303,9 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     // The sun look's exposure is the base the sky and fog are authored against; metering and
     // compensation sit on top, so an interior that opens up lets its windows burn.
     const exp = Number.isFinite(look.exposure) ? look.exposure : 0.5
+    // Lamps scale to the ambient they are seen against (lampSceneGain): weak by day, a
+    // clear pool at night. The lamp layer reads this every frame.
+    scene.userData.lampDaylight = look.daylight
     ctx.camera.getWorldPosition(camPos)
     const focus = shadowFocus(project, view, camPos, ctx.camera.near)
     const compensation = useSettings.getState().exposureComp + photoExposure()

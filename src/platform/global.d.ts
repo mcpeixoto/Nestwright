@@ -69,6 +69,8 @@ declare global {
       /** Opens a template the same way the gallery card does. */
       loadTemplate?: (id: string) => boolean
       roomCameraPose?: typeof import('../model/roomCamera').roomCameraPose
+      /** Catalog lookup, so the visual harness can place items (lamps) the way the tool does. */
+      getEntry?: typeof import('../catalog/registry').getEntry
       perf?: {
         /** Waits for 30 quiet frames (no compiles) unless `options.settle` says otherwise. */
         report: (
