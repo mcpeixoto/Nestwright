@@ -3,6 +3,7 @@ import type { MaterialRef } from '../model/types'
 import { getMaterialDef, type MaterialDef } from './library'
 import { albedoTint, loadPbrMaps, pbrScalars, type PbrMaps } from './pbrTextures'
 import { getPatternTextures } from './textures'
+import { reflectRoom } from '../view3d/lighting/reflectionProbe'
 
 const cache = new Map<string, THREE.MeshStandardMaterial>()
 /** Cache key of every material this module handed out, so an outdoor twin can be found from a mesh. */
@@ -47,6 +48,8 @@ export function outdoorVariant<T extends THREE.Material>(material: T): T | THREE
   if (hit) return hit
   const twin = (material as unknown as THREE.MeshStandardMaterial).clone()
   twin.userData = { ...material.userData, outdoor: true }
+  // Outdoors reflects the sky, never the camera's room (clone() does not copy envNode anyway).
+  ;(twin as THREE.MeshStandardMaterial & { envNode?: unknown }).envNode = null
   cache.set(outdoorKey, twin)
   keys.set(twin, outdoorKey)
   // A twin cloned before the scan arrived still has the procedural maps; give it its own swap.
@@ -185,6 +188,8 @@ export function getMaterial(ref: MaterialRef | undefined, options?: MaterialOpti
   // canvas (≈0.5) halves every material's roughness and plaster reads as satin.
   const target = { roughness: mat.roughness, metalness: mat.metalness }
   if (maps && mat.roughnessMap) mat.roughness = target.roughness / maps.roughMean
+  // Indoor instance: reflects the camera's room capture instead of the sky (see reflectionProbe).
+  reflectRoom(mat)
   cache.set(key, mat)
   keys.set(mat, key)
   mat.needsUpdate = true

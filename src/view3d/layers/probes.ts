@@ -1,6 +1,16 @@
 import * as THREE from 'three'
 import {
+  chooseReflectionSlot,
+  reflectionKey,
+  reflectionOrigin,
+  reflectionTier,
+  roomReflectionBox,
+  type ReflectionSlotState,
+  type ReflectionTierSettings,
+} from '../../model/reflectionProbes'
+import {
   levelProbeBox,
+  type ProbeBox,
   probeCellCentre,
   probeIndexCoords,
   probeLevels,
@@ -11,10 +21,12 @@ import {
   type ProbeResolution,
   type ProbeTierSettings,
 } from '../../model/probeGrid'
-import type { Level, Project } from '../../model/types'
+import type { Level, Project, Room } from '../../model/types'
 import { useSettings } from '../../settings'
 import { registerSceneLayer, type SceneViewState } from '../layers'
+import { roomAt } from '../lighting/focus'
 import { PROBE_LAYER, PROBES_PER_BATCH, ProbeBaker, ProbeVolume, type BakeJob } from '../lighting/probeVolume'
+import { REFLECTION_LAYER, ReflectionPool, showRoomReflection } from '../lighting/reflectionProbe'
 import { setPerfExtra, setSettleBusy } from '../perfMonitor'
 import { rendererBackend } from '../render/createRenderer'
 import { renderingHeld } from '../render/hold'
@@ -165,6 +177,73 @@ const stats: ProbeStats = {
 setSettleBusy('probes', () => stats.pending)
 setPerfExtra('probes',() => ({ ...stats, maxStepMs: Math.round(stats.maxStepMs * 10) / 10, lastBakeMs: Math.round(stats.lastBakeMs) }))
 
+export interface ReflectionStats {
+  tier: string
+  slots: number
+  /** Slot on show, -1 for the sky (outdoors, no capture yet). */
+  shown: number
+  room: string | null
+  pending: boolean
+  bakes: number
+  lastBakeMs: number
+  lastBakeFrames: number
+  /** Worst CPU ms of one reflection step (faces or prefilter). */
+  maxStepMs: number
+  faceMs: number
+  prefilterMs: number
+  /** Steps over 30 ms CPU (the first dozen); `face` is the next face to capture, 6 on the prefilter step. */
+  slow: { ms: number; face: number; frame: number; fresh: boolean }[]
+}
+
+const reflectionStats: ReflectionStats = {
+  tier: 'off',
+  slots: 0,
+  shown: -1,
+  room: null,
+  pending: false,
+  bakes: 0,
+  lastBakeMs: 0,
+  lastBakeFrames: 0,
+  maxStepMs: 0,
+  faceMs: 0,
+  prefilterMs: 0,
+  slow: [],
+}
+setSettleBusy('reflections', () => reflectionStats.pending)
+setPerfExtra('reflections', () => ({
+  ...reflectionStats,
+  maxStepMs: Math.round(reflectionStats.maxStepMs * 10) / 10,
+  faceMs: Math.round(reflectionStats.faceMs * 10) / 10,
+  prefilterMs: Math.round(reflectionStats.prefilterMs * 10) / 10,
+  lastBakeMs: Math.round(reflectionStats.lastBakeMs),
+}))
+
+/** Wait after the camera enters a room with no capture before baking it. */
+const ROOM_DELAY_MS = 150
+
+interface ReflectionSlot extends ReflectionSlotState {
+  levelId: string | null
+  parts: unknown[]
+  box: THREE.Box3
+  origin: THREE.Vector3
+  baked: boolean
+  due: number | null
+}
+
+interface ReflectionJob {
+  index: number
+  face: number
+  fresh: boolean
+  started: number
+  frames: number
+  /** Level box the bake sun is fitted to (the level's irradiance box, so the two share a map). */
+  sunBox: THREE.Box3
+}
+
+function toBox3(box: ProbeBox): THREE.Box3 {
+  return new THREE.Box3(new THREE.Vector3(box.min.x, box.min.y, box.min.z), new THREE.Vector3(box.max.x, box.max.y, box.max.z))
+}
+
 registerSceneLayer({
   id: 'probes',
   create(ctx) {
@@ -174,6 +253,8 @@ registerSceneLayer({
     // needs WebGPU's array camera and 3D render targets as three drives them).
     const off = typeof location !== 'undefined' && new URLSearchParams(location.search).get('probes') === 'off'
     const enabled = !off && renderer != null && rendererBackend(renderer) === 'webgpu'
+    // `?reflections=off` keeps the sky in every glossy surface (A/B against room captures).
+    const reflectionsOff = typeof location !== 'undefined' && new URLSearchParams(location.search).get('reflections') === 'off'
     let tier: ProbeTierSettings | null = null
     let tierName = ''
     let slots: Slot[] = []
@@ -185,6 +266,47 @@ registerSceneLayer({
     /** Shadow-casting scene lights, whose pending map refresh must wait for the main view. */
     let casters: Caster[] = []
     let coverFrame = 0
+    /** Box and sun the bake sun's shadow map was last drawn for (see enterCapture). */
+    let sunFit = ''
+
+    // Reflections: a fixed pool of room captures per tier (see lighting/reflectionProbe.ts).
+    let reflTier: ReflectionTierSettings | null = null
+    let pool: ReflectionPool | null = null
+    let rslots: ReflectionSlot[] = []
+    let rjob: ReflectionJob | null = null
+    /** Slot on show, -1 for the sky. */
+    let onShow = -1
+    /** The camera's room this frame, and the slot that holds (or will hold) its capture. */
+    let camRoom: { index: number; room: Room; level: Level } | null = null
+    /** No reflection bake before this (ms): the load precompile must build the capture pipelines first. */
+    let readyAt = performance.now() + FRESH_DELAY_MS
+    let clock = 0
+
+    const clearReflections = () => {
+      showRoomReflection(null)
+      pool?.dispose()
+      pool = null
+      rslots = []
+      rjob = null
+      onShow = -1
+      camRoom = null
+      reflectionStats.slots = 0
+      reflectionStats.shown = -1
+      reflectionStats.pending = false
+    }
+
+    const setupReflections = (name: string) => {
+      clearReflections()
+      reflTier = enabled && !reflectionsOff ? reflectionTier(name) : null
+      reflectionStats.tier = reflTier ? name : 'off'
+      if (!reflTier) return
+      pool = new ReflectionPool(reflTier.slots, reflTier.faceSize)
+      for (let i = 0; i < reflTier.slots; i++) {
+        rslots.push({ key: null, used: 0, levelId: null, parts: [], box: new THREE.Box3(), origin: new THREE.Vector3(), baked: false, due: null })
+      }
+      reflectionStats.slots = rslots.length
+      readyAt = performance.now() + FRESH_DELAY_MS
+    }
 
     // Stands in for the cascaded sun in captures: cascades are fitted to the view camera and
     // would leave other rooms unshadowed. Joins the scene only while a capture renders.
@@ -220,6 +342,7 @@ registerSceneLayer({
       // A tier change rebuilds the post chain and recompiles anyway; this is the only time the
       // light count changes.
       clearSlots()
+      setupReflections(name)
       if (!tier) {
         stats.volumes = 0
         return
@@ -334,6 +457,7 @@ registerSceneLayer({
         if (light.isLight && light.castShadow && light.shadow) casters.push(light)
         if (seenByProbes(obj)) obj.layers.enable(PROBE_LAYER)
         else obj.layers.disable(PROBE_LAYER)
+        if (obj.userData.shade) obj.layers.enable(REFLECTION_LAYER)
       })
     }
 
@@ -342,8 +466,12 @@ registerSceneLayer({
       return sun?.isDirectionalLight ? sun : null
     }
 
-    /** Put the scene in its capture state; returns the undo. */
-    const enterCapture = (current: Job): (() => void) => {
+    /**
+     * Put the scene in its capture state for a bake over `box`; returns the undo. The bake
+     * sun's map is redrawn when `forceShadow` or when it was last fitted to another box or sun
+     * (irradiance and reflection bakes take turns and must not see each other's fit).
+     */
+    const enterCapture = (box: THREE.Box3, volumesOff: boolean, forceShadow: boolean): (() => void) => {
       const sun = keySun()
       const sunVisible = sun?.visible ?? false
       // Shadow cameras copy the rendering camera's layers: a lamp-pool map due for a refresh
@@ -368,7 +496,7 @@ registerSceneLayer({
         const dir = new THREE.Vector3().setFromMatrixPosition(sun.matrixWorld).sub(new THREE.Vector3().setFromMatrixPosition(sun.target.matrixWorld))
         if (dir.lengthSq() < 1e-8) dir.set(0.3, 1, 0.2)
         dir.normalize()
-        const sphere = current.bake.box.getBoundingSphere(new THREE.Sphere())
+        const sphere = box.getBoundingSphere(new THREE.Sphere())
         const r = sphere.radius + 4
         bakeSun.color.copy(sun.color)
         bakeSun.intensity = sun.intensity
@@ -390,14 +518,15 @@ registerSceneLayer({
       scene.add(bakeSun.target)
       bakeSun.updateMatrixWorld()
       bakeSun.target.updateMatrixWorld()
-      if (current.shadowDue) {
+      const fit = `${box.min.toArray().join()}|${box.max.toArray().join()}|${bakeSun.position.toArray().map((v) => v.toFixed(3)).join()}`
+      if (forceShadow || fit !== sunFit) {
         bakeSun.shadow.needsUpdate = true
-        current.shadowDue = false
+        sunFit = fit
       }
       // A first pass captures with the plain fill (no probe light at all); later passes see
       // the volumes' last result, one more bounce each.
       const saved = slots.map((slot) => ({ volume: slot.volume, intensity: slot.volume.intensity, replace: slot.volume.replace }))
-      if (current.pass === 0) for (const slot of slots) slot.volume.intensity = 0
+      if (volumesOff) for (const slot of slots) slot.volume.intensity = 0
       return () => {
         for (const entry of saved) {
           entry.volume.intensity = entry.intensity
@@ -437,7 +566,8 @@ registerSceneLayer({
       stats.baking = true
       current.frames += 1
       const t0 = performance.now()
-      const undo = enterCapture(current)
+      const undo = enterCapture(current.bake.box, current.pass === 0, current.shadowDue)
+      current.shadowDue = false
       try {
         // The first frames of a bake after the scene was rebuilt set up a render object per
         // mesh a capture sees. Ramping the probes per frame (1, 2, 4, then full batches)
@@ -464,6 +594,11 @@ registerSceneLayer({
           stats.lastBakeMs = performance.now() - current.started
           stats.lastBakeFrames = current.frames
           job = null
+          // The room captures on this level saw the old bounce light (or none, on a first
+          // bake): recapture them, so a time-of-day or lamp change reaches the reflections.
+          for (const rslot of rslots) {
+            if (rslot.key && rslot.levelId === current.slot.levelId) rslot.due = Math.min(rslot.due ?? Infinity, performance.now())
+          }
         }
       }
       const spent = performance.now() - t0
@@ -481,6 +616,129 @@ registerSceneLayer({
       }
     }
 
+    const showSlot = (index: number) => {
+      onShow = index
+      reflectionStats.shown = index
+      const slot = index >= 0 ? rslots[index] : undefined
+      const texture = slot && pool ? pool.texture(index) : null
+      if (!slot || !texture) {
+        showRoomReflection(null)
+        return
+      }
+      // Materials scale every environment by scene.environmentIntensity, tuned for the open sky;
+      // a room's capture is the room's own radiance and goes in at 1.
+      const gain = 1 / Math.max(0.05, scene.environmentIntensity)
+      showRoomReflection({ texture, box: slot.box, origin: slot.origin, gain })
+    }
+
+    /** Find the camera's room, give it a slot, mark edited levels dirty and pick what is shown. */
+    const reconcileReflections = (now: number) => {
+      if (!pool || !project || !view) return
+      const source = project
+      clock += 1
+      for (let i = 0; i < rslots.length; i++) {
+        const slot = rslots[i] as ReflectionSlot
+        if (!slot.key) continue
+        const level = source.levels.find((entry) => entry.id === slot.levelId)
+        if (!level) {
+          if (rjob?.index === i) rjob = null
+          slot.key = null
+          slot.levelId = null
+          slot.baked = false
+          slot.due = null
+          continue
+        }
+        const parts = levelParts(level)
+        if (!sameParts(parts, slot.parts)) {
+          slot.parts = parts
+          slot.due = now + EDIT_DEBOUNCE_MS
+          if (rjob?.index === i) rjob = null
+        }
+      }
+      const cam = ctx.camera.position
+      const hit = roomAt(source, view, { x: cam.x, y: cam.y, z: cam.z })
+      if (!hit) {
+        camRoom = null
+        reflectionStats.room = null
+        if (onShow !== -1) showSlot(-1)
+        return
+      }
+      const key = reflectionKey(hit.level.id, hit.room)
+      let index = rslots.findIndex((slot) => slot.key === key)
+      if (index < 0) {
+        index = chooseReflectionSlot(rslots, key, onShow)
+        const slot = rslots[index]
+        if (!slot) return
+        if (rjob?.index === index) rjob = null
+        slot.key = key
+        slot.levelId = hit.level.id
+        slot.parts = levelParts(hit.level)
+        slot.baked = false
+        slot.due = Math.max(now + ROOM_DELAY_MS, readyAt)
+      }
+      const slot = rslots[index] as ReflectionSlot
+      slot.used = clock
+      camRoom = { index, room: hit.room, level: hit.level }
+      reflectionStats.room = hit.room.name
+      // Until the room's own capture lands, the last room's stays up (it is box-projected
+      // onto its own box only, so it reads as a plain reflection here) or the sky.
+      const next = slot.baked ? index : onShow >= 0 && rslots[onShow]?.baked ? onShow : -1
+      showSlot(next)
+    }
+
+    /** One frame of the camera room's capture: some faces, or the prefilter. False when idle. */
+    const stepReflection = (now: number): boolean => {
+      if (!pool || !renderer || !reflTier || !camRoom || !project) return false
+      if (!rjob) {
+        const slot = rslots[camRoom.index]
+        if (!slot || slot.due == null || slot.due > now) return false
+        const box = roomReflectionBox(camRoom.room, camRoom.level)
+        const levelBox = levelProbeBox(camRoom.level)
+        if (!box || !levelBox) {
+          slot.due = null
+          return false
+        }
+        const origin = reflectionOrigin(camRoom.room, camRoom.level)
+        slot.box.copy(toBox3(box))
+        slot.origin.set(origin.x, origin.y, origin.z)
+        slot.due = null
+        rjob = { index: camRoom.index, face: 0, fresh: !slot.baked, started: now, frames: 0, sunBox: toBox3(levelBox) }
+      }
+      const current = rjob
+      const slot = rslots[current.index] as ReflectionSlot
+      current.frames += 1
+      const t0 = performance.now()
+      if (current.face < 6) {
+        const perFrame = current.fresh ? reflTier.freshFacesPerFrame : reflTier.facesPerFrame
+        const undo = enterCapture(current.sunBox, false, false)
+        try {
+          for (let k = 0; k < perFrame && current.face < 6; k++) {
+            pool.captureFace(renderer, scene, slot.origin, current.face)
+            current.face += 1
+          }
+        } finally {
+          undo()
+        }
+        reflectionStats.faceMs = pool.timing.face
+      } else {
+        // The prefilter gets a frame of its own: it is the GPU-heavy part.
+        pool.prefilter(renderer, current.index)
+        reflectionStats.prefilterMs = pool.timing.prefilter
+        slot.baked = true
+        rjob = null
+        reflectionStats.bakes += 1
+        reflectionStats.lastBakeMs = performance.now() - current.started
+        reflectionStats.lastBakeFrames = current.frames
+        if (camRoom.index === current.index || onShow === current.index) showSlot(current.index)
+      }
+      const spent = performance.now() - t0
+      reflectionStats.maxStepMs = Math.max(reflectionStats.maxStepMs, spent)
+      if (spent > 30 && reflectionStats.slow.length < 12) {
+        reflectionStats.slow.push({ ms: Math.round(spent), face: current.face, frame: current.frames, fresh: current.fresh })
+      }
+      return true
+    }
+
     return {
       sync(next, state) {
         project = next
@@ -495,8 +753,20 @@ registerSceneLayer({
           if (coverFrame++ % 60 === 0) refreshCovers()
           const now = performance.now()
           reconcile(now)
-          step(now)
+          reconcileReflections(now)
+          // One kind of capture per frame. The camera room's reflection goes first: it is a
+          // handful of frames, while an irradiance bake runs for seconds.
+          let reflected = false
+          try {
+            reflected = stepReflection(now)
+          } catch (err) {
+            console.error('[nestwright] reflection bake failed', err)
+            rjob = null
+          }
+          if (!reflected) step(now)
           stats.pending = job != null || slots.some((slot) => slot.due != null && slot.levelId != null)
+          const camSlot = camRoom ? rslots[camRoom.index] : undefined
+          reflectionStats.pending = rjob != null || (camSlot?.due != null)
         } catch (err) {
           console.error('[nestwright] probe bake failed', err)
           job = null
@@ -531,7 +801,7 @@ registerSceneLayer({
         }
         refreshCovers()
         baker.aim(fake.bake.positions, 0, PROBES_PER_BATCH)
-        const undo = enterCapture(fake)
+        const undo = enterCapture(fake.bake.box, false, false)
         const culled: THREE.Object3D[] = []
         scene.traverse((obj) => {
           if (obj.frustumCulled) {
@@ -560,6 +830,27 @@ registerSceneLayer({
           renderer.setMRT(null)
           renderer.setRenderTarget(baker.target)
           await renderer.compileAsync(scene, baker.camera)
+          if (pool) {
+            // The room captures render with a plain camera into a cube face: other pipelines
+            // than the probe batch's array camera. Same dance (empty render, then compile),
+            // then one prefilter per slot, which allocates its PMREM and builds those shaders.
+            const face = pool.cubeCamera.children[0] as THREE.Camera
+            pool.cubeCamera.position.copy(centre)
+            pool.cubeCamera.updateMatrixWorld(true)
+            const layers = face.layers.mask
+            face.layers.set(31)
+            try {
+              pool.captureFace(renderer, scene, centre, 0)
+            } finally {
+              face.layers.mask = layers
+            }
+            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+            renderer.setMRT(null)
+            renderer.setRenderTarget(pool.capture, 0, 0)
+            await renderer.compileAsync(scene, face)
+            renderer.setRenderTarget(previous)
+            for (let i = 0; i < pool.slots; i++) pool.prefilter(renderer, i)
+          }
         } catch (err) {
           console.warn('[nestwright] probe precompile failed', err)
         } finally {
@@ -569,9 +860,11 @@ registerSceneLayer({
           undo()
         }
         stats.precompiles.push(Math.round(performance.now() - t0))
+        readyAt = Math.max(readyAt, performance.now() + 100)
       },
       dispose() {
         clearSlots()
+        clearReflections()
         baker?.dispose()
         baker = null
         bakeSun.dispose()

@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { ModelBounds } from '../../model/modelFit'
+import { reflectRoom } from '../../view3d/lighting/reflectionProbe'
 
 /** One drawable piece of a model: baked into model space, shared by every item using it. */
 export interface ModelPart {
@@ -66,6 +67,8 @@ export function gameMaterial(source: THREE.Material, key: string): { material: T
     material.depthWrite = false
   }
   material.userData = { ...material.userData, model: key }
+  // Furniture stands indoors: it reflects the camera's room, not the sky (see reflectionProbe).
+  reflectRoom(material)
   return { material, glass }
 }
 
