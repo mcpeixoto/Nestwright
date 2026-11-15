@@ -29,6 +29,8 @@ export interface SceneLayerContext {
 export interface SceneLayer {
   sync(project: Project, state: SceneViewState): void
   update?(dt: number, elapsed: number): void
+  /** Compile the layer's own off-screen pipelines while the view holds frames (project load, tier change). */
+  precompile?(): Promise<void>
   dispose(): void
 }
 

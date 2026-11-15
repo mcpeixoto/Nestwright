@@ -28,6 +28,8 @@ export interface PerfReport {
   programs: number
   gpuMemMB: number
   jsHeapMB?: number
+  /** Named diagnostics from setPerfExtra (auto-exposure, light probes). */
+  extra?: Record<string, unknown>
 }
 
 export interface PerfReportOptions {
@@ -83,6 +85,48 @@ interface PendingReport {
 }
 let pending: PendingReport | null = null
 
+const busyChecks = new Map<string, () => boolean>()
+
+/**
+ * Work that should finish before a settled report starts capturing (a probe bake, the
+ * exposure still adapting), so the window measures the steady view and a still taken after
+ * it shows the converged frame. `settle: 0` reports ignore it and measure that work instead.
+ */
+export function setSettleBusy(name: string, busy: () => boolean): void {
+  busyChecks.set(name, busy)
+}
+
+function settleBusy(): boolean {
+  for (const busy of busyChecks.values()) {
+    try {
+      if (busy()) return true
+    } catch {
+      /* a broken check does not hold the report */
+    }
+  }
+  return false
+}
+
+const extras = new Map<string, () => unknown>()
+
+/** Adds a named diagnostic (exposure, probe bake state) to every perf report. */
+export function setPerfExtra(name: string, read: () => unknown): void {
+  extras.set(name, read)
+}
+
+function readExtras(): Record<string, unknown> | undefined {
+  if (extras.size === 0) return undefined
+  const out: Record<string, unknown> = {}
+  for (const [name, read] of extras) {
+    try {
+      out[name] = read()
+    } catch {
+      out[name] = null
+    }
+  }
+  return out
+}
+
 function jsHeapMB(): number | undefined {
   const memory = (performance as Performance & { memory?: { usedJSHeapSize?: number } }).memory
   const bytes = memory?.usedJSHeapSize
@@ -114,6 +158,8 @@ function buildReport(timing: CaptureTiming, waiter: PendingReport): PerfReport {
   }
   const heap = jsHeapMB()
   if (heap != null) report.jsHeapMB = heap
+  const extra = readExtras()
+  if (extra) report.extra = extra
   return report
 }
 
@@ -157,7 +203,7 @@ export function recordFrame(renderer: PerfRenderer, scene: GpuScene, dtMs: numbe
   latest.height = renderer.domElement.height
   latest.pixelRatio = renderer.getPixelRatio()
   let finishing = false
-  if (pending && !pending.capturing && pending.settle.push(latest.programs, renderingHeld())) {
+  if (pending && !pending.capturing && pending.settle.push(latest.programs, renderingHeld() || settleBusy())) {
     pending.capturing = true
     pending.programsAtStart = latest.programs
     capture.start(pending.frames)

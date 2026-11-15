@@ -3,6 +3,7 @@ import { renderOutput } from 'three/tsl'
 import type { GraphicsQuality } from '../../settings'
 import { getPhotoSnapshot, isPhotoMode } from '../../ui/photoSession'
 import { qualityProfile, type QualityProfile } from '../render/quality'
+import { ExposureMeter } from './autoExposure'
 import { dofBokehScale, dofFocalLength, dofFocus } from './effects'
 import { createScenePass, type CameraMotion } from './gbuffer'
 import {
@@ -60,6 +61,8 @@ export class PostPipeline {
   private framesSinceReset = 0
   private scenePass: PassNode | null = null
   private motion: CameraMotion | null = null
+  /** Auto-exposure meter on the HDR scene colour; primary view only (the chain exists only there). */
+  private meter: ExposureMeter | null = null
 
   constructor(
     private readonly renderer: THREE.WebGPURenderer,
@@ -154,6 +157,10 @@ export class PostPipeline {
     try {
       this.pipeline.render()
       this.framesSinceReset += 1
+      if (this.scenePass) {
+        this.meter ??= new ExposureMeter()
+        this.meter.run(this.renderer, this.scenePass.getTexture('output'))
+      }
     } catch (err) {
       console.error(err)
       this.broken = true
@@ -181,6 +188,8 @@ export class PostPipeline {
 
   dispose(): void {
     this.disposePipeline()
+    this.meter?.dispose()
+    this.meter = null
   }
 
   private build(profile: QualityProfile, photo: boolean): THREE.RenderPipeline | null {

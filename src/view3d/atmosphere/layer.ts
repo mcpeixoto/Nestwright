@@ -16,6 +16,17 @@ import { clockTime } from './clock'
 import { createClouds } from './clouds'
 import { createGradedSky, type GradedSky, type SkyGrade } from './gradeSky'
 import { createPrecip, driftPrecip } from './precip'
+import { autoExposureState, stepAutoExposure } from '../post/autoExposure'
+import { aoIndirectCap, aoStrength } from '../post/effects'
+
+/**
+ * GTAO weight and indirect-share cap with the camera in a room (1 and 0.5 outside). The
+ * weight stays 1: above it, GTAO on normal-mapped roof tiles seen through a cutaway turned the
+ * tile gaps black, with no measurable gain in the rooms. The higher share cap lets AO darken
+ * more of each pixel indoors, where nearly all light is indirect.
+ */
+const INDOOR_AO_STRENGTH = 1
+const INDOOR_AO_INDIRECT_CAP = 0.8
 import { createSkyParams, writeSkyParams, type SkyParams } from './skyParams'
 import { createStars } from './stars'
 import { activeTone, rendererExposure, toneMappingFor } from './toneMap'
@@ -154,6 +165,8 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   const moonDir = new THREE.Vector3()
   const camPos = new THREE.Vector3()
   let envTimer = 0
+  /** Seconds since apply() last advanced the auto-exposure. */
+  let frameDt = 0
   let pendingKey = ''
   const background = new THREE.Color()
   const skyState = createSkyParams()
@@ -287,12 +300,23 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
       moon.intensity = look.intensity
     }
     const dark = alt < 0.04
-    const exposure = look.exposure * photoExposure()
-    const exp = Number.isFinite(exposure) ? exposure : 0.5
+    // The sun look's exposure is the base the sky and fog are authored against; metering and
+    // compensation sit on top, so an interior that opens up lets its windows burn.
+    const exp = Number.isFinite(look.exposure) ? look.exposure : 0.5
+    ctx.camera.getWorldPosition(camPos)
+    const focus = shadowFocus(project, view, camPos, ctx.camera.near)
+    const compensation = useSettings.getState().exposureComp + photoExposure()
+    const gain = stepAutoExposure(frameDt, exp, focus.indoor, compensation, look.daylight)
+    frameDt = 0
+    // Rooms lean on contact shadows (furniture undersides, corners) far more than exteriors:
+    // occlusion grows with the smoothed indoor share, so exteriors keep their tuned AO.
+    const inside = autoExposureState().indoor
+    aoStrength.value = 1 + (INDOOR_AO_STRENGTH - 1) * inside
+    aoIndirectCap.value = 0.5 + (INDOOR_AO_INDIRECT_CAP - 0.5) * inside
     const tone = activeTone()
     if (ctx.renderer) {
       ctx.renderer.toneMapping = toneMappingFor(tone)
-      ctx.renderer.toneMappingExposure = rendererExposure(exp, tone)
+      ctx.renderer.toneMappingExposure = rendererExposure(exp * gain, tone)
       ctx.renderer.setClearColor(background)
     }
     const cloudiness = THREE.MathUtils.clamp(env.cloudiness ?? 0, 0, 1)
@@ -318,10 +342,9 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     const fillDir = sunKey ? moonDir : unit
     moon.target.position.copy(center)
     moon.position.copy(center).addScaledVector(fillDir, 60)
-    ctx.camera.getWorldPosition(camPos)
     sunShadow.update({
       tier: nextQuality,
-      focus: shadowFocus(project, view, camPos, ctx.camera.near),
+      focus,
       night: !sunKey,
       active: sun.intensity > 0.02,
       webgl: rendererBackend(ctx.renderer) === 'webgl2',
@@ -372,8 +395,9 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
         console.error(err)
       }
     },
-    update(_dt, elapsed) {
+    update(dt, elapsed) {
       try {
+        frameDt += Number.isFinite(dt) && dt > 0 ? dt : 0
         sky.position.copy(ctx.camera.position)
         clouds.mesh.position.copy(ctx.camera.position)
         stars.points.position.copy(ctx.camera.position)

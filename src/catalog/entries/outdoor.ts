@@ -126,7 +126,7 @@ const entries: CatalogEntry[] = [
     defaultSize: { w: 0.8, d: 0.8, h: 0.4 },
     price: 240,
     materialSlots: { body: ref('metal-black'), fire: ref('paint-terracotta') },
-    light: { color: '#ff8a3d', intensity: 16, distance: 5, offsetY: 0.25 },
+    light: { color: '#ff8a3d', intensity: 16, lumens: 600, kelvin: 1800, distance: 5, offsetY: 0.25 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()
