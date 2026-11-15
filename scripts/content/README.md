@@ -49,6 +49,8 @@ Offline tools that turn CC0 and CC-BY 4.0 sources into the files under `public/c
 
 ambientCG's `dimensionX` is centimetres (`Concrete034` reports 110 for a 1.1 m tile).
 
+Optional on texture entries: `albedoContrast` (0–1, default 1) lerps the albedo toward its mean in linear light before encoding, and AO toward white by the same factor. Painted plaster is nearly one colour, so its character has to come from the normal and roughness maps. `normalScale` (default 1) sets the normal strength in the game; plaster uses about 0.5.
+
 `kind` is `texture`, `model` or `hdri`. `provider` is `polyhaven`, `ambientcg`, `sketchfab` or `local`. `resolution` is `1k`, `2k` or `4k`. Optional `units` is `m` (default), `cm` or `mm` and applies to models. Optional `tileMeters` is the fallback real-world width of one texture repeat.
 
 ## Commands
