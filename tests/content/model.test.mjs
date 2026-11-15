@@ -9,7 +9,18 @@ import { MeshoptDecoder } from 'meshoptimizer'
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 import { KTX_CREATE_ARGS, TOKTX_ARGS, encodeCommand } from '../../scripts/content/lib/ktx.mjs'
-import { capTriangles, countTriangles, dropMaterials, keepNode, modelEncodeRole, processModel, stripTextures } from '../../scripts/content/lib/model.mjs'
+import {
+  alphaMapCandidates,
+  capTriangles,
+  countTriangles,
+  cutoutTextures,
+  dropMaterials,
+  keepNode,
+  modelEncodeRole,
+  processModel,
+  stripTextures,
+  withAlpha,
+} from '../../scripts/content/lib/model.mjs'
 import { applyBottomCentre } from '../../scripts/content/lib/place.mjs'
 import { assertEntry } from '../../scripts/content/lib/sources.mjs'
 import { unitsToMetres } from '../../scripts/content/lib/tile.mjs'
@@ -60,6 +71,38 @@ async function readGlb(path) {
     .registerDependencies({ 'meshopt.decoder': MeshoptDecoder })
     .read(path)
 }
+
+describe('leaf cut-outs', () => {
+  it('finds the alpha map next to a colour map', () => {
+    expect(alphaMapCandidates('textures/plant_leaves_diff_1k.jpg')).toEqual([
+      'textures/plant_leaves_alpha_1k.png',
+      'textures/plant_leaves_alpha_1k.jpg',
+    ])
+    expect(alphaMapCandidates('textures/plant_leaves_rough_1k.jpg')).toEqual([])
+  })
+
+  it('lists only the colour maps of MASK and BLEND materials', () => {
+    const doc = new Document()
+    const leaf = doc.createTexture('leaf')
+    const wood = doc.createTexture('wood')
+    doc.createMaterial('leaves').setAlphaMode('MASK').setBaseColorTexture(leaf)
+    doc.createMaterial('pot').setBaseColorTexture(wood)
+    expect([...cutoutTextures(doc)]).toEqual([leaf])
+  })
+
+  it('packs a grey map into the alpha of an RGB image', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'nw-alpha-'))
+    const colour = await sharp({ create: { width: 8, height: 8, channels: 3, background: '#40a040' } }).jpeg().toBuffer()
+    const alphaPath = join(dir, 'a.png')
+    await sharp({ create: { width: 4, height: 4, channels: 3, background: '#808080' } }).png().toFile(alphaPath)
+    const merged = await withAlpha(colour, alphaPath)
+    const meta = await sharp(merged).metadata()
+    expect(meta.channels).toBe(4)
+    expect(meta.width).toBe(8)
+    const stats = await sharp(merged).stats()
+    expect(stats.channels[3]?.mean).toBeCloseTo(128, 0)
+  })
+})
 
 describe('model variants, triangle cap and LOD textures', () => {
   it('keeps one named node with its world position and rejects an unknown name', async () => {

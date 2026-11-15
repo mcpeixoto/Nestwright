@@ -6,16 +6,16 @@
   "sourceUrl": "https://polyhaven.com/a/potted_plant_02",
   "author": "Rico Cilliers",
   "licence": "CC0",
-  "fetchedAt": "2026-11-15T03:34:12.505Z",
-  "sha256Source": "992b7ef68deba1b213d7d6de4a44c0cf4771b0632626cd49512cda5b453d50a4",
+  "fetchedAt": "2026-11-15T04:34:29.809Z",
+  "sha256Source": "b0be1ab9f007a0930a9e494336eab9178ce56f140c57a1159c0d010589f533d9",
   "targets": {
     "catalogId": "monstera"
   },
   "files": [
     {
       "path": "models/potted-plant-02-model/potted-plant-02-model.glb",
-      "bytes": 2727728,
-      "sha256": "432a9da6ab1ae9d01d43b7adda060a616aa2c7ed68b3c969f9860e588f2ec27f"
+      "bytes": 2761944,
+      "sha256": "b7f27f06199e15d774c0ddc791efe8e42af1588e294f50e5b7b98f39b534874d"
     },
     {
       "path": "models/potted-plant-02-model/potted-plant-02-model.lod1.glb",

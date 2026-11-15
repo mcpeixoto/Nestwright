@@ -3,6 +3,7 @@ import { AchievementsPage } from '../achievements/panel'
 import { setHelpPage, useHelpPage } from '../achievements/helpPage'
 import { useTranslate } from '../i18n'
 import { T } from '../i18n/T'
+import { CreditsPage } from './CreditsPage'
 import { listTools } from '../tools/registry'
 import { replayTour } from './onboarding/Tour'
 import { formatShortcut, isHelpOpen, listShortcuts, setHelpOpen, subscribeHelp } from './shortcuts'
@@ -103,8 +104,17 @@ export function HelpDialog() {
           >
             {tr('Achievements')}
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={page === 'credits'}
+            className={page === 'credits' ? 'on' : ''}
+            onClick={() => setHelpPage('credits')}
+          >
+            {tr('Credits')}
+          </button>
         </div>
-        {page === 'achievements' ? <AchievementsPage /> : <ShortcutsPage />}
+        {page === 'achievements' ? <AchievementsPage /> : page === 'credits' ? <CreditsPage /> : <ShortcutsPage />}
     </Modal>
   )
 }

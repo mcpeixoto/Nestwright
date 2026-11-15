@@ -3,9 +3,9 @@ import { EXTMeshoptCompression, EXTTextureWebP, KHRONOS_EXTENSIONS, KHRTextureBa
 import { cloneDocument, dedup, meshopt, prune, resample, simplify, weld } from '@gltf-transform/functions'
 import { Buffer } from 'node:buffer'
 import { MeshoptDecoder, MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer'
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import sharp from 'sharp'
 import { encodeMap } from './textures.mjs'
 import { applyBottomCentre } from './place.mjs'
@@ -74,17 +74,69 @@ export function modelEncodeRole(role) {
   return 'albedo'
 }
 
-async function compressTextures(document, { limit, webp, env }) {
+/**
+ * Where Poly Haven keeps the cut-out of a colour map: `x_leaves_diff_1k.jpg` →
+ * `x_leaves_alpha_1k.{png,jpg}` (candidates, in order of preference).
+ */
+export function alphaMapCandidates(uri) {
+  if (!uri || !/_diff_/.test(uri)) return []
+  const base = uri.replace(/_diff_/, '_alpha_').replace(/\.[a-z0-9]+$/i, '')
+  return [`${base}.png`, `${base}.jpg`]
+}
+
+/** Base-colour textures of MASK or BLEND materials: they need an alpha channel. */
+export function cutoutTextures(document) {
+  const out = new Set()
+  for (const material of document.getRoot().listMaterials()) {
+    const texture = material.getBaseColorTexture()
+    if (texture && material.getAlphaMode() !== 'OPAQUE') out.add(texture)
+  }
+  return out
+}
+
+/** RGB of `image` with the grey `alphaPath` as its alpha channel (resized to match). */
+export async function withAlpha(image, alphaPath) {
+  const meta = await sharp(image).metadata()
+  const width = meta.width ?? 0
+  const height = meta.height ?? 0
+  if (!width || !height) return image
+  // Two passes: sharp orders removeAlpha after joinChannel within one pipeline.
+  const alpha = await sharp(alphaPath).resize(width, height, { fit: 'fill' }).extractChannel(0).raw().toBuffer()
+  const rgb = await sharp(image).removeAlpha().raw().toBuffer()
+  return sharp(rgb, { raw: { width, height, channels: 3 } })
+    .joinChannel(alpha, { raw: { width, height, channels: 1 } })
+    .png()
+    .toBuffer()
+}
+
+async function existing(paths) {
+  for (const path of paths) {
+    try {
+      await access(path)
+      return path
+    } catch {
+      /* next */
+    }
+  }
+  return null
+}
+
+async function compressTextures(document, { limit, webp, env, sourceDir }) {
   const textures = document.getRoot().listTextures()
   if (textures.length === 0) return
+  const cutouts = cutoutTextures(document)
   const scratch = await mkdtemp(join(tmpdir(), 'nestwright-model-'))
   try {
     if (webp) document.createExtension(EXTTextureWebP).setRequired(true)
     else document.createExtension(KHRTextureBasisu).setRequired(true)
     for (const texture of textures) {
-      const image = texture.getImage()
+      let image = texture.getImage()
       if (!image) continue
       const role = textureRole(document, texture)
+      if (cutouts.has(texture) && sourceDir) {
+        const alphaPath = await existing(alphaMapCandidates(texture.getURI()).map((uri) => join(sourceDir, uri)))
+        if (alphaPath) image = await withAlpha(Buffer.from(image), alphaPath)
+      }
       const resized = sharp(Buffer.from(image)).resize(limit, limit, { fit: 'inside', withoutEnlargement: true })
       if (webp) {
         texture.setImage(new Uint8Array(await resized.webp({ quality: 80 }).toBuffer()))
@@ -219,7 +271,7 @@ export async function processModel(input, { key, outDir, scale = 1, resolution =
   await capTriangles(document, maxTriangles)
   const lod = await buildLod(document)
   lod.setLogger(new Logger(Logger.Verbosity.WARN))
-  await compressTextures(document, { limit: modelTextureLimit(resolution), webp, env })
+  await compressTextures(document, { limit: modelTextureLimit(resolution), webp, env, sourceDir: dirname(input) })
   const triangles = countTriangles(document)
   const lodTriangles = countTriangles(lod)
   const materials = materialNames(document)

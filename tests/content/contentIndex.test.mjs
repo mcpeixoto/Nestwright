@@ -37,6 +37,42 @@ describe('content index', () => {
     expect(index.textures.a.meanOrm).toBeUndefined()
   })
 
+  it('lists models by catalog id with both LODs, and credits every asset', () => {
+    const index = buildContentIndex([
+      manifest('a-tex', 'a'),
+      {
+        key: 'sofa-02-model',
+        kind: 'model',
+        sourceId: 'sofa_02',
+        author: 'Someone',
+        licence: 'CC0',
+        sourceUrl: 'https://polyhaven.com/a/sofa_02',
+        targets: { catalogId: 'sofa-3' },
+        files: [{ path: 'models/sofa-02-model/sofa-02-model.glb' }, { path: 'models/sofa-02-model/sofa-02-model.lod1.glb' }],
+        model: { bounds: { w: 1.8, d: 0.8, h: 0.7 }, triangles: 2728 },
+      },
+      { key: 'flower-model', kind: 'model', targets: { species: 'flowers' }, files: [{ path: 'models/flower-model/flower-model.glb' }] },
+    ])
+    expect(index.models).toEqual({
+      'sofa-3': {
+        key: 'sofa-02-model',
+        lod0: 'models/sofa-02-model/sofa-02-model.glb',
+        lod1: 'models/sofa-02-model/sofa-02-model.lod1.glb',
+        bounds: { w: 1.8, d: 0.8, h: 0.7 },
+        triangles: 2728,
+      },
+    })
+    expect(index.credits.map((c) => c.key)).toEqual(['a-tex', 'flower-model', 'sofa-02-model'])
+    expect(index.credits[2]).toEqual({
+      key: 'sofa-02-model',
+      kind: 'model',
+      name: 'Sofa 02',
+      author: 'Someone',
+      licence: 'CC0',
+      sourceUrl: 'https://polyhaven.com/a/sofa_02',
+    })
+  })
+
   it('averages the packed ORM, using the fills for missing maps', async () => {
     expect(await ormMeans({}, 4, 4)).toEqual([1, 0.502, 0])
   })

@@ -16,9 +16,31 @@ export interface ContentTexture {
   maps: { albedo: string; normal?: string; orm?: string }
 }
 
+/** A furniture model in the pack, by catalog id. LOD1 carries no textures (see src/catalog/models). */
+export interface ContentModel {
+  key: string
+  lod0: string
+  lod1?: string
+  bounds?: { w: number; d: number; h: number }
+  triangles?: number
+}
+
+/** One third-party asset for the Credits screen. */
+export interface ContentCredit {
+  key: string
+  kind: 'texture' | 'model'
+  name: string
+  author: string
+  licence: string
+  sourceUrl: string
+}
+
 export interface ContentIndex {
   version: number
   textures: Record<string, ContentTexture>
+  /** Packs before content-v3 have no models or credits. */
+  models?: Record<string, ContentModel>
+  credits?: ContentCredit[]
 }
 
 export interface PbrMaps {
@@ -141,12 +163,13 @@ export function setPbrRenderer(next: THREE.WebGPURenderer): void {
   for (const resume of ready.splice(0)) resume()
 }
 
-function whenRenderer(): Promise<void> {
+export function whenRenderer(): Promise<void> {
   if (renderer) return Promise.resolve()
   return new Promise((resolve) => ready.push(resolve))
 }
 
-function getLoader(): KTX2Loader {
+/** The one KTX2 loader (and transcoder workers) the texture sets and the models share. */
+export function getLoader(): KTX2Loader {
   if (loader) return loader
   loader = new KTX2Loader()
   const path = transcoderPath()

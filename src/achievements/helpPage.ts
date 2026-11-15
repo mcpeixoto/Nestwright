@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
-export type HelpPage = 'shortcuts' | 'achievements'
+export type HelpPage = 'shortcuts' | 'achievements' | 'credits'
 
 let page: HelpPage = 'shortcuts'
 const listeners = new Set<() => void>()

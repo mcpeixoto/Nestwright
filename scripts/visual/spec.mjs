@@ -142,6 +142,8 @@ export function parseArgs(argv) {
     quality: /** @type {string | null} */ (null),
     /** Launch Chromium without vsync or a frame-rate cap, for headroom timings. */
     novsync: false,
+    /** Load with ?models=off: procedural furniture, for A/B against the scanned models. */
+    noModels: false,
     help: false,
   }
   for (let i = 0; i < argv.length; i++) {
@@ -170,6 +172,7 @@ export function parseArgs(argv) {
       if (!QUALITIES.includes(value)) throw new Error(`--quality must be one of ${QUALITIES.join(', ')}, got ${value}`)
       opts.quality = value
     } else if (arg === '--novsync') opts.novsync = true
+    else if (arg === '--no-models') opts.noModels = true
     else if (arg === '--help' || arg === '-h') opts.help = true
     else throw new Error(`Unknown argument ${arg}`)
   }

@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from 'react'
+import { hasModel, subscribeModels } from '../../../catalog/models'
 import { getEntry } from '../../../catalog/registry'
 import { catalogName, slotLabelKey } from '../../../i18n/catalog'
 import { useTranslate } from '../../../i18n'
@@ -16,6 +18,12 @@ function ItemSection() {
   const level = useStore(selectActiveLevel)
   const currency = useStore((s) => s.project.budget.currency)
   const item = level?.items.find((entry) => entry.id === id)
+  const catalogId = item?.catalogId ?? ''
+  const scanned = useSyncExternalStore(
+    subscribeModels,
+    () => catalogId !== '' && hasModel(catalogId),
+    () => false,
+  )
   if (!item) return null
   const entry = getEntry(item.catalogId)
   const catalogPrice = entry?.price ?? 0
@@ -79,9 +87,8 @@ function ItemSection() {
           })
         }
       />
-      {slots.map((slot) => (
-        <label className="field" key={slot}>
-          {tr(slotLabelKey(slot, labelOf(slot)))}
+      {slots.map((slot) => {
+        const picker = (
           <MaterialPicker
             value={item.materials[slot] ?? entry?.materialSlots[slot] ?? { id: 'plaster-white' }}
             onChange={(next) =>
@@ -91,8 +98,21 @@ function ItemSection() {
               })
             }
           />
-        </label>
-      ))}
+        )
+        return (
+          <label className="field" key={slot}>
+            {tr(slotLabelKey(slot, labelOf(slot)))}
+            {scanned ? (
+              // A scanned model keeps its own materials; the picks only drive the procedural fallback.
+              <fieldset className="mat-locked" disabled title={tr('Scanned model — material fixed')}>
+                {picker}
+              </fieldset>
+            ) : (
+              picker
+            )}
+          </label>
+        )
+      })}
       <p className="readout">
         {tr('Catalog price')}: {money(catalogPrice)}
       </p>

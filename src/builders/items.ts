@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import { buildModel, modelFor } from '../catalog/models'
+import { occupy } from '../catalog/parts'
 import { getEntry } from '../catalog/registry'
 import type { CatalogEntry } from '../catalog/types'
 import { getMaterial } from '../materials/materialCache'
@@ -33,8 +35,17 @@ export function buildItem(item: Item): THREE.Group {
   root.rotation.y = -item.rotation
 
   const entry = getEntry(item.catalogId)
+  const template = entry ? modelFor(item.catalogId) : null
   if (!entry) {
     root.add(fallback(item))
+  } else if (template) {
+    // Scanned model: its own materials (the item's material picks do not apply).
+    const built = new THREE.Group()
+    built.add(buildModel(template, item.size, !!entry.light))
+    occupy(built, item.size)
+    if (entry.light) tuneLamp(built, item, entry)
+    root.add(built)
+    root.userData.scanned = template.key
   } else {
     const materials: Record<string, THREE.MeshStandardMaterial> = {}
     const slots = new Set([...Object.keys(entry.materialSlots), ...Object.keys(item.materials)])
