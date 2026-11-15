@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { clampEvComp } from '../model/exposure'
 import { qualityProfile, RENDER_SCALE_MAX, RENDER_SCALE_MIN } from '../view3d/render/quality'
+import { combineBriefStars, normalizeBriefStars, raiseBriefStars } from './briefStars'
 
 export type GraphicsQuality = 'low' | 'medium' | 'high' | 'ultra'
 export type AppLanguage = 'en' | 'pt-PT'
@@ -43,6 +44,8 @@ export interface Settings {
   volumeEffects: number
   volumeAmbience: number
   muted: boolean
+  /** Best star count per brief id. Older saved settings omit this. */
+  briefStars: Record<string, number>
 }
 
 const KEY = 'nestwright:settings'
@@ -73,6 +76,7 @@ export const DEFAULT_SETTINGS: Settings = {
   volumeEffects: 70,
   volumeAmbience: 50,
   muted: false,
+  briefStars: {},
 }
 
 function clamp(value: number, min: number, max: number, fallback: number): number {
@@ -115,6 +119,7 @@ export function normalizeSettings(partial: Partial<Settings> | null | undefined)
     volumeEffects: volumePercent(source.volumeEffects, DEFAULT_SETTINGS.volumeEffects),
     volumeAmbience: volumePercent(source.volumeAmbience, DEFAULT_SETTINGS.volumeAmbience),
     muted: source.muted === true,
+    briefStars: normalizeBriefStars(source.briefStars),
   }
 }
 
@@ -141,6 +146,7 @@ export function initialSettings(raw: string | null): Settings {
 export function mergeSettings(current: Settings, partial: Partial<Settings>): Settings {
   const next: Partial<Settings> = { ...current, ...partial }
   if (partial.graphicsQuality !== undefined && partial.qualityAuto === undefined) next.qualityAuto = false
+  if (partial.briefStars !== undefined) next.briefStars = combineBriefStars(current.briefStars, partial.briefStars)
   return normalizeSettings(next)
 }
 
@@ -175,6 +181,15 @@ export const useSettings = create<SettingsState>((set, get) => ({
     persist(next)
   },
 }))
+
+/** Stores a higher star count for one brief. Returns whether the saved count went up. */
+export function commitBriefStars(id: string, stars: number): boolean {
+  const current = useSettings.getState().briefStars
+  const next = raiseBriefStars(current, id, stars)
+  if (next === current) return false
+  useSettings.getState().setSettings({ briefStars: next })
+  return true
+}
 
 /** Thin wrappers over the tier profiles in `view3d/render/quality`. */
 export function shadowMapSize(quality: GraphicsQuality): number {

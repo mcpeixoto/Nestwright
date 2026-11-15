@@ -659,6 +659,8 @@ input, select {
   gap: 8px;
 }
 .start-panel button, .gallery-head button { width: 100%; text-align: left; }
+.start-panel .start-pair { display: flex; gap: 8px; }
+.start-panel .start-pair button { flex: 1; width: auto; }
 .start-primary { background: rgba(63, 184, 175, 0.22); border-color: rgba(63, 184, 175, 0.45); }
 .gallery { width: min(920px, calc(100% - 32px)); }
 .gallery-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
@@ -763,6 +765,24 @@ input, select {
 .budget-variants { width: 100%; border-collapse: collapse; }
 .budget-variants td, .budget-variants th { text-align: left; padding: 2px 4px 2px 0; font-weight: 400; }
 .trace-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.brief-total { color: var(--sand); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.brief-stars { color: var(--sand); letter-spacing: 1px; }
+.floating-panel.stacked:has(.brief-panel) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.brief-panel { display: flex; flex-direction: column; gap: 8px; min-width: 220px; min-height: 0; flex: 1; }
+.brief-panel .brief-score { margin: 0; font-size: 22px; letter-spacing: 2px; color: var(--sand); line-height: 1; }
+.brief-summary .brief-score { margin: 4px 0 8px; font-size: 42px; letter-spacing: 4px; color: var(--sand); line-height: 1; }
+.brief-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; overflow: auto; min-height: 0; }
+.brief-panel .brief-checks { flex: 1; }
+.brief-checks li { display: grid; grid-template-columns: 1.2em 1fr; column-gap: 6px; row-gap: 2px; }
+.brief-checks .mark { color: var(--teal); }
+.brief-checks li.fail .mark { color: var(--danger); }
+.brief-checks .detail { grid-column: 2; color: var(--muted); }
+.brief-usage { margin: 8px 0; color: var(--muted); }
+.brief-usage p { margin: 0 0 4px; }
 
 /* Furniture: multi-item actions and clearance hints. */
 .multi-actions { display: flex; gap: 8px; }

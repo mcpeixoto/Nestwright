@@ -9,7 +9,7 @@ import { presentProject } from './presentProject'
 import { studioApartment } from '../templates'
 import type { Project } from '../model/types'
 
-export type Screen = 'start' | 'gallery' | 'editor'
+export type Screen = 'start' | 'gallery' | 'briefs' | 'editor'
 
 function hasAutosave(): boolean {
   try {
@@ -65,6 +65,11 @@ function subscribeScreen(listener: () => void): () => void {
 
 export function showGallery(): void {
   screen = 'gallery'
+  publish()
+}
+
+export function showBriefs(): void {
+  screen = 'briefs'
   publish()
 }
 

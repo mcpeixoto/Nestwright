@@ -202,7 +202,10 @@ export function TopBar() {
   const canUndo = useStore((s) => s.canUndo)
   const canRedo = useStore((s) => s.canRedo)
   const narrow = useMediaQuery(NARROW_BAR)
-  const panels = usePanelList().filter((panel) => panel.placement === 'bottom' || panel.placement === 'floating')
+  const hasBrief = useStore((s) => s.project.brief != null)
+  const panels = usePanelList().filter(
+    (panel) => (panel.placement === 'bottom' || panel.placement === 'floating') && (panel.id !== 'brief' || hasBrief),
+  )
   const open = useOpenPanelIds()
   const actions = listTopBarActions()
   const wishes = panels.find((panel) => panel.id === 'wishes')
