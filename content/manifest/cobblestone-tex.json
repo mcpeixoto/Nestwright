@@ -1,0 +1,44 @@
+{
+  "key": "cobblestone-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "cobblestone_floor_01",
+  "sourceUrl": "https://polyhaven.com/a/cobblestone_floor_01",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:49.048Z",
+  "sha256Source": "088abf20cbf3f2bfabea94c9273f444e136eeddef50654d5c3c0c1438a3f6526",
+  "targets": {
+    "materialId": "cobblestone"
+  },
+  "files": [
+    {
+      "path": "textures/cobblestone-tex/albedo.ktx2",
+      "bytes": 812661,
+      "sha256": "98fde0167110ce3382b34c1f4d0b3f79a1baeea2bb30d2cbbb8e80f0848f7a20"
+    },
+    {
+      "path": "textures/cobblestone-tex/normal.ktx2",
+      "bytes": 4827905,
+      "sha256": "4a40a835a304e7ff889bf28c3fff9ca622dc85c55551fd4f67ca4eba4477a8dc"
+    },
+    {
+      "path": "textures/cobblestone-tex/orm.ktx2",
+      "bytes": 807527,
+      "sha256": "a2024bedb997bfcdddfa4cf0c267c02f71fa8ee57706e0ffb1093061d27eff1f"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      142.876,
+      130.064,
+      109.805
+    ],
+    "tileMeters": 1,
+    "meanOrm": [
+      0.453,
+      0.731,
+      0
+    ]
+  }
+}

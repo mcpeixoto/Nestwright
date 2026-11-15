@@ -1,0 +1,44 @@
+{
+  "key": "timber-cladding-vertical-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "WoodSiding009",
+  "sourceUrl": "https://ambientcg.com/a/WoodSiding009",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:15:08.775Z",
+  "sha256Source": "941a4ee28ece773174d634f92c0db3963812c88e3663372059bc21632b89f8c2",
+  "targets": {
+    "materialId": "timber-cladding-vertical"
+  },
+  "files": [
+    {
+      "path": "textures/timber-cladding-vertical-tex/albedo.ktx2",
+      "bytes": 399666,
+      "sha256": "126ee296f6f9c6f96024340bd7c0a59f3a09a6eb9b820b87b816775e5daba3cd"
+    },
+    {
+      "path": "textures/timber-cladding-vertical-tex/normal.ktx2",
+      "bytes": 2328218,
+      "sha256": "16e7e16dd68812347fb0a489cd27a930445aee0ff782068fb13c9f1cb31b3dbb"
+    },
+    {
+      "path": "textures/timber-cladding-vertical-tex/orm.ktx2",
+      "bytes": 298533,
+      "sha256": "6b0e08cab4fcb07df75ea35abcd0cf7afd902cf4e3c86c27982a6e86272f94eb"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      201.588,
+      192.868,
+      157.442
+    ],
+    "tileMeters": 1,
+    "meanOrm": [
+      0.976,
+      0.73,
+      0
+    ]
+  }
+}

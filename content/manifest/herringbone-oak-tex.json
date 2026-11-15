@@ -1,0 +1,44 @@
+{
+  "key": "herringbone-oak-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "herringbone_parquet",
+  "sourceUrl": "https://polyhaven.com/a/herringbone_parquet",
+  "author": "Jenelle van Heerden, Sergej Majboroda",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:12:45.944Z",
+  "sha256Source": "e476616c9a922e2ac33e26db3ddff327ba12b21aed921e867c7e912063d0edf8",
+  "targets": {
+    "materialId": "herringbone-oak"
+  },
+  "files": [
+    {
+      "path": "textures/herringbone-oak-tex/albedo.ktx2",
+      "bytes": 783118,
+      "sha256": "d7adfe211abf473ed4c45101e3283df1b3332fb8a78937fb166ac8520c1f7d0a"
+    },
+    {
+      "path": "textures/herringbone-oak-tex/normal.ktx2",
+      "bytes": 3817003,
+      "sha256": "de7a48a81ba49ee02283797812bcc56cc2ef177ce4b5034a1e5af12ab9dc0bc0"
+    },
+    {
+      "path": "textures/herringbone-oak-tex/orm.ktx2",
+      "bytes": 585117,
+      "sha256": "66a6b1346b9ccb905e57030228a8743eb9171a325b6ae654934835d721cf67b5"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      146.86,
+      111.84,
+      77.096
+    ],
+    "tileMeters": 3.4,
+    "meanOrm": [
+      0.973,
+      0.098,
+      0
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "key": "oak-grey-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "wood_planks_grey",
+  "sourceUrl": "https://polyhaven.com/a/wood_planks_grey",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:14.617Z",
+  "sha256Source": "d0ef81a682c6de51688c13ce583777513a37c49cd7abf9d0d9d87d541b0bd12e",
+  "targets": {
+    "materialId": "oak-grey"
+  },
+  "files": [
+    {
+      "path": "textures/oak-grey-tex/albedo.ktx2",
+      "bytes": 806781,
+      "sha256": "34b15cc6d0c9e63e1b8829784554394185124cb0ea8a6bfed67d2eb17b1cf37e"
+    },
+    {
+      "path": "textures/oak-grey-tex/normal.ktx2",
+      "bytes": 4535103,
+      "sha256": "d9caa00ec066740a1f98b68d5ed37373d15a92de2e5e5530078f7d8aa1485885"
+    },
+    {
+      "path": "textures/oak-grey-tex/orm.ktx2",
+      "bytes": 622484,
+      "sha256": "900fa15123d918bff3e00dbe151cd73d4d67a598568c52e4a233e03753c2bab2"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      69.85,
+      68.089,
+      63.437
+    ],
+    "tileMeters": 1.5,
+    "meanOrm": [
+      0.983,
+      0.892,
+      0
+    ]
+  }
+}

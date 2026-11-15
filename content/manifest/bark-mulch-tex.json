@@ -1,0 +1,44 @@
+{
+  "key": "bark-mulch-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "wood_chips",
+  "sourceUrl": "https://polyhaven.com/a/wood_chips",
+  "author": "eye-candy.xyz",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:15:03.781Z",
+  "sha256Source": "f4c5e45a754813d29ac2dcfcaad1d9a4818010caec3a4426438ec82a4bf90c6b",
+  "targets": {
+    "materialId": "bark-mulch"
+  },
+  "files": [
+    {
+      "path": "textures/bark-mulch-tex/albedo.ktx2",
+      "bytes": 920928,
+      "sha256": "1611c523ad1ec985e878049ca3a269389f4aaff0102bc8daf7d1cefdef07df3c"
+    },
+    {
+      "path": "textures/bark-mulch-tex/normal.ktx2",
+      "bytes": 4789688,
+      "sha256": "4ba7baca0843e6218df3d59f739ad707f33eaf173fee231ae1dcb69f8e76148e"
+    },
+    {
+      "path": "textures/bark-mulch-tex/orm.ktx2",
+      "bytes": 795407,
+      "sha256": "c1ee33167fb89634efc1fc8c2efc1cebe7099e66c6017e7b863745b80475bae8"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      80.11,
+      56.019,
+      26.726
+    ],
+    "tileMeters": 2,
+    "meanOrm": [
+      0.867,
+      0.878,
+      0
+    ]
+  }
+}

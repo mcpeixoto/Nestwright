@@ -1,0 +1,44 @@
+{
+  "key": "oak-wide-plank-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "plank_flooring_02",
+  "sourceUrl": "https://polyhaven.com/a/plank_flooring_02",
+  "author": "Dario Barresi, Dimitrios Savva",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:13.875Z",
+  "sha256Source": "b03cbf369aaa35b3ec90f3deac387e40251c535a2760e2d2842e14e1854a82f6",
+  "targets": {
+    "materialId": "oak-wide-plank"
+  },
+  "files": [
+    {
+      "path": "textures/oak-wide-plank-tex/albedo.ktx2",
+      "bytes": 750739,
+      "sha256": "6d9da4c1ecd292a8dabdfc33e9371760bd6ab0f36fd1fb20a9f68e58ab41d416"
+    },
+    {
+      "path": "textures/oak-wide-plank-tex/normal.ktx2",
+      "bytes": 4202909,
+      "sha256": "e6cc4982463f3be60d2bb8db897abe9385f8f5693b57075e7699a19654a8d1cb"
+    },
+    {
+      "path": "textures/oak-wide-plank-tex/orm.ktx2",
+      "bytes": 437918,
+      "sha256": "c4d5f03408796fd5fbdaa6b9a6c62da69e15dabd90d698a10b62d39728925ade"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      153.766,
+      99.926,
+      19.628
+    ],
+    "tileMeters": 1.98,
+    "meanOrm": [
+      0.951,
+      0.343,
+      0
+    ]
+  }
+}

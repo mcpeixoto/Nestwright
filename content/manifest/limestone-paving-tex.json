@@ -1,0 +1,44 @@
+{
+  "key": "limestone-paving-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Tiles139",
+  "sourceUrl": "https://ambientcg.com/a/Tiles139",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:48.189Z",
+  "sha256Source": "6af0ab80e40dcb953501fde70829dd4028e5fe0537d7558697b182c03bf4dd5c",
+  "targets": {
+    "materialId": "limestone-paving"
+  },
+  "files": [
+    {
+      "path": "textures/limestone-paving-tex/albedo.ktx2",
+      "bytes": 754940,
+      "sha256": "0f3b088bd3a2824415612a27db536c68a27fd241086ff9090dd0905135b8aa0b"
+    },
+    {
+      "path": "textures/limestone-paving-tex/normal.ktx2",
+      "bytes": 3651410,
+      "sha256": "1f1c20fb90694a9720df7497eea58417621dc2f19692a277c9e95fe6afe3fd96"
+    },
+    {
+      "path": "textures/limestone-paving-tex/orm.ktx2",
+      "bytes": 602305,
+      "sha256": "972e12281d121113043f067422af494f6d27f9307ea90dc26050c7984e65c272"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      179.498,
+      159.083,
+      137.386
+    ],
+    "tileMeters": 2,
+    "meanOrm": [
+      1,
+      0.514,
+      0
+    ]
+  }
+}

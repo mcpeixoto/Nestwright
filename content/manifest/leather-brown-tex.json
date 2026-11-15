@@ -1,0 +1,44 @@
+{
+  "key": "leather-brown-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "brown_leather",
+  "sourceUrl": "https://polyhaven.com/a/brown_leather",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:25.730Z",
+  "sha256Source": "73b7e8a740e8d9e1657a6a9a2c5ae033dd937332b6bfdc9e59ad5c4400a6c0da",
+  "targets": {
+    "materialId": "leather-brown"
+  },
+  "files": [
+    {
+      "path": "textures/leather-brown-tex/albedo.ktx2",
+      "bytes": 201154,
+      "sha256": "5566e1a4829c230d80dceaadedf6f7e51518a89cacab8bc0a945c9cad70defcc"
+    },
+    {
+      "path": "textures/leather-brown-tex/normal.ktx2",
+      "bytes": 1210869,
+      "sha256": "fd4083ffc605b23d46217ac3588069684137b42455ba0afdd267a54929ebb4e3"
+    },
+    {
+      "path": "textures/leather-brown-tex/orm.ktx2",
+      "bytes": 240640,
+      "sha256": "054d666e7b596d4300a71f6a6d88e28e798fb3359c798328d82b94278563714a"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      80.915,
+      45.364,
+      15.887
+    ],
+    "tileMeters": 0.4,
+    "meanOrm": [
+      0.88,
+      0.662,
+      0
+    ]
+  }
+}

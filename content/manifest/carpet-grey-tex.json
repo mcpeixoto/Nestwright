@@ -1,0 +1,44 @@
+{
+  "key": "carpet-grey-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Carpet001",
+  "sourceUrl": "https://ambientcg.com/a/Carpet001",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:04.601Z",
+  "sha256Source": "0e9915d5c4f5d9b1193be09f529bf225e9fc6590e85c4cb35c170cfb967dcc69",
+  "targets": {
+    "materialId": "carpet-grey"
+  },
+  "files": [
+    {
+      "path": "textures/carpet-grey-tex/albedo.ktx2",
+      "bytes": 202166,
+      "sha256": "729d2af5db2f449f891634bdcaec2dc55a5c9c563baa7cd1ae0c4ecb1ded92f5"
+    },
+    {
+      "path": "textures/carpet-grey-tex/normal.ktx2",
+      "bytes": 1125552,
+      "sha256": "f896fe4ef961dd52251abb4961d90fa838c06f96ce2c0c4922a1913b903bb924"
+    },
+    {
+      "path": "textures/carpet-grey-tex/orm.ktx2",
+      "bytes": 178263,
+      "sha256": "a3e7c90674c81a7a0db8e76d82e11e8bb8d3577a699500d18861aa7fb413cd1d"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      147.245,
+      145.008,
+      138.531
+    ],
+    "tileMeters": 1,
+    "meanOrm": [
+      1,
+      0.834,
+      0
+    ]
+  }
+}

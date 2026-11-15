@@ -1,0 +1,44 @@
+{
+  "key": "cork-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Cork002",
+  "sourceUrl": "https://ambientcg.com/a/Cork002",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:52.078Z",
+  "sha256Source": "5bf5a9af7ce186326f683e05a98d94998e756bea6cc8872ee08aa77d0e5e9b10",
+  "targets": {
+    "materialId": "cork"
+  },
+  "files": [
+    {
+      "path": "textures/cork-tex/albedo.ktx2",
+      "bytes": 223459,
+      "sha256": "5d63d0b3347881fb8d78e355a84ee18e06a41cd8e0502f59723845c0340f27ce"
+    },
+    {
+      "path": "textures/cork-tex/normal.ktx2",
+      "bytes": 1123935,
+      "sha256": "07b020b1e815ff170e50f47a83359ec67b14ff71202e2ad92cdce385f1f52a8a"
+    },
+    {
+      "path": "textures/cork-tex/orm.ktx2",
+      "bytes": 153234,
+      "sha256": "9758b4075ec098011fa87944e732e93a3af78cfa6dcc4833a316339aab9f96bf"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      174.886,
+      129.872,
+      101.373
+    ],
+    "tileMeters": 0.5,
+    "meanOrm": [
+      1,
+      0.702,
+      0
+    ]
+  }
+}

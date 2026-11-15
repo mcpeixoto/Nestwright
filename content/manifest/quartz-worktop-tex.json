@@ -1,0 +1,46 @@
+{
+  "key": "quartz-worktop-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Marble003",
+  "sourceUrl": "https://ambientcg.com/a/Marble003",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:43.816Z",
+  "sha256Source": "5ddee2dca2002e498b6f3f18dc2b60a7aa4bbb3c620f3f0dff4fd54db036ec12",
+  "targets": {
+    "materialId": "quartz-worktop"
+  },
+  "files": [
+    {
+      "path": "textures/quartz-worktop-tex/albedo.ktx2",
+      "bytes": 478106,
+      "sha256": "961576c8b2de1c446da64fdf8cabb167f033c467aece237cbcd9edf328106ee9"
+    },
+    {
+      "path": "textures/quartz-worktop-tex/normal.ktx2",
+      "bytes": 4049716,
+      "sha256": "18b62b3163774617a06a635751c4b510a71cd04cf4ef1b3d6ac2d285fc0790e8"
+    },
+    {
+      "path": "textures/quartz-worktop-tex/orm.ktx2",
+      "bytes": 606892,
+      "sha256": "1ed51e0752a960080aadad03a9f951ad2b3ff15d1c7d60b3d60744150d02671a"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      175.568,
+      182.621,
+      201.45
+    ],
+    "meanOrm": [
+      1,
+      0.176,
+      0
+    ],
+    "tileMeters": 1.4,
+    "albedoContrast": 0.5,
+    "normalScale": 0.5
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "key": "plaster-white-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "white_plaster_02",
+  "sourceUrl": "https://polyhaven.com/a/white_plaster_02",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:11:41.459Z",
+  "sha256Source": "e39f1bf980169163b266f9beb524b06f930265b2c80a83c57466c0e9bce8f560",
+  "targets": {
+    "materialId": "plaster-white"
+  },
+  "files": [
+    {
+      "path": "textures/plaster-white-tex/albedo.ktx2",
+      "bytes": 636409,
+      "sha256": "aa76711394bbe33273fddbf342b375a70cbf63b9f085993e0605c632071c0679"
+    },
+    {
+      "path": "textures/plaster-white-tex/normal.ktx2",
+      "bytes": 4638511,
+      "sha256": "5eb16efd15ff5fbfc7fb48e0740a2d95d9320a5a14108cb16731c31d7b88d5a2"
+    },
+    {
+      "path": "textures/plaster-white-tex/orm.ktx2",
+      "bytes": 678176,
+      "sha256": "7c221b1a3ae3f0984083bb1f75da8d96ee1b81f99ee3e0988a0ca24951272b13"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      143.164,
+      136.873,
+      124.1
+    ],
+    "meanOrm": [
+      0.935,
+      0.907,
+      0
+    ],
+    "tileMeters": 1,
+    "albedoContrast": 0.2,
+    "normalScale": 0.45
+  }
+}

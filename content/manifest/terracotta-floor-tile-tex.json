@@ -1,0 +1,44 @@
+{
+  "key": "terracotta-floor-tile-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "terracotta_floor_tiles",
+  "sourceUrl": "https://polyhaven.com/a/terracotta_floor_tiles",
+  "author": "Dimitrios Savva",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:30.229Z",
+  "sha256Source": "b4e9c6188fc983b070c72b0c444d84f3a747a940f351ea35b080b1e04cf30ab1",
+  "targets": {
+    "materialId": "terracotta-floor-tile"
+  },
+  "files": [
+    {
+      "path": "textures/terracotta-floor-tile-tex/albedo.ktx2",
+      "bytes": 708940,
+      "sha256": "e6878f8dfb65b89b3f4ff2ea5935982573c01726daca08e62a847191e44df154"
+    },
+    {
+      "path": "textures/terracotta-floor-tile-tex/normal.ktx2",
+      "bytes": 4335104,
+      "sha256": "c9e7a97efd5fb62de79e50e7f5d1795a372bf95fad95d8336d7be621b80c22cd"
+    },
+    {
+      "path": "textures/terracotta-floor-tile-tex/orm.ktx2",
+      "bytes": 734101,
+      "sha256": "14025bc8c3314f09ef719c843e2cbec68d64ba08f725fb26f895ea6d7361346a"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      76.675,
+      38.721,
+      25.838
+    ],
+    "tileMeters": 2.08,
+    "meanOrm": [
+      0.935,
+      0.751,
+      0
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "key": "cane-webbing-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Wicker004",
+  "sourceUrl": "https://ambientcg.com/a/Wicker004",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:39.790Z",
+  "sha256Source": "0d25d4b2066afe4251b085ffa6bb2607bd9ce57798a5e69e0fb0e2dd3cf880c3",
+  "targets": {
+    "materialId": "cane-webbing"
+  },
+  "files": [
+    {
+      "path": "textures/cane-webbing-tex/albedo.ktx2",
+      "bytes": 220907,
+      "sha256": "f5b24d3e4048d504ccddbb4435935341c96b5dd06eff4303eeac62d3a6be62fa"
+    },
+    {
+      "path": "textures/cane-webbing-tex/normal.ktx2",
+      "bytes": 1239167,
+      "sha256": "cd488d4e0ab9a2a28aa649a4211a2ea4c7da7cae670e5777ed652fba4b802d4f"
+    },
+    {
+      "path": "textures/cane-webbing-tex/orm.ktx2",
+      "bytes": 217129,
+      "sha256": "0c188dd780cbe13a9cde51f3d0091f7934d4736574f40f98bdb424a5c8c66c37"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      98.893,
+      69.828,
+      49.908
+    ],
+    "tileMeters": 0.25,
+    "meanOrm": [
+      0.837,
+      0.603,
+      0
+    ]
+  }
+}

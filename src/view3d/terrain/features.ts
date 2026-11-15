@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { materialColor, positionWorld, sin, uniform, vec4 } from 'three/tsl'
+import { metricUVs } from '../../builders/uv'
 import { getMaterial } from '../../materials/materialCache'
 import { srgbByteToLinear } from '../colorLinear'
 import { dist, normalize, perp, polygonArea, sub } from '../../model/geometry'
@@ -178,7 +179,7 @@ function ribbonMesh(points: Vec2[], y: number, half: number, material: THREE.Mat
 function segmentBox(a: Vec2, b: Vec2, y: number, height: number, thickness: number, material: THREE.Material): THREE.Mesh | null {
   const length = dist(a, b)
   if (length < 0.05 || height <= 0) return null
-  const geo = new THREE.BoxGeometry(length, height, Math.max(0.04, thickness))
+  const geo = metricUVs(new THREE.BoxGeometry(length, height, Math.max(0.04, thickness)))
   const mesh = new THREE.Mesh(geo, material)
   mesh.position.set((a.x + b.x) / 2, y + height / 2, (a.y + b.y) / 2)
   mesh.rotation.y = _yaw(a.x, a.y, b.x, b.y)
@@ -400,7 +401,7 @@ function buildBoundary(terrain: Terrain): THREE.Group {
   const points = terrain.boundary.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y))
   for (const point of points) {
     const y = sampleHeight(terrain, point.x, point.y)
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.7, 6), wood)
+    const post = new THREE.Mesh(metricUVs(new THREE.CylinderGeometry(0.05, 0.06, 0.7, 6)), wood)
     post.position.set(point.x, (Number.isFinite(y) ? y : 0) + 0.35, point.y)
     post.castShadow = true
     post.receiveShadow = true

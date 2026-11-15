@@ -1,0 +1,44 @@
+{
+  "key": "lawn-fine-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "grass_ground",
+  "sourceUrl": "https://polyhaven.com/a/grass_ground",
+  "author": "Charlotte Baglioni",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:15:24.387Z",
+  "sha256Source": "b45ee5802dac5f099da5f64a57b11b241eb3e8fbf1181cf1b8ffbf49d5f259f9",
+  "targets": {
+    "materialId": "lawn-fine"
+  },
+  "files": [
+    {
+      "path": "textures/lawn-fine-tex/albedo.ktx2",
+      "bytes": 821500,
+      "sha256": "2ce09a7deb6cf75f6d1158bbbe9ad8d3eeb7b7232e19a08cb672282dd1be9e57"
+    },
+    {
+      "path": "textures/lawn-fine-tex/normal.ktx2",
+      "bytes": 4972834,
+      "sha256": "fa1dba650922dd03486f9e292f2cb6a22ac9cc8af539d66d73cd42f8449400d0"
+    },
+    {
+      "path": "textures/lawn-fine-tex/orm.ktx2",
+      "bytes": 812860,
+      "sha256": "f9c3ff08181b8ff0de5b494b2c8cd12bf1fab2b595ad300c44ae16235e84b2d1"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      109.872,
+      96.328,
+      61.871
+    ],
+    "tileMeters": 2.51,
+    "meanOrm": [
+      0.798,
+      0.937,
+      0
+    ]
+  }
+}

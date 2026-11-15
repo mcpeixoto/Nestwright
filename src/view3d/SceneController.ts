@@ -14,6 +14,8 @@ import { isPhotoMode } from '../ui/photoSession'
 import { getRig, type CameraRig } from './rigs'
 import { bindWalkScene } from './rigs/walk'
 import { recordFrame, type PerfRenderer } from './perfMonitor'
+import { setPbrRenderer } from '../materials/pbrTextures'
+import { activeTone, toneMappingFor } from './atmosphere/toneMap'
 import { PostPipeline } from './post/pipeline'
 import { backendPreference, createRenderer, type RendererBackend } from './render/createRenderer'
 import { scheduleAutoTier } from './render/autoTierRunner'
@@ -169,8 +171,9 @@ export class SceneController {
     const renderer = created.renderer
     this.renderer = renderer
     this.backend = created.backend
+    setPbrRenderer(renderer)
     renderer.outputColorSpace = THREE.SRGBColorSpace
-    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMapping = toneMappingFor(activeTone())
     renderer.toneMappingExposure = 0.5
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFShadowMap

@@ -1,0 +1,44 @@
+{
+  "key": "metal-brass-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Metal048A",
+  "sourceUrl": "https://ambientcg.com/a/Metal048A",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:26.907Z",
+  "sha256Source": "92a00c144c23bd820747a5ce01b7019315a0849c5bb1d83815dda182d2c9ea9d",
+  "targets": {
+    "materialId": "metal-brass"
+  },
+  "files": [
+    {
+      "path": "textures/metal-brass-tex/albedo.ktx2",
+      "bytes": 101259,
+      "sha256": "90cc196f4e85fad44aac264f41c4c2daa790da72f5825f74a37e07dbaa50be5c"
+    },
+    {
+      "path": "textures/metal-brass-tex/normal.ktx2",
+      "bytes": 253072,
+      "sha256": "81b994a8851298282a5c4fa52813e1d3a8ca684f333aea936e26f859dd7936a2"
+    },
+    {
+      "path": "textures/metal-brass-tex/orm.ktx2",
+      "bytes": 18920,
+      "sha256": "1d2c030cf89d4a11306cac8e968113daa06d7a66bd8697ac3ad338f542bf95e0"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      254.213,
+      227.21,
+      156.419
+    ],
+    "tileMeters": 0.5,
+    "meanOrm": [
+      1,
+      0.09,
+      1
+    ]
+  }
+}

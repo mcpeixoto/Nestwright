@@ -1,0 +1,44 @@
+{
+  "key": "copper-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Metal047A",
+  "sourceUrl": "https://ambientcg.com/a/Metal047A",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:02.794Z",
+  "sha256Source": "d61378073332d246a4e86c241c7524bbe1d7dd66df7509ddded7325ebfbfc998",
+  "targets": {
+    "materialId": "copper"
+  },
+  "files": [
+    {
+      "path": "textures/copper-tex/albedo.ktx2",
+      "bytes": 168998,
+      "sha256": "dcb739041ba5362b49c847f6b10aea57ef62c1825b868c26bb6f5809f464253d"
+    },
+    {
+      "path": "textures/copper-tex/normal.ktx2",
+      "bytes": 825967,
+      "sha256": "941f6a0f23c3d83474c34a1ed6a97aeb17ffeca3203e5b1274c696e30cdb936f"
+    },
+    {
+      "path": "textures/copper-tex/orm.ktx2",
+      "bytes": 81950,
+      "sha256": "8d5ec57d513b0203bbcb5c1b1517a4295b0fda2546270903c8207c9386c06f83"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      202.88,
+      132.208,
+      92.487
+    ],
+    "tileMeters": 0.4,
+    "meanOrm": [
+      1,
+      0.263,
+      1
+    ]
+  }
+}

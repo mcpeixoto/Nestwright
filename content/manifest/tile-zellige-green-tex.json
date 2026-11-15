@@ -1,0 +1,44 @@
+{
+  "key": "tile-zellige-green-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Tiles032",
+  "sourceUrl": "https://ambientcg.com/a/Tiles032",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:53.979Z",
+  "sha256Source": "33ff989c39ac05a7e0d64fbea4627ba2e47d1c322e597587861c36ecff15853b",
+  "targets": {
+    "materialId": "tile-zellige-green"
+  },
+  "files": [
+    {
+      "path": "textures/tile-zellige-green-tex/albedo.ktx2",
+      "bytes": 275568,
+      "sha256": "4e05cc148f8be365c572b3a89dad7e2e55a8b1a1936dafefa57066f38bdcded4"
+    },
+    {
+      "path": "textures/tile-zellige-green-tex/normal.ktx2",
+      "bytes": 2964092,
+      "sha256": "f8f3a167d4f863191fa5d54c1b620e418746ed2eb2c7008c5534e0109683f2f7"
+    },
+    {
+      "path": "textures/tile-zellige-green-tex/orm.ktx2",
+      "bytes": 131922,
+      "sha256": "91ed242c1db52e08923bbe56c959d431ae2b869cc9cd302f4d1b63d1b4af12c6"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      29.438,
+      78.923,
+      54.551
+    ],
+    "tileMeters": 0.6,
+    "meanOrm": [
+      1,
+      0.208,
+      0
+    ]
+  }
+}

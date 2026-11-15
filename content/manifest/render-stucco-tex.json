@@ -1,0 +1,46 @@
+{
+  "key": "render-stucco-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "white_stucco",
+  "sourceUrl": "https://polyhaven.com/a/white_stucco",
+  "author": "Amal Kumar",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:15:04.922Z",
+  "sha256Source": "9788c6fd15bd38d7a8f2aa1d721ca44e89958ae73b7069786a7a5165eae7ff98",
+  "targets": {
+    "materialId": "render-stucco"
+  },
+  "files": [
+    {
+      "path": "textures/render-stucco-tex/albedo.ktx2",
+      "bytes": 262481,
+      "sha256": "f2094a376408ddb5ca1c4683286c7b0684930106805aa69ddc2c29422b95d7c8"
+    },
+    {
+      "path": "textures/render-stucco-tex/normal.ktx2",
+      "bytes": 4697242,
+      "sha256": "723b4387ee57499fbcca8c1c259e2d262471ea65d6c009cef75eee5a38631531"
+    },
+    {
+      "path": "textures/render-stucco-tex/orm.ktx2",
+      "bytes": 176373,
+      "sha256": "617ed28629cf047f64083d5d907ee03a2f83ab8db9475e66ce63b2862997bf4a"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      215.157,
+      211.123,
+      207.792
+    ],
+    "meanOrm": [
+      0.996,
+      0.881,
+      0
+    ],
+    "tileMeters": 1.998063,
+    "albedoContrast": 0.25,
+    "normalScale": 0.6
+  }
+}

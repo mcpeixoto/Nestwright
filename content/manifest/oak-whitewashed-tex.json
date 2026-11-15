@@ -1,0 +1,44 @@
+{
+  "key": "oak-whitewashed-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "white_planks_clean",
+  "sourceUrl": "https://polyhaven.com/a/white_planks_clean",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:14.329Z",
+  "sha256Source": "4efdfbe439ad2cc59ea30bb4554eb0a5da6cf19c272a12d425243d398609da98",
+  "targets": {
+    "materialId": "oak-whitewashed"
+  },
+  "files": [
+    {
+      "path": "textures/oak-whitewashed-tex/albedo.ktx2",
+      "bytes": 593254,
+      "sha256": "27c09327135211b5c92f12dc38afd3bb3c509b609889242fd4694ff93a161c63"
+    },
+    {
+      "path": "textures/oak-whitewashed-tex/normal.ktx2",
+      "bytes": 4199258,
+      "sha256": "337b7f73f0c968a727274b078d1e42277dcde86f7c8c715faefc4302480eef08"
+    },
+    {
+      "path": "textures/oak-whitewashed-tex/orm.ktx2",
+      "bytes": 520312,
+      "sha256": "3583c9628ab9b28e169b73fd998b07d29361ea06227bea0b3a4f48cb6d5c138b"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      180.469,
+      166.428,
+      157.33
+    ],
+    "tileMeters": 1.8,
+    "meanOrm": [
+      0.95,
+      0.524,
+      0
+    ]
+  }
+}

@@ -4,6 +4,8 @@ import { getMaterialDef, type MaterialDef, type PatternSpec } from './library'
 export interface PatternTextures {
   color: THREE.CanvasTexture
   rough: THREE.CanvasTexture
+  /** Mean of the rough map, 0–1. The material scalar is divided by it (see materialCache). */
+  roughMean: number
 }
 
 const cache = new Map<string, PatternTextures | null>()
@@ -257,6 +259,19 @@ function toTexture(canvas: Paint, colorSpace: THREE.ColorSpace): THREE.CanvasTex
   return tex as THREE.CanvasTexture
 }
 
+/** Mean of the red channel, 0–1 (the rough canvas is grey). 0.5 when pixels cannot be read. */
+function meanRed(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, size: number): number {
+  try {
+    const data = ctx.getImageData(0, 0, size, size).data
+    let sum = 0
+    for (let i = 0; i < data.length; i += 16) sum += data[i]!
+    const mean = sum / (data.length / 16) / 255
+    return mean > 0.02 ? mean : 0.5
+  } catch {
+    return 0.5
+  }
+}
+
 /** Null when no canvas exists (unit tests, headless). Callers fall back to a flat colour. */
 export function getPatternTextures(id: string): PatternTextures | null {
   if (cache.has(id)) return cache.get(id) ?? null
@@ -283,6 +298,7 @@ export function getPatternTextures(id: string): PatternTextures | null {
     const textures = {
       color: toTexture(colorCanvas, THREE.SRGBColorSpace),
       rough: toTexture(roughCanvas, THREE.NoColorSpace),
+      roughMean: meanRed(roughCtx, 512),
     }
     cache.set(id, textures)
     return textures

@@ -1,12 +1,14 @@
 import { sunLook, TWILIGHT_RAD } from '../../model/sunLook'
+import type { ToneMapSetting } from '../../settings'
 import { linearToSrgbByte, srgbByteToLinear } from '../colorLinear'
+import { acesFilmic, DEFAULT_TONE, toneMap } from './toneMap'
 
 /**
- * Display targets for a clear noon. ACES filmic mixes channels (the three.js
- * matrix fit), so a Preetham zenith that is "blue" in linear light comes out
+ * Display targets for a clear noon. The tone mapper (AgX by default, ACES as a setting)
+ * mixes channels, so a Preetham zenith that is "blue" in linear light comes out
  * cyan/mint. `*Scene` values are the linear radiance to write *before* tone
- * mapping so the framebuffer lands on these sRGB bytes. `*Light` is plain
- * sRGB→linear for the environment map (lighting, not a second ACES pass).
+ * mapping so the framebuffer lands on these sRGB bytes under the active curve. `*Light` is
+ * plain sRGB→linear for the environment map (lighting, not a second tone-mapping pass).
  */
 export const NOON_ZENITH_SRGB: readonly [number, number, number] = [95, 140, 200]
 export const NOON_HORIZON_SRGB: readonly [number, number, number] = [190, 205, 220]
@@ -33,10 +35,12 @@ export interface SkyParams {
   rayleigh: number
   mieCoefficient: number
   mieDirectionalG: number
+  /** Look exposure (sunLook × photo). The renderer gets `rendererExposure(exposure, tone)`. */
   exposure: number
+  tone: ToneMapSetting
   zenithDisplay: RGB
   horizonDisplay: RGB
-  /** Linear radiance that ACES maps back to the display bytes. */
+  /** Linear radiance that the tone mapper maps back to the display bytes. */
   zenithScene: RGB
   horizonScene: RGB
   /** sRGB→linear, for the PMREM environment (not inverse-ACES). */
@@ -69,32 +73,11 @@ function mix3(a: readonly [number, number, number], b: readonly [number, number,
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
 }
 
-/** three.js `ACESFilmicToneMapping` (Narkowicz fit + the AP1 matrices + exposure/0.6). */
-export function acesFilmic(color: readonly [number, number, number], exposure: number): RGB {
-  const scale = exposure / 0.6
-  const x = color[0] * scale
-  const y = color[1] * scale
-  const z = color[2] * scale
-  const r = 0.59719 * x + 0.35458 * y + 0.04823 * z
-  const g = 0.076 * x + 0.90834 * y + 0.01566 * z
-  const b = 0.0284 * x + 0.13383 * y + 0.83777 * z
-  const fit = (v: number) => {
-    const a = v * (v + 0.0245786) - 0.000090537
-    const d = v * (0.983729 * v + 0.432951) + 0.238081
-    return d === 0 ? 0 : a / d
-  }
-  const fr = fit(r)
-  const fg = fit(g)
-  const fb = fit(b)
-  return [
-    clamp01(1.60475 * fr - 0.53108 * fg - 0.07367 * fb),
-    clamp01(-0.10208 * fr + 1.10813 * fg - 0.00605 * fb),
-    clamp01(-0.00327 * fr - 0.07276 * fg + 1.07602 * fb),
-  ]
-}
+export { acesFilmic }
 
-export function displayedSrgb(scene: readonly [number, number, number], exposure: number): RGB {
-  const mapped = acesFilmic(scene, exposure)
+/** sRGB bytes on screen for scene radiance at a look exposure, under the chosen tone mapper. */
+export function displayedSrgb(scene: readonly [number, number, number], exposure: number, tone: ToneMapSetting = DEFAULT_TONE): RGB {
+  const mapped = toneMap(scene, exposure, tone)
   return [linearToSrgbByte(mapped[0]), linearToSrgbByte(mapped[1]), linearToSrgbByte(mapped[2])]
 }
 
@@ -109,14 +92,15 @@ const jac = [
 ]
 const probe = [0, 0, 0] as RGB
 
-/** Scene radiance whose ACES output is `target` (already linear, post-curve). Mutates `out`. */
-function invertAces(target: RGB, exposure: number, out: RGB): void {
+/** Scene radiance whose tone-mapped output is `target` (already linear, post-curve). Mutates `out`. */
+function invertTone(target: RGB, exposure: number, tone: ToneMapSetting, out: RGB): void {
+  const curve = (c: RGB) => toneMap(c, exposure, tone)
   out[0] = target[0]
   out[1] = target[1]
   out[2] = target[2]
   const eps = 1e-3
   for (let iter = 0; iter < 10; iter++) {
-    const y = acesFilmic(out, exposure)
+    const y = curve(out)
     const err0 = target[0] - y[0]
     const err1 = target[1] - y[1]
     const err2 = target[2] - y[2]
@@ -126,7 +110,7 @@ function invertAces(target: RGB, exposure: number, out: RGB): void {
       probe[1] = out[1]
       probe[2] = out[2]
       probe[col] += eps
-      const y2 = acesFilmic(probe, exposure)
+      const y2 = curve(probe)
       jac[0]![col] = (y2[0] - y[0]) / eps
       jac[1]![col] = (y2[1] - y[1]) / eps
       jac[2]![col] = (y2[2] - y[2]) / eps
@@ -163,6 +147,7 @@ export function createSkyParams(): SkyParams {
     mieCoefficient: CLEAR_MIE,
     mieDirectionalG: CLEAR_MIE_G,
     exposure: 0.5,
+    tone: DEFAULT_TONE,
     zenithDisplay: [0, 0, 0],
     horizonDisplay: [0, 0, 0],
     zenithScene: [...zero],
@@ -191,6 +176,7 @@ export function writeSkyParams(
   cloudiness: number,
   exposure: number,
   out: SkyParams,
+  tone: ToneMapSetting = DEFAULT_TONE,
 ): SkyParams {
   const alt = Number.isFinite(sunAltitude) ? sunAltitude : 0.6
   const cover = clamp01(Number.isFinite(cloudiness) ? cloudiness : 0)
@@ -217,8 +203,9 @@ export function writeSkyParams(
   out.horizonDisplay = horizon
   const zenithTarget = srgbToLinear3(zenith)
   const horizonTarget = srgbToLinear3(horizon)
-  invertAces(zenithTarget, exp, sceneZenith)
-  invertAces(horizonTarget, exp, sceneHorizon)
+  out.tone = tone
+  invertTone(zenithTarget, exp, tone, sceneZenith)
+  invertTone(horizonTarget, exp, tone, sceneHorizon)
   out.zenithScene[0] = sceneZenith[0]
   out.zenithScene[1] = sceneZenith[1]
   out.zenithScene[2] = sceneZenith[2]
@@ -247,8 +234,14 @@ export function writeSkyParams(
   return out
 }
 
-export function skyParams(sunAltitude: number, weather: string, cloudiness = 0, exposure?: number): SkyParams {
+export function skyParams(
+  sunAltitude: number,
+  weather: string,
+  cloudiness = 0,
+  exposure?: number,
+  tone: ToneMapSetting = DEFAULT_TONE,
+): SkyParams {
   const alt = Number.isFinite(sunAltitude) ? sunAltitude : 0.6
   const exp = exposure ?? sunLook(alt).exposure
-  return writeSkyParams(alt, weather, cloudiness, exp, createSkyParams())
+  return writeSkyParams(alt, weather, cloudiness, exp, createSkyParams(), tone)
 }

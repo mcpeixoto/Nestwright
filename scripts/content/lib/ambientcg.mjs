@@ -50,10 +50,12 @@ export function assertAmbientCc0(asset) {
   }
 }
 
-/** ambientCG `dimensionX` is metres when small and millimetres when clearly a raw scan size. */
+/**
+ * ambientCG `dimensionX` is centimetres (Concrete034 is 110, Tiles107 is 100). Reading it as
+ * metres-or-millimetres made 15 sets 10× too small or 100× too large.
+ */
 export function ambientSpanToMetres(value) {
   const n = Number(value)
   if (!Number.isFinite(n) || n <= 0) return null
-  if (n > 100) return Math.round((n / 1000) * 1e6) / 1e6
-  return n
+  return Math.round((n / 100) * 1e6) / 1e6
 }

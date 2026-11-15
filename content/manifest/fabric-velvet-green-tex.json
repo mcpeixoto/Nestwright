@@ -1,0 +1,44 @@
+{
+  "key": "fabric-velvet-green-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "velour_velvet",
+  "sourceUrl": "https://polyhaven.com/a/velour_velvet",
+  "author": "colormass, Rico Cilliers",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:00.917Z",
+  "sha256Source": "10b16b1b900dd98e72f5a838bb88bb7bf7bd63254ddae970087d782dbd229073",
+  "targets": {
+    "materialId": "fabric-velvet-green"
+  },
+  "files": [
+    {
+      "path": "textures/fabric-velvet-green-tex/albedo.ktx2",
+      "bytes": 188051,
+      "sha256": "98535dfbbe628eab07530169f3dd0ab3e3080c80841f9d43d1a59a49ed904c8b"
+    },
+    {
+      "path": "textures/fabric-velvet-green-tex/normal.ktx2",
+      "bytes": 1076769,
+      "sha256": "294c28d3e434849112468a5387b55d7f14bb73a2dd3eb458fed9d2b9193d86c9"
+    },
+    {
+      "path": "textures/fabric-velvet-green-tex/orm.ktx2",
+      "bytes": 231892,
+      "sha256": "311dfc8523f8a69ed9c8f89d3ae60fc5e087979555dfd432d1225ba34693c9e1"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      173.573,
+      45.098,
+      71.116
+    ],
+    "meanOrm": [
+      0.891,
+      0.726,
+      0.061
+    ],
+    "tileMeters": 0.284228
+  }
+}

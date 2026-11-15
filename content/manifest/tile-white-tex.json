@@ -1,0 +1,44 @@
+{
+  "key": "tile-white-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Tiles107",
+  "sourceUrl": "https://ambientcg.com/a/Tiles107",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:12:46.735Z",
+  "sha256Source": "15e956833eee70c340d83e6fb63f8093d37dd3c22a14cd00a625af696b998639",
+  "targets": {
+    "materialId": "tile-white"
+  },
+  "files": [
+    {
+      "path": "textures/tile-white-tex/albedo.ktx2",
+      "bytes": 109300,
+      "sha256": "0ee892df3e22b8ebb6703993f21307c6247313c1748ead170175f4a2e8d48376"
+    },
+    {
+      "path": "textures/tile-white-tex/normal.ktx2",
+      "bytes": 1244010,
+      "sha256": "1f0ae109c9a25ef2c02d93f4321e84829dc519f0f556cb1ed572d4a9932573a2"
+    },
+    {
+      "path": "textures/tile-white-tex/orm.ktx2",
+      "bytes": 63927,
+      "sha256": "d84e9389e2a53e40212c2a15986260c25e41d46736c009adf05306022ccec538"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      247.921,
+      247.78,
+      247.518
+    ],
+    "tileMeters": 1,
+    "meanOrm": [
+      0.994,
+      0.056,
+      0
+    ]
+  }
+}

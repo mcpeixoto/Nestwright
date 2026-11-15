@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { getMaterialDef } from '../../materials/library'
+import { metricUVs } from '../../builders/uv'
 import { getMaterial } from '../../materials/materialCache'
 import { sampleHeight } from '../../model/terrain'
 import type { Project, Terrain, Vec2 } from '../../model/types'
@@ -86,7 +86,6 @@ function writeHeights(geo: THREE.BufferGeometry, terrain: Terrain): boolean {
 }
 
 function flatGrass(): { mesh: THREE.Mesh; material: THREE.MeshStandardMaterial; resize: (size: number) => void } {
-  const tile = getMaterialDef('grass')?.tileSize ?? 1.2
   const source = getMaterial({ id: 'grass' })
   const material = source.clone()
   material.userData.own = true
@@ -106,11 +105,10 @@ function flatGrass(): { mesh: THREE.Mesh; material: THREE.MeshStandardMaterial; 
     if (Math.abs(next - size) < 0.5 && size > 0) return
     size = next
     mesh.geometry.dispose()
-    const geo = new THREE.PlaneGeometry(next, next)
+    // Metric UVs, so the cloned map keeps the library's 1/tileSize repeat at any plane size.
+    const geo = metricUVs(new THREE.PlaneGeometry(next, next))
     geo.rotateX(-Math.PI / 2)
     mesh.geometry = geo
-    const repeat = next / tile
-    material.map?.repeat.set(repeat, repeat)
   }
   resize(120)
   return { mesh, material, resize }

@@ -1,0 +1,44 @@
+{
+  "key": "marble-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "marble_01",
+  "sourceUrl": "https://polyhaven.com/a/marble_01",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:03.511Z",
+  "sha256Source": "0241a3f3f65888b71ee24326896d9bd295b3571105be3eb492c187285edfb3cb",
+  "targets": {
+    "materialId": "marble"
+  },
+  "files": [
+    {
+      "path": "textures/marble-tex/albedo.ktx2",
+      "bytes": 673393,
+      "sha256": "0c225ef354c95a9742878c43cbeabd69f1abf62c55bf422e296006eff871ad32"
+    },
+    {
+      "path": "textures/marble-tex/normal.ktx2",
+      "bytes": 1653505,
+      "sha256": "d030b15313f85504a51f28dbbf8d2e0b73674d9f6356a4fb8946d8afbf2ea603"
+    },
+    {
+      "path": "textures/marble-tex/orm.ktx2",
+      "bytes": 380689,
+      "sha256": "2d23defa6e9380e642b4fed0c863e3d3ed2c2da49fcdd52383e9959bf1f8b65f"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      177.383,
+      156.823,
+      121.531
+    ],
+    "tileMeters": 1.5,
+    "meanOrm": [
+      0.96,
+      0.506,
+      0
+    ]
+  }
+}

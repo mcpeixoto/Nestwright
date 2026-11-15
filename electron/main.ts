@@ -3,6 +3,7 @@ import fs from 'node:fs/promises'
 import fsSync from 'node:fs'
 import path from 'node:path'
 import { coopSend, coopUsername, setCoopSink, startCoopHost, stopCoopHost } from './coop/server'
+import { handleContentScheme, registerContentScheme } from './contentProtocol'
 import { crashFileName, formatCrash, sanitizeCrash } from './crashLog'
 import { RENDERER_PROBE, SMOKE_TIMEOUT_MS, judgeSmoke, smokeDir, type RendererProbe, type SmokeReport } from './smoke'
 import {
@@ -37,6 +38,7 @@ declare const __dirname: string
 const here = __dirname
 
 app.setName('Nestwright')
+registerContentScheme()
 
 const smoke = smokeDir(process.argv)
 // A smoke run loads a template; keep it out of the player's real autosave and settings.
@@ -769,6 +771,7 @@ if (!gotLock) {
     app.whenReady().then(() => {
       for (const filePath of nestPathsFromArgv(process.argv)) enqueueOpen(filePath)
       installMenu()
+      handleContentScheme()
       registerIpc(steam)
       createWindow()
       app.on('activate', () => {

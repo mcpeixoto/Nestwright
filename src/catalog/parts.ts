@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
+import { metricUVs, swapUvAxes } from '../builders/uv'
 import type { BuildContext } from './types'
 
 const FALLBACK = new THREE.MeshStandardMaterial({ color: '#c8c2b8', roughness: 0.7 })
@@ -37,7 +38,7 @@ export function roundedBox(
   const hh = Math.max(h, 0.004)
   const dd = Math.max(d, 0.004)
   const r = Math.min(radius, ww / 2 - 1e-4, hh / 2 - 1e-4, dd / 2 - 1e-4)
-  const geo = r > 0.003 ? new RoundedBoxGeometry(ww, hh, dd, 2, r) : new THREE.BoxGeometry(ww, hh, dd)
+  const geo = metricUVs(r > 0.003 ? new RoundedBoxGeometry(ww, hh, dd, 2, r) : new THREE.BoxGeometry(ww, hh, dd))
   const mesh = prep(new THREE.Mesh(geo, material), slot)
   mesh.position.set(x, y, z)
   parent.add(mesh)
@@ -56,9 +57,15 @@ export function cylinder(
   axis: 'x' | 'y' | 'z' = 'y',
   segments = 12,
 ): THREE.Mesh {
-  const geo = new THREE.CylinderGeometry(Math.max(radius, 0.003), Math.max(radius, 0.003), Math.max(length, 0.004), segments)
-  if (axis === 'x') geo.rotateZ(Math.PI / 2)
-  if (axis === 'z') geo.rotateX(Math.PI / 2)
+  const geo = metricUVs(new THREE.CylinderGeometry(Math.max(radius, 0.003), Math.max(radius, 0.003), Math.max(length, 0.004), segments))
+  if (axis === 'x') {
+    geo.rotateZ(Math.PI / 2)
+    swapUvAxes(geo, 'x', 'y')
+  }
+  if (axis === 'z') {
+    geo.rotateX(Math.PI / 2)
+    swapUvAxes(geo, 'y', 'z')
+  }
   const mesh = prep(new THREE.Mesh(geo, material), slot)
   mesh.position.set(x, y, z)
   parent.add(mesh)
@@ -81,7 +88,7 @@ export function fourLegs(
   const geos: THREE.BufferGeometry[] = []
   for (const x of [-w / 2 + pad, w / 2 - pad]) {
     for (const z of [-d / 2 + pad, d / 2 - pad]) {
-      const geo = new THREE.CylinderGeometry(r, r, h, 8)
+      const geo = metricUVs(new THREE.CylinderGeometry(r, r, h, 8))
       geo.translate(x, h / 2, z)
       geos.push(geo)
     }
@@ -144,7 +151,7 @@ export function handle(
   vertical = true,
 ): void {
   if (style === 'knob') {
-    const mesh = prep(new THREE.Mesh(new THREE.SphereGeometry(0.014, 10, 8), material), slot)
+    const mesh = prep(new THREE.Mesh(metricUVs(new THREE.SphereGeometry(0.014, 10, 8)), material), slot)
     mesh.position.set(x, y, z)
     parent.add(mesh)
     return
@@ -167,8 +174,11 @@ export function torusRing(
   z: number,
   flat = true,
 ): THREE.Mesh {
-  const geo = new THREE.TorusGeometry(Math.max(radius, 0.01), Math.max(tube, 0.003), 8, 18)
-  if (flat) geo.rotateX(Math.PI / 2)
+  const geo = metricUVs(new THREE.TorusGeometry(Math.max(radius, 0.01), Math.max(tube, 0.003), 8, 18))
+  if (flat) {
+    geo.rotateX(Math.PI / 2)
+    swapUvAxes(geo, 'y', 'z')
+  }
   const mesh = prep(new THREE.Mesh(geo, material), slot)
   mesh.position.set(x, y, z)
   parent.add(mesh)
@@ -195,8 +205,9 @@ export function lathe(
   const rawH = Math.max(0.001, (box?.max.y ?? 1) - (box?.min.y ?? 0))
   const rawR = Math.max(0.001, Math.max(Math.abs(box?.min.x ?? 0.5), Math.abs(box?.max.x ?? 0.5)))
   geo.translate(0, -(box?.min.y ?? 0), 0)
-  const mesh = prep(new THREE.Mesh(geo, material), slot)
-  mesh.scale.set(w / (2 * rawR), h / rawH, d / (2 * rawR))
+  const stretch = [w / (2 * rawR), h / rawH, d / (2 * rawR)] as const
+  const mesh = prep(new THREE.Mesh(metricUVs(geo, stretch), material), slot)
+  mesh.scale.set(...stretch)
   mesh.position.set(x, y, z)
   parent.add(mesh)
   return mesh
@@ -214,8 +225,9 @@ export function ellipsoid(
   y: number,
   z: number,
 ): THREE.Mesh {
-  const mesh = prep(new THREE.Mesh(new THREE.SphereGeometry(0.5, 18, 12), material), slot)
-  mesh.scale.set(Math.max(w, 0.004), Math.max(h, 0.004), Math.max(d, 0.004))
+  const stretch = [Math.max(w, 0.004), Math.max(h, 0.004), Math.max(d, 0.004)] as const
+  const mesh = prep(new THREE.Mesh(metricUVs(new THREE.SphereGeometry(0.5, 18, 12), stretch), material), slot)
+  mesh.scale.set(...stretch)
   mesh.position.set(x, y, z)
   parent.add(mesh)
   return mesh

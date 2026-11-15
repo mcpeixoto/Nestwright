@@ -1,0 +1,46 @@
+{
+  "key": "lime-plaster-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "rough_plaster_03",
+  "sourceUrl": "https://polyhaven.com/a/rough_plaster_03",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:15:07.306Z",
+  "sha256Source": "0ec8b506032e5c19d9c01effd46679abd69bfdc9413c7311814f261c4d3be9dc",
+  "targets": {
+    "materialId": "lime-plaster"
+  },
+  "files": [
+    {
+      "path": "textures/lime-plaster-tex/albedo.ktx2",
+      "bytes": 715037,
+      "sha256": "eaf6b9dfece165d9222c47fca74c4d52cd5852c7e6b81650599ca0b90f930f95"
+    },
+    {
+      "path": "textures/lime-plaster-tex/normal.ktx2",
+      "bytes": 4769181,
+      "sha256": "8f9f8d5b39cce421f44929bb9b16b76d5ecec7b273fe5c8c64ddf60327ca02ee"
+    },
+    {
+      "path": "textures/lime-plaster-tex/orm.ktx2",
+      "bytes": 693815,
+      "sha256": "ed37e25688f2891580690ff1420d04415a166f9acd1bc4e1dba543afa1fb4f98"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      147.646,
+      131.325,
+      115.566
+    ],
+    "meanOrm": [
+      0.88,
+      0.938,
+      0
+    ],
+    "tileMeters": 1.5,
+    "albedoContrast": 0.35,
+    "normalScale": 0.6
+  }
+}

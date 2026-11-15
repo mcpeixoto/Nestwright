@@ -1,0 +1,46 @@
+{
+  "key": "microcement-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Concrete016",
+  "sourceUrl": "https://ambientcg.com/a/Concrete016",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:08.415Z",
+  "sha256Source": "6b72f448fb91b406af935676346fc3dee4512def023d7efbf3c51542c6ac2805",
+  "targets": {
+    "materialId": "microcement"
+  },
+  "files": [
+    {
+      "path": "textures/microcement-tex/albedo.ktx2",
+      "bytes": 428122,
+      "sha256": "f597e2a1a21b6e52edc637dcab994ecc0f50c83ae8bcb134ef7aa606b1e436c5"
+    },
+    {
+      "path": "textures/microcement-tex/normal.ktx2",
+      "bytes": 4703609,
+      "sha256": "17fb94457c549b9f04a94ffcd4560778d7423374e5fc3d8a928c5149785a941b"
+    },
+    {
+      "path": "textures/microcement-tex/orm.ktx2",
+      "bytes": 650127,
+      "sha256": "0c8a604a0163ac1d1214dae5c05972c0b201d1e36cb1a5679964120e5b0043bd"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      125.962,
+      131.007,
+      134.939
+    ],
+    "meanOrm": [
+      1,
+      0.627,
+      0
+    ],
+    "tileMeters": 1.4,
+    "albedoContrast": 0.45,
+    "normalScale": 0.5
+  }
+}

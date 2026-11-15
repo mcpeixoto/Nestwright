@@ -1,0 +1,44 @@
+{
+  "key": "travertine-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Travertine009",
+  "sourceUrl": "https://ambientcg.com/a/Travertine009",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:56.475Z",
+  "sha256Source": "21372dbb4fd728dd5cdba3184c65eb1a58577a30dc7fc2b16a421687f7f3705d",
+  "targets": {
+    "materialId": "travertine"
+  },
+  "files": [
+    {
+      "path": "textures/travertine-tex/albedo.ktx2",
+      "bytes": 712232,
+      "sha256": "d7a80e8eccc6e39983c99847098efee81bf34908fd39b809e57ea526faace026"
+    },
+    {
+      "path": "textures/travertine-tex/normal.ktx2",
+      "bytes": 993969,
+      "sha256": "a613291972c6bafb6010d296e885ca20192303c903d1f9bbf2771fd54d58a77d"
+    },
+    {
+      "path": "textures/travertine-tex/orm.ktx2",
+      "bytes": 300204,
+      "sha256": "b020259e6af24adcb211333de438912d24c6ad4c3291241884ac902b99c2aa35"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      223.178,
+      203.339,
+      172.049
+    ],
+    "tileMeters": 1.2,
+    "meanOrm": [
+      0.996,
+      0.037,
+      0
+    ]
+  }
+}

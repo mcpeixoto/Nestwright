@@ -5,6 +5,8 @@ export type GraphicsQuality = 'low' | 'medium' | 'high' | 'ultra'
 export type AppLanguage = 'en' | 'pt-PT'
 /** `auto` tries WebGPU and falls back to WebGL2; `webgl` forces the fallback. */
 export type RendererBackendSetting = 'auto' | 'webgpu' | 'webgl'
+/** AgX keeps saturated sun and lamp highlights from clipping to flat hues; ACES is the old look. */
+export type ToneMapSetting = 'agx' | 'aces'
 
 export interface Settings {
   units: 'metric' | 'imperial'
@@ -32,6 +34,7 @@ export interface Settings {
    * tier by hand turns it off too, so it never runs again unless switched back on in Settings.
    */
   qualityAuto: boolean
+  toneMapping: ToneMapSetting
 }
 
 const KEY = 'nestwright:settings'
@@ -56,6 +59,7 @@ export const DEFAULT_SETTINGS: Settings = {
   backend: 'auto',
   renderScale: 0,
   qualityAuto: false,
+  toneMapping: 'agx',
 }
 
 function clamp(value: number, min: number, max: number, fallback: number): number {
@@ -92,6 +96,7 @@ export function normalizeSettings(partial: Partial<Settings> | null | undefined)
       : DEFAULT_SETTINGS.backend,
     renderScale: normalizeRenderScale(source.renderScale),
     qualityAuto: source.qualityAuto === true,
+    toneMapping: source.toneMapping === 'aces' ? 'aces' : 'agx',
   }
 }
 

@@ -24,6 +24,15 @@ extraResources:
     to: .
     filter:
       - steam_appid.txt
+  # Content pack (npm run content:fetch). Skipped when absent: the game falls back to procedural.
+  - from: public/content
+    to: content
+  # KTX2 transcoder; file:// pages cannot fetch it from the asar, nwcontent://basis/ serves it.
+  - from: node_modules/three/examples/jsm/libs/basis
+    to: basis
+    filter:
+      - basis_transcoder.js
+      - basis_transcoder.wasm
 mac:
   icon: build/icon.icns
   category: public.app-category.games

@@ -1,0 +1,45 @@
+{
+  "key": "porcelain-large-grey-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "large_grey_tiles",
+  "sourceUrl": "https://polyhaven.com/a/large_grey_tiles",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:21.649Z",
+  "sha256Source": "b6efc0c968055c1525ab969203da57db4f8c8adcdb11b5e5480ff2e0f0acdad3",
+  "targets": {
+    "materialId": "porcelain-large-grey"
+  },
+  "files": [
+    {
+      "path": "textures/porcelain-large-grey-tex/albedo.ktx2",
+      "bytes": 709487,
+      "sha256": "a63240335957001e1d82253cf2b4c4b13790eff84dcfde992597b5dbb4909f6a"
+    },
+    {
+      "path": "textures/porcelain-large-grey-tex/normal.ktx2",
+      "bytes": 4493238,
+      "sha256": "fb174911d78d60c0a6fed580372752c1b5954dfe4a7a68fdc9c0f1e8bca295bc"
+    },
+    {
+      "path": "textures/porcelain-large-grey-tex/orm.ktx2",
+      "bytes": 762830,
+      "sha256": "b2e70fec215a5d651e6298dc5da2b4a41fe700f893aa9e46e04c893875ed3d43"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      133.729,
+      128.297,
+      117.065
+    ],
+    "meanOrm": [
+      0.867,
+      0.815,
+      0
+    ],
+    "tileMeters": 3,
+    "albedoContrast": 0.6
+  }
+}

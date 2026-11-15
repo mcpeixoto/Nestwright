@@ -1,0 +1,44 @@
+{
+  "key": "walnut-planks-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "WoodFloor064",
+  "sourceUrl": "https://ambientcg.com/a/WoodFloor064",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:12:37.492Z",
+  "sha256Source": "0ca6629739fbc0003ad999b9b3233ff9051ddb6a6c1dcd2a9733282c062db0c5",
+  "targets": {
+    "materialId": "walnut-planks"
+  },
+  "files": [
+    {
+      "path": "textures/walnut-planks-tex/albedo.ktx2",
+      "bytes": 652325,
+      "sha256": "dee8d7da7dc4f0b79774d06211ea708ff58647550418a57573981bf7ca975a70"
+    },
+    {
+      "path": "textures/walnut-planks-tex/normal.ktx2",
+      "bytes": 2680447,
+      "sha256": "14143837b7f0abee6bc231459cf59a8d81b1995a9922bb9873d7c4a9dd0554d0"
+    },
+    {
+      "path": "textures/walnut-planks-tex/orm.ktx2",
+      "bytes": 328477,
+      "sha256": "d28af15db6beb7eab2419e6b09b46d99e15d1d1c8318de0185da2e512c942f69"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      108.111,
+      66.947,
+      19.572
+    ],
+    "tileMeters": 1.5,
+    "meanOrm": [
+      1,
+      0.402,
+      0
+    ]
+  }
+}

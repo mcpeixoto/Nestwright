@@ -1,0 +1,44 @@
+{
+  "key": "tile-checker-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Tiles012",
+  "sourceUrl": "https://ambientcg.com/a/Tiles012",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:55.579Z",
+  "sha256Source": "8791f025d5196b1fe170d55c546df7bbd3ea337ff29a297e904a95d7d2a25dc2",
+  "targets": {
+    "materialId": "tile-checker"
+  },
+  "files": [
+    {
+      "path": "textures/tile-checker-tex/albedo.ktx2",
+      "bytes": 560723,
+      "sha256": "ffbe33f0f7eea530d7e8dcf9d92c532fefe4914fe781471f815c01174c1749a8"
+    },
+    {
+      "path": "textures/tile-checker-tex/normal.ktx2",
+      "bytes": 3253654,
+      "sha256": "2f506fde9dd793fc0122d37cae34ae89f41ba4e2f0d5fd15a278acb1f00150bc"
+    },
+    {
+      "path": "textures/tile-checker-tex/orm.ktx2",
+      "bytes": 646631,
+      "sha256": "5a559545843533b4259f2e6a200ef38c62d954a65389dd66a1b8838c4aa86a2b"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      133.911,
+      132.407,
+      128.578
+    ],
+    "tileMeters": 1,
+    "meanOrm": [
+      1,
+      0.106,
+      0
+    ]
+  }
+}

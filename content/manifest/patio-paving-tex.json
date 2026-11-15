@@ -1,0 +1,44 @@
+{
+  "key": "patio-paving-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "patio_tiles",
+  "sourceUrl": "https://polyhaven.com/a/patio_tiles",
+  "author": "Dario Barresi",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:51.826Z",
+  "sha256Source": "afae5de8c5860c6c65a9bdb68d27bec34c5bafc34f046fd5d008d71b7097bc65",
+  "targets": {
+    "materialId": "patio-paving"
+  },
+  "files": [
+    {
+      "path": "textures/patio-paving-tex/albedo.ktx2",
+      "bytes": 743807,
+      "sha256": "0ab3ff4353a08521851e295238704befff8c7b20f7473be23af4961f2762a6f1"
+    },
+    {
+      "path": "textures/patio-paving-tex/normal.ktx2",
+      "bytes": 3527829,
+      "sha256": "37e575e71574670324bb092e84ffe4a859e17612561724c905e73193e1349a71"
+    },
+    {
+      "path": "textures/patio-paving-tex/orm.ktx2",
+      "bytes": 561139,
+      "sha256": "84b6eb751b4120bbe5aa926f66910747b9ff2a5ea68831c78aa717e9bccd4563"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      177.437,
+      129.447,
+      86.18
+    ],
+    "tileMeters": 2.15,
+    "meanOrm": [
+      0.925,
+      0.636,
+      0
+    ]
+  }
+}

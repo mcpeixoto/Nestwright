@@ -1,0 +1,44 @@
+{
+  "key": "marble-nero-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Marble016",
+  "sourceUrl": "https://ambientcg.com/a/Marble016",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:45.529Z",
+  "sha256Source": "b97930ae95aff99a014fd39a3540cfa636ab1d345c8ed1b6b798fd30e61cb5b8",
+  "targets": {
+    "materialId": "marble-nero"
+  },
+  "files": [
+    {
+      "path": "textures/marble-nero-tex/albedo.ktx2",
+      "bytes": 791233,
+      "sha256": "b2633a76ce2994fd5983236b1144c08a31b17edf26609c50312a8fc5ed5ad852"
+    },
+    {
+      "path": "textures/marble-nero-tex/normal.ktx2",
+      "bytes": 1086469,
+      "sha256": "c09f2a81c40b0f92c397f2c5616bfa935930f01c14712d3f6ac0c6820cdf7bc6"
+    },
+    {
+      "path": "textures/marble-nero-tex/orm.ktx2",
+      "bytes": 260662,
+      "sha256": "b015f48fa87ae24a79b03464381ec7c1747956729fce0cd35e49727f16e0775d"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      61.23,
+      62.687,
+      61.941
+    ],
+    "tileMeters": 1.4,
+    "meanOrm": [
+      1,
+      0.114,
+      0
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "key": "tile-subway-blue-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Tiles029",
+  "sourceUrl": "https://ambientcg.com/a/Tiles029",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:28.900Z",
+  "sha256Source": "f1a2d45a7153a2af2517fd177f7f1557240a17a88f099a86b243a7d096168e4a",
+  "targets": {
+    "materialId": "tile-subway-blue"
+  },
+  "files": [
+    {
+      "path": "textures/tile-subway-blue-tex/albedo.ktx2",
+      "bytes": 308650,
+      "sha256": "facb93a8082b1f72c8f726f60d01ce17eccbe456b05077ae347b06ca39c898a8"
+    },
+    {
+      "path": "textures/tile-subway-blue-tex/normal.ktx2",
+      "bytes": 3410075,
+      "sha256": "f2d10f6150e92254780aa185612571870b9499e26d452653e415e090e9f49f66"
+    },
+    {
+      "path": "textures/tile-subway-blue-tex/orm.ktx2",
+      "bytes": 346594,
+      "sha256": "26b94296bb580a8a263bb5da34811d397ed3dccdf7bfa7fc2dd6145b8ec07a0a"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      26.337,
+      76.353,
+      86.923
+    ],
+    "tileMeters": 0.6,
+    "meanOrm": [
+      1,
+      0.211,
+      0
+    ]
+  }
+}

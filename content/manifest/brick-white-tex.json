@@ -1,0 +1,44 @@
+{
+  "key": "brick-white-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "white_bricks",
+  "sourceUrl": "https://polyhaven.com/a/white_bricks",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:12:03.692Z",
+  "sha256Source": "58e58b959e917a01b951756b20cf6447aa3a1205e05d49804a2bac638dbb40f2",
+  "targets": {
+    "materialId": "brick-white"
+  },
+  "files": [
+    {
+      "path": "textures/brick-white-tex/albedo.ktx2",
+      "bytes": 995820,
+      "sha256": "75cfde47941c549bdf3cab26115679c07af7af2c1896490aef15557142962180"
+    },
+    {
+      "path": "textures/brick-white-tex/normal.ktx2",
+      "bytes": 4547818,
+      "sha256": "c525f3cdf4cdf289b3f3cd60f78466567d3c43db9e51affdff3aa260b24ac032"
+    },
+    {
+      "path": "textures/brick-white-tex/orm.ktx2",
+      "bytes": 899855,
+      "sha256": "6f8e67c891c9606822d5f1aa8891e2ddb0117059a6196a6e86afbcc5f2043e04"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      140.213,
+      127.582,
+      107.012
+    ],
+    "tileMeters": 1.5,
+    "meanOrm": [
+      0.935,
+      0.715,
+      0
+    ]
+  }
+}

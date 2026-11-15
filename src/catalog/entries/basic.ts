@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { metricUVs } from '../../builders/uv'
 import { legs, part, tube } from '../geom'
 import { registerEntries } from '../registry'
 import type { BuildContext, CatalogEntry } from '../types'
@@ -276,7 +277,7 @@ const entries: CatalogEntry[] = [
       tube(g, mat(ctx, 'stand'), 0.015, h * 0.78, 0, h * 0.42, 0)
       const shadeH = h * 0.18
       const mesh = new THREE.Mesh(
-        new THREE.CylinderGeometry(Math.min(w, d) * 0.42, Math.min(w, d) * 0.28, shadeH, 16, 1, true),
+        metricUVs(new THREE.CylinderGeometry(Math.min(w, d) * 0.42, Math.min(w, d) * 0.28, shadeH, 16, 1, true)),
         shade,
       )
       mesh.position.y = h - shadeH / 2
@@ -304,7 +305,7 @@ const entries: CatalogEntry[] = [
       shadeMat.emissiveIntensity = 0.55
       tube(g, mat(ctx, 'cord'), 0.008, h * 0.62, 0, h * 0.69, 0)
       const shadeR = Math.min(w, d) / 2
-      const shade = new THREE.Mesh(new THREE.CylinderGeometry(shadeR, shadeR * 0.56, h * 0.32, 20, 1, true), shadeMat)
+      const shade = new THREE.Mesh(metricUVs(new THREE.CylinderGeometry(shadeR, shadeR * 0.56, h * 0.32, 20, 1, true)), shadeMat)
       shade.position.y = Math.max(h * 0.16, h * 0.32) / 2 + 0.01
       shade.castShadow = true
       shade.userData.shade = true
@@ -340,7 +341,7 @@ const entries: CatalogEntry[] = [
       const { w, d, h } = ctx.size
       const g = group()
       const r = Math.min(w, d) / 2
-      const pot = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.72, r * 0.55, h * 0.32, 16), mat(ctx, 'pot'))
+      const pot = new THREE.Mesh(metricUVs(new THREE.CylinderGeometry(r * 0.72, r * 0.55, h * 0.32, 16)), mat(ctx, 'pot'))
       pot.position.y = h * 0.16
       pot.castShadow = true
       pot.receiveShadow = true

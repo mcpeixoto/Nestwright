@@ -1,0 +1,46 @@
+{
+  "key": "plaster-pink-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "clay_plaster",
+  "sourceUrl": "https://polyhaven.com/a/clay_plaster",
+  "author": "Amal Kumar",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:11:57.505Z",
+  "sha256Source": "2c44c303a05fc7aa79a49c4902ce3ecdc25bd09ad76c9add9c286d5c4df77748",
+  "targets": {
+    "materialId": "plaster-pink"
+  },
+  "files": [
+    {
+      "path": "textures/plaster-pink-tex/albedo.ktx2",
+      "bytes": 117895,
+      "sha256": "738ea2707774c294355f7105afe14fcb6fcd4b8cbac1c9f8c05057612e83dc0d"
+    },
+    {
+      "path": "textures/plaster-pink-tex/normal.ktx2",
+      "bytes": 4596383,
+      "sha256": "ae3be3573d1717638efcdc6fb501f23d7b0c6f2e1cdf8d0da6f44fd0dd85f71a"
+    },
+    {
+      "path": "textures/plaster-pink-tex/orm.ktx2",
+      "bytes": 319994,
+      "sha256": "f634301393fa4b3cde87dd0aeb157f54e769e3606ca7cd62aa7d5a24edf4a9dd"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      114.448,
+      90.111,
+      59.861
+    ],
+    "meanOrm": [
+      0.994,
+      0.923,
+      0
+    ],
+    "tileMeters": 2,
+    "albedoContrast": 0.25,
+    "normalScale": 0.5
+  }
+}

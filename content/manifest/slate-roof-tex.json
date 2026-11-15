@@ -1,0 +1,44 @@
+{
+  "key": "slate-roof-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "RoofingTiles003",
+  "sourceUrl": "https://ambientcg.com/a/RoofingTiles003",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:15:10.976Z",
+  "sha256Source": "ff08df0746a996d8249486fa6c0a9cbb5e15cc1b1d754ca468dbdc8233294d4c",
+  "targets": {
+    "materialId": "slate-roof"
+  },
+  "files": [
+    {
+      "path": "textures/slate-roof-tex/albedo.ktx2",
+      "bytes": 754886,
+      "sha256": "6d478188e5ff54e21d0a1d5cc4ef5cf4043fa5ee554fea9bb02e8303a1bd7387"
+    },
+    {
+      "path": "textures/slate-roof-tex/normal.ktx2",
+      "bytes": 4894376,
+      "sha256": "397d17d57862ea5de861332781fd77aebdb4edc6eb828e45987309ba7d7edf09"
+    },
+    {
+      "path": "textures/slate-roof-tex/orm.ktx2",
+      "bytes": 778553,
+      "sha256": "15cbecea42415096174f635464c27f3fc70be40b5ed161b352479110817062d9"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      52.062,
+      53.975,
+      51.938
+    ],
+    "tileMeters": 1.5,
+    "meanOrm": [
+      1,
+      0.683,
+      0
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "key": "corten-steel-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Rust009",
+  "sourceUrl": "https://ambientcg.com/a/Rust009",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T20:49:15.332Z",
+  "sha256Source": "15fac26ae7e468cf581150ef8b85f1d2c174275e4a66cde43cef126b6c9742c2",
+  "targets": {
+    "materialId": "corten-steel"
+  },
+  "files": [
+    {
+      "path": "textures/corten-steel-tex/albedo.ktx2",
+      "bytes": 221735,
+      "sha256": "fbced91c646a40fee37416c2c964bba6b871db227a4a26d3feb74d2cc5131f54"
+    },
+    {
+      "path": "textures/corten-steel-tex/normal.ktx2",
+      "bytes": 1092708,
+      "sha256": "992e55d12f8ad7179be423649ec68abf0064b6363b866e80039c3d7ab0f3caf1"
+    },
+    {
+      "path": "textures/corten-steel-tex/orm.ktx2",
+      "bytes": 206739,
+      "sha256": "f6e3108aa77f269b443b13e8d8a904f1f4a6c7150eb8947ceffacb9753180639"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      139.451,
+      76.147,
+      38.68
+    ],
+    "tileMeters": 1,
+    "meanOrm": [
+      0.897,
+      0.78,
+      0
+    ]
+  }
+}

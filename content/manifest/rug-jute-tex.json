@@ -1,0 +1,44 @@
+{
+  "key": "rug-jute-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "hessian_380",
+  "sourceUrl": "https://polyhaven.com/a/hessian_380",
+  "author": "colormass, Rico Cilliers",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:36.437Z",
+  "sha256Source": "e5dd462883c0846004bdf5b97d02bb2090685c18956c6dff0e320853ee9285f3",
+  "targets": {
+    "materialId": "rug-jute"
+  },
+  "files": [
+    {
+      "path": "textures/rug-jute-tex/albedo.ktx2",
+      "bytes": 204750,
+      "sha256": "7ea56752cf7ed87cf222f6c4635c95bd7edfb88f5c5fd8a7be5b3b895545e035"
+    },
+    {
+      "path": "textures/rug-jute-tex/normal.ktx2",
+      "bytes": 1173991,
+      "sha256": "c232c1912f8b94b31410818c496afc269c184d25dc4fb89d42828d093d364d92"
+    },
+    {
+      "path": "textures/rug-jute-tex/orm.ktx2",
+      "bytes": 230227,
+      "sha256": "2851b6db757a4babeec1856793b30756d151f98ae215da338d8e20f7f3d1f006"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      175.771,
+      144.038,
+      106.495
+    ],
+    "tileMeters": 0.273866,
+    "meanOrm": [
+      0.955,
+      0.588,
+      0.078
+    ]
+  }
+}

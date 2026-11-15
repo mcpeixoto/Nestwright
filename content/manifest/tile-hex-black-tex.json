@@ -1,0 +1,44 @@
+{
+  "key": "tile-hex-black-tex",
+  "kind": "texture",
+  "provider": "ambientcg",
+  "sourceId": "Tiles072",
+  "sourceUrl": "https://ambientcg.com/a/Tiles072",
+  "author": "ambientCG",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:14:26.330Z",
+  "sha256Source": "f593afd5f17ea94cbd8734389b48977c8ab3a7ed780ae83c168f72e407e530d7",
+  "targets": {
+    "materialId": "tile-hex-black"
+  },
+  "files": [
+    {
+      "path": "textures/tile-hex-black-tex/albedo.ktx2",
+      "bytes": 716881,
+      "sha256": "d4ec3469a4cb616699773050a4548f8d468411c1944f6fa859ad5125b5dd7905"
+    },
+    {
+      "path": "textures/tile-hex-black-tex/normal.ktx2",
+      "bytes": 4712262,
+      "sha256": "263b555e4ac79d98aee2d4f657dd2e72cc45a163bfa956ce0b85cee4271c89f9"
+    },
+    {
+      "path": "textures/tile-hex-black-tex/orm.ktx2",
+      "bytes": 677200,
+      "sha256": "bcabcea5cb554b5f951dd8c2c7aeeac906f5e388038e2294bf05b9d1b3001256"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      37.213,
+      41.373,
+      44.099
+    ],
+    "tileMeters": 0.45,
+    "meanOrm": [
+      0.973,
+      0.473,
+      0
+    ]
+  }
+}

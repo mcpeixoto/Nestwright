@@ -12,14 +12,17 @@ import { processModel } from './lib/model.mjs'
 import { outputRecord } from './lib/output.mjs'
 import { cacheDir, paths } from './lib/paths.mjs'
 import { loadSources, selectEntries } from './lib/sources.mjs'
-import { processTexture } from './lib/textures.mjs'
+import { writeIndexFile } from './lib/contentIndex.mjs'
+import { processTexture, textureOrmMeans } from './lib/textures.mjs'
 import { unitsToMetres } from './lib/tile.mjs'
 
-const HELP = `node scripts/content/process.mjs [--only key,key] [--dry-run] [--webp]
+const HELP = `node scripts/content/process.mjs [--only key,key] [--dry-run] [--webp] [--stats]
 
 Encode cached downloads into public/content and write content/manifest/<key>.json.
 --webp keeps model textures as WebP when KTX-Software is not available.
+--stats only recomputes texture.meanOrm from the cache (no encoding).
 Texture sets (albedo, normal, ORM) are always KTX2.
+Both modes rewrite public/content/index.json, the file the game reads.
 `
 
 function roundMetres(box) {
@@ -76,11 +79,13 @@ async function processOne(entry, { webp, library }) {
     const tileMeters = tileFor(entry, meta, library)
     if (!tileMeters) throw new Error(`${entry.key}: tileMeters unknown; set tileMeters on the source entry`)
     const dest = join(paths.output, 'textures', entry.key)
-    const stats = await processTexture(meta, dest)
+    const stats = await processTexture(meta, dest, { albedoContrast: entry.albedoContrast ?? 1 })
     const names = ['albedo.ktx2', 'orm.ktx2']
     if (meta.files.some((file) => file.role === 'normal')) names.splice(1, 0, 'normal.ktx2')
     for (const name of names) manifest.files.push(await outputRecord(join(dest, name)))
-    manifest.texture = { meanAlbedoSrgb: stats.meanAlbedoSrgb, tileMeters }
+    manifest.texture = { meanAlbedoSrgb: stats.meanAlbedoSrgb, meanOrm: stats.meanOrm, tileMeters }
+    if (entry.albedoContrast != null && entry.albedoContrast < 1) manifest.texture.albedoContrast = entry.albedoContrast
+    if (entry.normalScale != null) manifest.texture.normalScale = entry.normalScale
   } else if (entry.kind === 'model') {
     if (!meta.modelFile) throw new Error(`${entry.key}: cache meta has no modelFile`)
     const dest = join(paths.output, 'models', entry.key)
@@ -129,6 +134,11 @@ run(async () => {
     return
   }
   const { library } = loadIds()
+  if (args.stats) {
+    for (const entry of entries.filter((item) => item.kind === 'texture')) await backfillStats(entry, args.dryRun)
+    if (!args.dryRun) await writeIndexFile()
+    return
+  }
   for (const entry of entries) {
     if (args.dryRun) {
       const suffix = entry.kind === 'model' && args.webp ? ' (webp)' : ''
@@ -137,4 +147,25 @@ run(async () => {
     }
     await processOne(entry, { webp: args.webp, library })
   }
+  if (!args.dryRun) await writeIndexFile()
 })
+
+/** Add `texture.meanOrm` to an existing manifest from the cache, without re-encoding. */
+async function backfillStats(entry, dryRun) {
+  const file = join(paths.manifests, `${entry.key}.json`)
+  let manifest
+  try {
+    manifest = JSON.parse(await readFile(file, 'utf8'))
+  } catch {
+    log(`skip ${entry.key}: no manifest`)
+    return
+  }
+  const meanOrm = await textureOrmMeans(await loadMeta(entry), entry.albedoContrast ?? 1)
+  if (dryRun) {
+    log(`${entry.key} meanOrm ${meanOrm.join(', ')}`)
+    return
+  }
+  manifest.texture = { ...manifest.texture, meanOrm }
+  await writeManifest(manifest)
+  log(`stats ${entry.key} meanOrm ${meanOrm.join(', ')}`)
+}

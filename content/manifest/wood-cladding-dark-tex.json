@@ -1,0 +1,44 @@
+{
+  "key": "wood-cladding-dark-tex",
+  "kind": "texture",
+  "provider": "polyhaven",
+  "sourceId": "dark_planks",
+  "sourceUrl": "https://polyhaven.com/a/dark_planks",
+  "author": "Rob Tuytel",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-14T17:13:50.840Z",
+  "sha256Source": "bcaf50dcc9655663d37e871b0eb1c908901aec611930f973eddba4d3bad45f91",
+  "targets": {
+    "materialId": "wood-cladding-dark"
+  },
+  "files": [
+    {
+      "path": "textures/wood-cladding-dark-tex/albedo.ktx2",
+      "bytes": 743753,
+      "sha256": "8dc66c5b09d59a4c28ccb9a065879c077f9f19021addb0b6cc7e419b1a06771d"
+    },
+    {
+      "path": "textures/wood-cladding-dark-tex/normal.ktx2",
+      "bytes": 4367048,
+      "sha256": "003b3648a6784fba0e5ce8ff52bd44741cfb5028a430727df45be13d49a591ca"
+    },
+    {
+      "path": "textures/wood-cladding-dark-tex/orm.ktx2",
+      "bytes": 657963,
+      "sha256": "62e0d210d6852f5e796d79e8a400ca59a2a6f4bca3bc6c02acb9c9bfc41c0736"
+    }
+  ],
+  "texture": {
+    "meanAlbedoSrgb": [
+      98.098,
+      94.53,
+      83.621
+    ],
+    "tileMeters": 2,
+    "meanOrm": [
+      0.571,
+      0.517,
+      0
+    ]
+  }
+}

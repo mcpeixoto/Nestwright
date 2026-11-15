@@ -5,6 +5,7 @@ import { pointInPolygon, polygonArea } from '../model/geometry'
 import { clipToConvex, isConvex } from '../model/polygon'
 import { buildRoofModel, type RoofFace, type RoofModel, type RoofVertex } from '../model/roofs'
 import type { Level, Roof, Vec2 } from '../model/types'
+import { metricUVs } from './uv'
 
 /**
  * Roof shell: sloped faces (and gable infill) extruded by `thickness`, with the
@@ -73,10 +74,9 @@ function faceMesh(
   const positions: number[] = []
   const normals: number[] = []
   const uvs: number[] = []
-  const push = (p: RoofVertex, n: THREE.Vector3) => {
+  const push = (p: RoofVertex, n: THREE.Vector3, uv = metricUv(p, outer[0] ?? p, normal)) => {
     positions.push(p.x, y0 + p.h, p.y)
     normals.push(n.x, n.y, n.z)
-    const uv = metricUv(p, outer[0] ?? p, normal)
     uvs.push(uv[0], uv[1])
   }
   const index: number[] = []
@@ -122,10 +122,13 @@ function faceMesh(
     if (!a || !b || !c || !d) continue
     const i0 = positions.length / 3
     const outward = edgeOutward(a, b, normal)
-    push(a, outward)
-    push(b, outward)
-    push(d, outward)
-    push(c, outward)
+    // The fascia stands square to the roof plane, so the plane's projection would squash its
+    // thickness to nothing. Metres along the edge by metres across the thickness instead.
+    const length = Math.hypot(b.x - a.x, b.h - a.h, b.y - a.y)
+    push(a, outward, [0, thick])
+    push(b, outward, [length, thick])
+    push(d, outward, [length, 0])
+    push(c, outward, [0, 0])
     index.push(i0, i0 + 1, i0 + 2, i0, i0 + 2, i0 + 3)
   }
   const geo = new THREE.BufferGeometry()
@@ -248,7 +251,7 @@ function skylight(cut: Vec2[], model: RoofModel, y0: number, id: string): THREE.
     if (!a || !b) continue
     const length = Math.hypot(b.x - a.x, b.y - a.y)
     if (length < 1e-3) continue
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(length, 0.06, 0.06), frameMat)
+    const bar = new THREE.Mesh(metricUVs(new THREE.BoxGeometry(length, 0.06, 0.06)), frameMat)
     bar.position.set((a.x + b.x) / 2, y0 + (a.h + b.h) / 2 + 0.05, (a.y + b.y) / 2)
     const edge = new THREE.Vector3(b.x - a.x, b.h - a.h, b.y - a.y)
     if (edge.lengthSq() > 1e-8) {
