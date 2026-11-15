@@ -1,12 +1,13 @@
 import { getEntry } from '../../../catalog/registry'
 import { catalogName } from '../../../i18n/catalog'
+import { useTranslate } from '../../../i18n'
+import { formatMoney } from '../../../model/money'
 import { useSettings } from '../../../settings'
 import { selectActiveLevel, useStore } from '../../../store'
 import { MaterialPicker } from '../../MaterialPicker'
 import { selectionFacts } from '../facts'
 import { labelOf, NumberField, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
-import { useTranslate } from '../../../i18n'
 
 function ItemSection() {
   const tr = useTranslate()
@@ -17,6 +18,8 @@ function ItemSection() {
   const item = level?.items.find((entry) => entry.id === id)
   if (!item) return null
   const entry = getEntry(item.catalogId)
+  const catalogPrice = entry?.price ?? 0
+  const money = (amount: number) => formatMoney(amount, currency, language)
   const slots = entry ? Object.keys(entry.materialSlots) : Object.keys(item.materials)
   return (
     <div className="props">
@@ -91,8 +94,48 @@ function ItemSection() {
         </label>
       ))}
       <p className="readout">
-        {currency} {(item.price ?? entry?.price ?? 0).toFixed(0)}
+        {tr('Catalog price')}: {money(catalogPrice)}
       </p>
+      <label className="field">
+        {tr('Quoted price')}
+        <input
+          type="number"
+          min={0}
+          step={1}
+          aria-label={tr('Quoted price')}
+          value={item.price ?? ''}
+          placeholder={String(catalogPrice)}
+          onChange={(event) => {
+            const raw = event.target.value
+            patchLevel('Item price', (draft) => {
+              const found = draft.items.find((entry) => entry.id === id)
+              if (!found) return
+              if (raw.trim() === '') {
+                delete found.price
+                return
+              }
+              const next = Number(raw)
+              if (Number.isFinite(next) && next >= 0) found.price = next
+            })
+          }}
+        />
+      </label>
+      {typeof item.price === 'number' && (
+        <>
+          <p className="readout">{tr('Quoted: {amount}', { amount: money(item.price) })}</p>
+          <button
+            type="button"
+            onClick={() =>
+              patchLevel('Reset price', (draft) => {
+                const found = draft.items.find((entry) => entry.id === id)
+                if (found) delete found.price
+              })
+            }
+          >
+            {tr('Reset')}
+          </button>
+        </>
+      )}
     </div>
   )
 }

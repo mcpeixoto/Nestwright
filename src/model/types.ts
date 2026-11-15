@@ -313,6 +313,14 @@ export interface Variant {
   terrain: Terrain;
 }
 
+/** A labour, fee or other amount that is not derived from the model. */
+export interface BudgetExtra {
+  id: Id;
+  label: string;
+  amount: number;
+  kind: 'labour' | 'fees' | 'other';
+}
+
 export interface Budget {
   currency: string; // "EUR"
   /** Construction cost per m² of floor area. */
@@ -321,6 +329,15 @@ export interface Budget {
   finishCostPerM2: Record<string, number>;
   /** Spending cap in `currency`. Omitted until someone sets one. */
   target?: number;
+  /**
+   * Fixed quotes that replace one computed line, keyed by `BudgetLine.id`.
+   * Absent on files saved before line quotes existed.
+   */
+  overrides?: Record<string, number>;
+  /**
+   * Labour, fees and other lines. Absent on files saved before extras existed.
+   */
+  extras?: BudgetExtra[];
 }
 
 export interface RoomRequirement {
