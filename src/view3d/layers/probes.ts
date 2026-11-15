@@ -28,7 +28,7 @@ import { renderingHeld } from '../render/hold'
 /** Volumes in the scene at once: the active level and its nearest visible neighbour. */
 export const VOLUME_SLOTS = 2
 /** Share of the hemisphere and environment fill a baked volume replaces inside its box. */
-export const PROBE_REPLACE = 0.85
+export const PROBE_REPLACE = 1
 /** Idle time after the last edit of a level before it rebakes. */
 export const EDIT_DEBOUNCE_MS = 600
 /** Time-of-day and weather changes rebake at most this often. */
@@ -535,8 +535,11 @@ registerSceneLayer({
           }
         })
         const previous = renderer.getRenderTarget()
+        const mrt = renderer.getMRT()
         const t0 = performance.now()
         try {
+          // The post precompile's scene-pass MRT must not shape these pipelines (see capture).
+          renderer.setMRT(null)
           renderer.setRenderTarget(baker.target)
           // compileAsync against a target that has never been rendered builds pipelines for
           // the wrong formats (invalid, "structures must have at least one member"); one
@@ -549,12 +552,14 @@ registerSceneLayer({
             baker.camera.layers.mask = mask
           }
           await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+          renderer.setMRT(null)
           renderer.setRenderTarget(baker.target)
           await renderer.compileAsync(scene, baker.camera)
         } catch (err) {
           console.warn('[nestwright] probe precompile failed', err)
         } finally {
           renderer.setRenderTarget(previous)
+          renderer.setMRT(mrt)
           for (const obj of culled) obj.frustumCulled = true
           undo()
         }

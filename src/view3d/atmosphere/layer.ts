@@ -16,7 +16,17 @@ import { clockTime } from './clock'
 import { createClouds } from './clouds'
 import { createGradedSky, type GradedSky, type SkyGrade } from './gradeSky'
 import { createPrecip, driftPrecip } from './precip'
-import { stepAutoExposure } from '../post/autoExposure'
+import { autoExposureState, stepAutoExposure } from '../post/autoExposure'
+import { aoIndirectCap, aoStrength } from '../post/effects'
+
+/**
+ * GTAO weight and indirect-share cap with the camera in a room (1 and 0.5 outside). The
+ * weight stays 1: above it, GTAO on normal-mapped roof tiles seen through a cutaway turned the
+ * tile gaps black, with no measurable gain in the rooms. The higher share cap lets AO darken
+ * more of each pixel indoors, where nearly all light is indirect.
+ */
+const INDOOR_AO_STRENGTH = 1
+const INDOOR_AO_INDIRECT_CAP = 0.8
 import { createSkyParams, writeSkyParams, type SkyParams } from './skyParams'
 import { createStars } from './stars'
 import { activeTone, rendererExposure, toneMappingFor } from './toneMap'
@@ -298,6 +308,11 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     const compensation = useSettings.getState().exposureComp + photoExposure()
     const gain = stepAutoExposure(frameDt, exp, focus.indoor, compensation, look.daylight)
     frameDt = 0
+    // Rooms lean on contact shadows (furniture undersides, corners) far more than exteriors:
+    // occlusion grows with the smoothed indoor share, so exteriors keep their tuned AO.
+    const inside = autoExposureState().indoor
+    aoStrength.value = 1 + (INDOOR_AO_STRENGTH - 1) * inside
+    aoIndirectCap.value = 0.5 + (INDOOR_AO_INDIRECT_CAP - 0.5) * inside
     const tone = activeTone()
     if (ctx.renderer) {
       ctx.renderer.toneMapping = toneMappingFor(tone)

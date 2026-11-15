@@ -53,7 +53,17 @@ import type { ProbeResolution } from '../../model/probeGrid'
 export const PROBE_LAYER = 3
 
 /** Share of the bounce light's chroma that reaches surfaces (1 = all of it). */
-export const PROBE_SATURATION = 0.55
+export const PROBE_SATURATION = 0.5
+
+/**
+ * Share of a material's environment reflection that takes the local probe irradiance indoors:
+ * 0 for glossy (roughness ≤ 0.25, keeps the env map and SSR), 1 for matt (≥ 0.7), smooth between.
+ */
+export function roughShare(roughness: number): number {
+  if (!Number.isFinite(roughness)) return 0
+  const t = Math.min(1, Math.max(0, (roughness - 0.25) / (0.7 - 0.25)))
+  return t * t * (3 - 2 * t)
+}
 
 /** Probes captured per render: six 90° sub-cameras each. */
 export const PROBES_PER_BATCH = 8
@@ -225,11 +235,21 @@ class ProbeVolumeNode extends (THREE as any).AnalyticLightNode {
       ctx.nwProbe = probe
       const hemi = ctx.irradiance
       const ibl = ctx.iblIrradiance
+      // Only PBR materials have a roughness (Lambert and basic shading do not). The material's
+      // scalar is read here, at build time: the per-pixel `roughness` node is not set up in
+      // every pass that builds lights, and reading it there broke pipelines (empty output).
+      const rough = typeof builder.material?.roughness === 'number' ? roughShare(builder.material.roughness) : 0
+      const specular = rough > 0 ? ctx.radiance : null
       const blend = probe
       // Built where LightsNode adds it, after every light: scale the image-based fill down
       // as a side statement, then return the term that turns `irradiance +=` into a blend.
+      // The environment's specular lobe is the open sky too: on rough surfaces (plaster,
+      // fabric, matt wood) it was a grey sheen over the whole room. Indoors their rough
+      // reflection takes the local irradiance instead (E/π, the radiance of a uniform
+      // surround); glossy surfaces keep the environment map and SSR.
       ctx.lightProbeIrradiance = Fn(() => {
         if (ibl) ibl.mulAssign(float(1).sub(blend.weight))
+        if (specular) specular.assign(mix(specular, blend.irradiance.mul(1 / Math.PI), blend.weight.mul(rough)))
         return blend.irradiance.sub(hemi.mul(blend.weight))
       })()
     }
@@ -459,7 +479,12 @@ export class ProbeBaker {
     this.aim(job.positions, start, count)
     const autoClear = renderer.autoClear
     const previous = renderer.getRenderTarget()
+    const mrt = renderer.getMRT()
     try {
+      // A scene pass's MRT left on the renderer would build these pipelines with no colour
+      // output (its names match none of our targets' textures): "structures must have at
+      // least one member".
+      renderer.setMRT(null)
       renderer.autoClear = true
       renderer.setRenderTarget(this.faceTarget)
       const t0 = performance.now()
@@ -475,6 +500,7 @@ export class ProbeBaker {
     } finally {
       renderer.autoClear = autoClear
       renderer.setRenderTarget(previous)
+      renderer.setMRT(mrt)
     }
     return count
   }
@@ -490,7 +516,9 @@ export class ProbeBaker {
     const padded = capacity.z + 2 * ATLAS_PADDING
     const autoClear = renderer.autoClear
     const previous = renderer.getRenderTarget()
+    const mrt = renderer.getMRT()
     try {
+      renderer.setMRT(null)
       renderer.autoClear = false
       atlas.viewport.set(0, 0, nx, ny)
       for (let iz = 0; iz < nz; iz++) {
@@ -512,6 +540,7 @@ export class ProbeBaker {
     } finally {
       renderer.autoClear = autoClear
       renderer.setRenderTarget(previous)
+      renderer.setMRT(mrt)
     }
   }
 

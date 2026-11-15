@@ -18,18 +18,22 @@ export interface EvRange {
 /** Correction range with the camera outside. */
 export const OUTDOOR_RANGE: EvRange = { min: -0.3, max: 0.3 }
 /**
- * Correction range with the camera inside a room by day. The ceiling is modest: an average
- * meter reads dark furniture as a dark room (the family kitchen's black sculptures asked
- * for +1.7 EV and burnt its white walls).
+ * Correction range with the camera inside a room by day. The lift is small on purpose:
+ * archviz interiors read real through contrast (sun patches, falloff into the corners), and
+ * a meter that opens a room up to grey washes that out.
  */
-export const INDOOR_RANGE: EvRange = { min: -0.75, max: 1.25 }
+export const INDOOR_RANGE: EvRange = { min: -0.75, max: 0.6 }
 /**
  * Highest indoor correction at night. A lamp-lit room metered to grey reads as daytime; a
  * camera at night is let open up only a little, so the room stays a night room.
  */
-export const INDOOR_NIGHT_MAX = 0.6
-/** Interiors by day are exposed a little brighter than metered grey: white walls read white. */
-export const INDOOR_BIAS = 0.35
+export const INDOOR_NIGHT_MAX = 0.3
+/**
+ * Stops added to the metered target inside by day. Zero: with the trimmed meter and the
+ * 0.6 EV cap, an interior lands at or a little under metered grey, which keeps the sun
+ * patches bright and the corners dark.
+ */
+export const INDOOR_BIAS = 0
 /**
  * Metered log2 luminance + log2(base exposure) that counts as "correctly exposed". Measured
  * on the harness exteriors at their tuned look (front-facade −2.6 and terrace-pool −2.5 at
@@ -56,15 +60,20 @@ export function clampEvComp(value: number): number {
   return clamp(value, EV_COMP_MIN, EV_COMP_MAX)
 }
 
+/** Share of the metered weight dropped at each end (darkest and brightest samples). */
+export const METER_TRIM = 0.05
+
 /**
- * Centre-weighted mean of per-pixel log2 luminance from the meter target (row-major,
- * `stride` floats per texel, log2 luminance in the first). The centre counts ~3× the corners,
- * like a camera's centre-weighted meter. Null when nothing finite was read.
+ * Centre-weighted, trimmed mean of per-pixel log2 luminance from the meter target
+ * (row-major, `stride` floats per texel, log2 luminance in the first). The centre counts ~3×
+ * the corners, like a camera's centre-weighted meter, and the darkest and brightest
+ * METER_TRIM of the weight are dropped, so a black sculpture or a sunlit floor patch cannot
+ * drive the exposure. Null when nothing finite was read.
  */
-export function meterAverage(data: ArrayLike<number>, width: number, height: number, stride = 4): number | null {
+export function meterAverage(data: ArrayLike<number>, width: number, height: number, stride = 4, trim = METER_TRIM): number | null {
   if (width < 1 || height < 1) return null
-  let sum = 0
-  let weight = 0
+  const samples: { v: number; w: number }[] = []
+  let total = 0
   for (let y = 0; y < height; y++) {
     const ny = ((y + 0.5) / height) * 2 - 1
     for (let x = 0; x < width; x++) {
@@ -72,9 +81,27 @@ export function meterAverage(data: ArrayLike<number>, width: number, height: num
       if (value === undefined || !Number.isFinite(value)) continue
       const nx = ((x + 0.5) / width) * 2 - 1
       const w = 1 + 2 * Math.max(0, 1 - (nx * nx + ny * ny) / 1.2)
-      sum += clamp(value, SAMPLE_MIN, SAMPLE_MAX) * w
-      weight += w
+      samples.push({ v: clamp(value, SAMPLE_MIN, SAMPLE_MAX), w })
+      total += w
     }
+  }
+  if (total <= 0) return null
+  samples.sort((a, b) => a.v - b.v)
+  const cut = clamp(trim, 0, 0.45) * total
+  const lo = cut
+  const hi = total - cut
+  let sum = 0
+  let weight = 0
+  let at = 0
+  for (const s of samples) {
+    // The part of this sample's weight that falls inside [lo, hi] of the cumulative weight.
+    const start = Math.max(at, lo)
+    const end = Math.min(at + s.w, hi)
+    if (end > start) {
+      sum += s.v * (end - start)
+      weight += end - start
+    }
+    at += s.w
   }
   return weight > 0 ? sum / weight : null
 }

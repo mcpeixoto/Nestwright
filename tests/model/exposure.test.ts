@@ -28,18 +28,32 @@ describe('meterAverage', () => {
   })
 
   it('weights the centre above the corners and skips non-finite texels', () => {
+    // Untrimmed: a single texel would otherwise fall inside the trimmed tail.
     const data = flat(9, 9, -6)
     data[(4 * 9 + 4) * 4] = 6
-    const centre = meterAverage(data, 9, 9) ?? 0
+    const centre = meterAverage(data, 9, 9, 4, 0) ?? 0
     const corner = flat(9, 9, -6)
     corner[0] = 6
-    expect(centre).toBeGreaterThan(meterAverage(corner, 9, 9) ?? 0)
+    expect(centre).toBeGreaterThan(meterAverage(corner, 9, 9, 4, 0) ?? 0)
     const holes = flat(4, 4, -1)
     holes[0] = Number.NaN
     holes[4] = Number.POSITIVE_INFINITY
     expect(meterAverage(holes, 4, 4)).toBeCloseTo(-1, 9)
     expect(meterAverage(flat(2, 2, Number.NaN), 2, 2)).toBeNull()
     expect(meterAverage([], 0, 0)).toBeNull()
+  })
+
+  it('ignores the darkest and brightest 5 % of the frame', () => {
+    // 4 % black furniture and 4 % sunlit floor do not move a mid-grey room.
+    const data = flat(10, 10, -3)
+    for (let i = 0; i < 4; i++) data[i * 4] = -14
+    for (let i = 96; i < 100; i++) data[i * 4] = 4
+    expect(meterAverage(data, 10, 10)).toBeCloseTo(-3, 9)
+    expect(meterAverage(data, 10, 10, 4, 0)).not.toBeCloseTo(-3, 1)
+    // A large dark area still counts: trimming only removes the tails.
+    const dark = flat(10, 10, -3)
+    for (let i = 0; i < 50; i++) dark[i * 4] = -8
+    expect(meterAverage(dark, 10, 10)).toBeLessThan(-4)
   })
 
   it('clamps extreme samples so the sun disc cannot swing the frame', () => {
@@ -67,8 +81,9 @@ describe('targetEv', () => {
     expect(day).toBeGreaterThan(night)
   })
 
-  it('biases a daytime interior above metered grey', () => {
-    expect(targetEv(METER_KEY_LOG2, 1, 1, 1)).toBeGreaterThan(0)
+  it('lifts a daytime interior by at most 0.6 EV, and never above metered grey', () => {
+    expect(INDOOR_RANGE.max).toBeLessThanOrEqual(0.6)
+    expect(targetEv(METER_KEY_LOG2, 1, 1, 1)).toBeCloseTo(0, 9)
     expect(targetEv(METER_KEY_LOG2, 1, 1, 0)).toBeCloseTo(0, 9)
   })
 

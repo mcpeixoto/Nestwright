@@ -71,9 +71,16 @@ export class ExposureMeter {
     if (this.frame++ % METER_EVERY !== 0 || this.pending) return
     this.source.value = color
     const previous = renderer.getRenderTarget()
+    const mrt = renderer.getMRT()
+    // No scene-pass MRT: its output names match nothing in the meter target.
+    renderer.setMRT(null)
     renderer.setRenderTarget(this.target)
-    this.quad.render(renderer)
-    renderer.setRenderTarget(previous)
+    try {
+      this.quad.render(renderer)
+    } finally {
+      renderer.setRenderTarget(previous)
+      renderer.setMRT(mrt)
+    }
     this.pending = true
     void renderer
       .readRenderTargetPixelsAsync(this.target, 0, 0, METER_W, METER_H)

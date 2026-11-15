@@ -1,7 +1,19 @@
 import * as THREE from 'three'
 import { describe, expect, it } from 'vitest'
 import { createOutdoorLights } from '../../src/view3d/lighting/outdoorLights'
-import { PROBE_LAYER, ProbeVolume } from '../../src/view3d/lighting/probeVolume'
+import { PROBE_LAYER, ProbeVolume, roughShare } from '../../src/view3d/lighting/probeVolume'
+
+describe('roughShare', () => {
+  it('keeps glossy reflections, hands matt ones to the probes, smoothly between', () => {
+    expect(roughShare(0)).toBe(0)
+    expect(roughShare(0.25)).toBe(0)
+    expect(roughShare(0.7)).toBe(1)
+    expect(roughShare(1)).toBe(1)
+    expect(roughShare(0.475)).toBeCloseTo(0.5, 9)
+    expect(roughShare(0.4)).toBeLessThan(roughShare(0.5))
+    expect(roughShare(Number.NaN)).toBe(0)
+  })
+})
 
 describe('ProbeVolume', () => {
   it('allocates its atlas once for its capacity: seven padded SH sub-volumes', () => {
