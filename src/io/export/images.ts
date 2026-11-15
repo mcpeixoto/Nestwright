@@ -1,5 +1,7 @@
 import { notePhotoExported } from '../../achievements/signals'
 import { getPlatform } from '../../platform'
+import { fill, translate } from '../../i18n'
+import { useSettings } from '../../settings'
 import { useStore } from '../../store'
 import type { Level, Project } from '../../model/types'
 import { listPlanLayers, type PlanDrawContext } from '../../plan2d/layers'
@@ -8,6 +10,11 @@ import { getController } from '../../view3d/SceneController'
 import { buildPlanPdf } from './planPdf'
 import type { PlanSheetOptions } from './planSheet'
 import { bytesToDataUrl } from './binary'
+
+function say(key: string, vars?: Record<string, string | number>): void {
+  const language = useSettings.getState().language
+  useStore.getState().setMessage(vars ? fill(language, key, vars) : translate(language, key))
+}
 
 const PX = 50
 
@@ -18,11 +25,12 @@ function fileName(name: string, ext: string): string {
 
 async function save(name: string, data: string): Promise<boolean> {
   if (!data) {
-    useStore.getState().setMessage('Nothing to export')
+    say('Nothing to export')
     return false
   }
   const ok = await getPlatform().saveFile(name, data)
-  useStore.getState().setMessage(ok ? `Saved ${name}` : 'Export cancelled')
+  if (ok) say('Saved {name}', { name })
+  else say('Export cancelled')
   return ok
 }
 
@@ -31,7 +39,7 @@ export async function exportViewImage(width: number, height: number): Promise<vo
   const renderer = controller?.renderer
   const camera = controller?.camera
   if (!controller || !renderer || !camera) {
-    useStore.getState().setMessage('The 3D view is not ready')
+    say('The 3D view is not ready')
     return
   }
   const canvas = renderer.domElement
@@ -59,7 +67,7 @@ export async function exportViewImage(width: number, height: number): Promise<vo
     url = frame.toDataURL('image/png')
   } catch (err) {
     console.error(err)
-    useStore.getState().setMessage('Could not render the image')
+    say('Could not render the image')
     return
   } finally {
     renderer.setPixelRatio(prevRatio)
@@ -167,7 +175,7 @@ export async function exportPlanPng(): Promise<void> {
   const state = useStore.getState()
   const level = state.project.levels.find((item) => item.id === state.activeLevelId) ?? state.project.levels[0]
   if (!level) {
-    state.setMessage('No level to draw')
+    say('No level to draw')
     return
   }
   const url = renderPlanPng(state.project, level)
@@ -176,6 +184,6 @@ export async function exportPlanPng(): Promise<void> {
 
 export async function exportPlanPdf(options: PlanSheetOptions): Promise<boolean> {
   const project = useStore.getState().project
-  const bytes = buildPlanPdf(project, options)
+  const bytes = buildPlanPdf(project, { language: useSettings.getState().language, ...options })
   return save(fileName(project.name, 'pdf'), bytesToDataUrl(bytes, 'application/pdf'))
 }

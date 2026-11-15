@@ -3,6 +3,8 @@ import { formatArea } from '../../../model/units'
 import { roomsFor, selectActiveLevel, useStore } from '../../../store'
 import { useTranslate } from '../../../i18n'
 import { importTraceImage } from '../../levelActions'
+import { levelDisplayName } from '../../../i18n/rooms'
+import { useSettings } from '../../../settings'
 import { selectionFacts } from '../facts'
 import { NumberField, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
@@ -13,6 +15,7 @@ function LevelSection() {
   const units = useStore((s) => s.project.units)
   const hasTrace = useStore((s) => s.project.traces.some((item) => item.levelId === s.activeLevelId))
   const tr = useTranslate()
+  const language = useSettings((s) => s.language)
   if (!level) return null
   const areas = levelAreas(level, roomsFor(level))
   return (
@@ -21,7 +24,7 @@ function LevelSection() {
       <label className="field">
         <T k="Name" />
         <input
-          value={level.name}
+          value={levelDisplayName(language, level.name)}
           onChange={(event) => {
             const next = event.target.value
             patchLevel('Rename level', (draft) => {

@@ -8,9 +8,10 @@ import { getPlanCursor } from '../../plan2d/cursor'
 import { getPlanRenderer } from '../../plan2d/PlanRenderer'
 import { useSettings } from '../../settings'
 import { roomsFor, useStore } from '../../store'
-import { getEntry } from '../../catalog/registry'
 import { T } from '../../i18n/T'
-import { translate, useTranslate } from '../../i18n'
+import { fill, translate, useTranslate } from '../../i18n'
+import { catalogName, catalogNameById } from '../../i18n/catalog'
+import { levelDisplayName, roomDisplayName } from '../../i18n/rooms'
 import { registerPanel } from './registry'
 import { focusWish } from '../together/focus'
 import { setShowWishPins, showWishPins } from '../together/wishView'
@@ -20,19 +21,40 @@ function authorName(): string {
   return useSettings.getState().playerName.trim() || translate(language, 'Player')
 }
 
-function targetLabel(project: ReturnType<typeof useStore.getState>['project'], wish: Wish): string {
+/** Model place names that are fixed English words rather than a room's own name. */
+const PLACE_WORDS = new Set(['Missing room', 'Not in a room'])
+
+function placeName(language: string, name: string): string {
+  return PLACE_WORDS.has(name) ? translate(language, name) : roomDisplayName(language, name)
+}
+
+function targetLabel(language: string, project: ReturnType<typeof useStore.getState>['project'], wish: Wish): string {
   const target = wish.target
-  if (target && target.kind === 'item') {
+  if (!target) return translate(language, 'Unknown')
+  if (target.kind === 'item') {
     for (const level of project.levels ?? []) {
       const item = level.items.find((entry) => entry.id === target.id)
-      if (item) return getEntry(item.catalogId)?.name ?? 'Item'
+      if (item) return catalogNameById(language, item.catalogId)
     }
+    return translate(language, 'Missing item')
   }
-  return describeTarget(project, wish)
+  if (target.kind === 'point') {
+    const level = project.levels?.find((item) => item.id === target.levelId)
+    return level ? fill(language, 'Point on {name}', { name: levelDisplayName(language, level.name) }) : translate(language, 'Point')
+  }
+  return placeName(language, describeTarget(project, wish))
+}
+
+/** `checkRequirements` details are English model text; the area figures pass through. */
+function requirementDetail(language: string, detail: string): string {
+  const short = /^(.*), needs (.*) m²$/.exec(detail)
+  if (short) return fill(language, '{have}, needs {area} m²', { have: short[1]!, area: short[2]! })
+  return translate(language, detail)
 }
 
 export function WishesPanel() {
   const tr = useTranslate()
+  const language = useSettings((s) => s.language)
   const project = useStore((s) => s.project)
   const selection = useStore((s) => s.selection)
   const levelId = useStore((s) => s.activeLevelId)
@@ -53,7 +75,7 @@ export function WishesPanel() {
   const groups = groupWishes(project, visible)
   const clashes = disagreements(wishes)
   const rooms = (project.levels ?? []).flatMap((level) =>
-    roomsFor(level).map((room) => ({ id: level.id, level: level.name, room })),
+    roomsFor(level).map((room) => ({ id: level.id, level: levelDisplayName(language, level.name), room })),
   )
   const catalog = listEntries()
   const requirements = checkRequirements(project)
@@ -106,7 +128,9 @@ export function WishesPanel() {
     }
     const text =
       reqText.trim() ||
-      (rule === 'min-area' ? `At least ${min} m²` : `Has ${chosen?.name ?? 'an item'}`)
+      (rule === 'min-area'
+        ? tr('At least {min} m²', { min })
+        : tr('Has {name}', { name: chosen ? catalogName(language, chosen.id, chosen.name) : tr('an item') }))
     useStore.getState().apply('Requirement', (draft) => {
       draft.requirements.push({
         id: newId('req'),
@@ -197,11 +221,11 @@ export function WishesPanel() {
           )}
           {groups.map((group) => (
             <section key={group.key || 'loose'}>
-              <h3>{group.name}</h3>
+              <h3>{group.key === '' ? tr(group.name) : placeName(language, group.name)}</h3>
               {group.wishes.map((wish) => (
                 <div className="wish-row" key={wish.id}>
                   <button type="button" className="link" onClick={() => focusWish(wish)}>
-                    {REACTION_GLYPH[wish.reaction]} {targetLabel(project, wish)}
+                    {REACTION_GLYPH[wish.reaction]} {targetLabel(language, project, wish)}
                     {wish.note ? ` — ${wish.note}` : ''} <span className="hint">{wish.author}</span>
                   </button>
                   <button
@@ -259,7 +283,7 @@ export function WishesPanel() {
             <select value={roomKey || rooms[0]?.room.key || ''} onChange={(event) => setRoomKey(event.target.value)}>
               {rooms.map((item) => (
                 <option key={`${item.id}:${item.room.key}`} value={item.room.key}>
-                  {item.level} · {item.room.name}
+                  {item.level} · {roomDisplayName(language, item.room.name)}
                 </option>
               ))}
             </select>
@@ -278,7 +302,7 @@ export function WishesPanel() {
               <select value={catalogId || catalog[0]?.id || ''} onChange={(event) => setCatalogId(event.target.value)}>
                 {catalog.map((entry) => (
                   <option key={entry.id} value={entry.id}>
-                    {entry.name}
+                    {catalogName(language, entry.id, entry.name)}
                   </option>
                 ))}
               </select>
@@ -305,7 +329,7 @@ export function WishesPanel() {
             <div className="req-row" key={status.requirement.id}>
               <span aria-label={status.met ? tr('Met') : tr('Unmet')}>{status.met ? '✓' : '✕'}</span>
               <span>
-                {status.roomName}: {status.requirement.text || status.detail}
+                {placeName(language, status.roomName)}: {status.requirement.text || requirementDetail(language, status.detail)}
               </span>
               <button
                 type="button"

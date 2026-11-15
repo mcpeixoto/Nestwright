@@ -97,7 +97,7 @@ export function openReceivedFile(file: { name: string; data: string; path?: stri
     useStore.getState().setMessage(`${translate(useSettings.getState().language, 'Open')} ${file.name}`)
     return true
   } catch (err) {
-    useStore.getState().setMessage(err instanceof Error ? err.message : translate(useSettings.getState().language, 'Could not open that file.'))
+    useStore.getState().setMessage(translate(useSettings.getState().language, err instanceof Error ? err.message : 'Could not open that file.'))
     return false
   }
 }
@@ -111,7 +111,7 @@ export async function openProject(): Promise<boolean> {
 export function newProject(): void {
   const language = useSettings.getState().language
   confirmIfNeeded(translate(language, 'Start a new empty project?'), () => {
-    const project = createProject('Untitled', 'house')
+    const project = createProject(translate(language, 'Untitled'), 'house')
     project.units = useSettings.getState().units
     setFilePath(null)
     presentProject(project)

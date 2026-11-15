@@ -1,4 +1,6 @@
-import { getEntry } from '../../catalog/registry'
+import { catalogNameById } from '../../i18n/catalog'
+import { roomDisplayName } from '../../i18n/rooms'
+import { useSettings } from '../../settings'
 import { swatchColor } from '../../materials/library'
 import { add, perp, polylabel, scale, sub } from '../../model/geometry'
 import { roomNetArea } from '../../model/areas'
@@ -171,6 +173,7 @@ registerPlanLayer({
     if (!ctx.level) return
     const units = ctx.project.units
     const level = ctx.level
+    const language = useSettings.getState().language
     for (const room of roomsFor(level)) {
       const at = roomLabelPoint(room.polygon)
       const anchor = ctx.worldToScreen(at)
@@ -181,7 +184,7 @@ registerPlanLayer({
       }
       if (reach < 28) continue
       paperLabel(ctx2d, anchor.x, anchor.y, [
-        { text: room.name, font: `13px ${FONT}`, color: '#3a342c' },
+        { text: roomDisplayName(language, room.name), font: `13px ${FONT}`, color: '#3a342c' },
         { text: formatArea(roomNetArea(level, room), units), font: `11px ${FONT}`, color: '#5c564c' },
       ])
     }
@@ -190,7 +193,7 @@ registerPlanLayer({
       const picked = ctx.selection.includes(item.id) || ctx.hover === item.id
       if (!picked && !showAllNames) continue
       const at = ctx.worldToScreen(item.position)
-      const name = getEntry(item.catalogId)?.name ?? item.catalogId.replace(/-/g, ' ')
+      const name = catalogNameById(language, item.catalogId)
       paperLabel(ctx2d, at.x, at.y, [{ text: name, font: `11px ${FONT}`, color: '#2a261f' }])
     }
   },

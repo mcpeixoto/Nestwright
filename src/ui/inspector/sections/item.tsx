@@ -1,5 +1,5 @@
 import { getEntry } from '../../../catalog/registry'
-import { catalogName } from '../../../i18n/catalog'
+import { catalogName, slotLabelKey } from '../../../i18n/catalog'
 import { useTranslate } from '../../../i18n'
 import { formatMoney } from '../../../model/money'
 import { useSettings } from '../../../settings'
@@ -81,7 +81,7 @@ function ItemSection() {
       />
       {slots.map((slot) => (
         <label className="field" key={slot}>
-          {tr(labelOf(slot))}
+          {tr(slotLabelKey(slot, labelOf(slot)))}
           <MaterialPicker
             value={item.materials[slot] ?? entry?.materialSlots[slot] ?? { id: 'plaster-white' }}
             onChange={(next) =>

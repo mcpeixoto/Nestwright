@@ -3,9 +3,12 @@ import { addLevelAbove } from './actions'
 import { addLevelBelow, deleteActiveLevel, duplicateActiveLevel, importTraceImage } from './levelActions'
 import { T } from '../i18n/T'
 import { useTranslate } from '../i18n'
+import { levelDisplayName } from '../i18n/rooms'
+import { useSettings } from '../settings'
 
 export function LevelBar() {
   const tr = useTranslate()
+  const language = useSettings((s) => s.language)
   const levels = useStore((s) => s.project.levels)
   const activeId = useStore((s) => s.activeLevelId)
   const display = useStore((s) => s.levelDisplay)
@@ -23,8 +26,8 @@ export function LevelBar() {
             onClick={() => useStore.getState().setActiveLevel(level.id)}
           >
             <input
-              aria-label={tr('{name} name', { name: level.name })}
-              value={level.name}
+              aria-label={tr('{name} name', { name: levelDisplayName(language, level.name) })}
+              value={levelDisplayName(language, level.name)}
               onChange={(event) => {
                 const next = event.target.value
                 useStore.getState().apply('Rename level', (draft) => {

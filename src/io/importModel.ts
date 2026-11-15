@@ -4,9 +4,11 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import { forgetThumb, requestThumb } from '../catalog/thumbnails'
 import type { CatalogEntry } from '../catalog/types'
 import { getEntry, listEntries, registerEntries, unregisterEntry } from '../catalog/registry'
+import { fill, translate } from '../i18n'
 import { newId } from '../model/ids'
 import type { ImportedAsset } from '../model/types'
 import { getPlatform } from '../platform'
+import { useSettings } from '../settings'
 import { useStore } from '../store'
 
 const cache = new Map<string, THREE.Group>()
@@ -142,7 +144,7 @@ function registerImportedAsset(asset: ImportedAsset): void {
   if (!getEntry(id)) {
     const entry: CatalogEntry = {
       id,
-      name: asset.name || 'Imported model',
+      name: asset.name || translate(useSettings.getState().language, 'Imported model'),
       category: 'imported',
       tags: ['imported'],
       defaultSize: { w: 1, d: 1, h: 1 },
@@ -215,8 +217,9 @@ export async function importModelFile(): Promise<void> {
 
 export function removeImportedModel(assetId: string): void {
   const asset = useStore.getState().project.assets.find((entry) => entry.id === assetId)
-  const label = asset?.name ?? 'this model'
-  const message = `Remove ${label}? Placed copies of it will be removed too.`
+  const language = useSettings.getState().language
+  const label = asset?.name ?? translate(language, 'this model')
+  const message = fill(language, 'Remove {label}? Placed copies of it will be removed too.', { label })
   const run = () => {
     useStore.getState().apply('Remove model', (draft) => {
       draft.assets = draft.assets.filter((entry) => entry.id !== assetId)

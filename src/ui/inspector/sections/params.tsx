@@ -46,7 +46,7 @@ function ParamsSection() {
               <select value={String(value)} onChange={(event) => commit(def.key, event.target.value)}>
                 {(def.options ?? []).map((option) => (
                   <option key={option} value={option}>
-                    {option}
+                    {tr(option)}
                   </option>
                 ))}
               </select>

@@ -198,7 +198,7 @@ export function PhotoMode() {
         <select value={photo.aspect} onChange={(event) => setPhoto({ aspect: event.target.value as PhotoAspect })}>
           {ASPECTS.map((item) => (
             <option key={item} value={item}>
-              {item}
+              {item === 'free' ? tr('Free') : item}
             </option>
           ))}
         </select>

@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { newId } from '../model/ids'
 import { getPlanCursor } from '../plan2d/cursor'
 import { getPlanRenderer } from '../plan2d/PlanRenderer'
+import { fill, translate } from '../i18n'
 import { getPlatform } from '../platform'
 import { useSettings } from '../settings'
 import { REDO_BLOCKED, UNDO_BLOCKED, useStore } from '../store'
@@ -20,6 +21,14 @@ import {
 } from './session'
 
 const ADDRESS_KEY = 'nestwright.coopAddress'
+
+function t(key: string): string {
+  return translate(useSettings.getState().language, key)
+}
+
+function f(key: string, vars: Record<string, string | number>): string {
+  return fill(useSettings.getState().language, key, vars)
+}
 
 export interface ChatLine {
   id: number
@@ -140,7 +149,7 @@ function pushChat(peer: Peer, text: string): void {
 function identity(): { name: string; colour: string } {
   const settings = useSettings.getState()
   return {
-    name: settings.playerName.trim() || 'Player',
+    name: settings.playerName.trim() || t('Player'),
     colour: settings.playerColor || '#3FB8AF',
   }
 }
@@ -226,10 +235,10 @@ function hooks(selfId: string): SessionHooks {
       publish({ peers })
     },
     onJoined(peer) {
-      notify(`${peer.name} joined`)
+      notify(f('{name} joined', { name: peer.name }))
     },
     onLeft(peer) {
-      notify(`${peer.name} left`)
+      notify(f('{name} left', { name: peer.name }))
       removePresence(peer.id)
     },
     onChat(peer, text) {
@@ -249,8 +258,9 @@ function hooks(selfId: string): SessionHooks {
     },
     onRejected(text) {
       rejected = true
-      publish({ error: text, role: 'idle' })
-      notify(text)
+      const shown = t(text)
+      publish({ error: shown, role: 'idle' })
+      notify(shown)
     },
     onDisconnected() {
       const quiet = intentional || rejected
@@ -260,15 +270,15 @@ function hooks(selfId: string): SessionHooks {
       const was = state.role
       resetVisual()
       if (error) publish({ error })
-      if (!quiet) notify(was === 'idle' ? "Couldn't reach that address." : 'Disconnected')
+      if (!quiet) notify(t(was === 'idle' ? "Couldn't reach that address." : 'Disconnected'))
     },
     onSynced() {
-      notify('Synced with your partner')
+      notify(t('Synced with your partner'))
     },
     onWelcome(peers) {
       publish({ role: 'client', peers, error: '' })
       const partner = peers.find((peer) => peer.id !== selfId)
-      notify(partner ? `Joined ${partner.name}` : 'Joined')
+      notify(partner ? f('Joined {name}', { name: partner.name }) : t('Joined'))
     },
   }
 }
@@ -312,7 +322,7 @@ export async function ensurePlayerName(): Promise<void> {
       }
     }
     if (!useSettings.getState().playerName.trim()) {
-      useSettings.getState().setSettings({ playerName: name || 'Player' })
+      useSettings.getState().setSettings({ playerName: name || t('Player') })
     }
   } catch {
     /* settings unavailable */
@@ -337,7 +347,7 @@ export async function leaveSession(): Promise<void> {
     }
   }
   resetVisual()
-  notify('Left the session')
+  notify(t('Left the session'))
 }
 
 export async function startHosting(): Promise<void> {
@@ -370,7 +380,7 @@ export async function startHosting(): Promise<void> {
     unsubClose?.()
     unsubMessage = null
     unsubClose = null
-    publish({ error: err instanceof Error ? err.message : 'Could not start hosting' })
+    publish({ error: t(err instanceof Error ? err.message : 'Could not start hosting') })
     return
   }
   session = createHostSession({
@@ -406,16 +416,16 @@ export async function startHosting(): Promise<void> {
 export async function joinSession(address: string, code: string): Promise<void> {
   const url = websocketUrl(address)
   if (!url) {
-    publish({ error: 'Enter an address like 192.168.1.20' })
+    publish({ error: t('Enter an address like 192.168.1.20') })
     return
   }
   const cleaned = code.trim().toUpperCase()
   if (!/^[A-Z]{4}$/.test(cleaned)) {
-    publish({ error: 'The code is four letters.' })
+    publish({ error: t('The code is four letters.') })
     return
   }
   if (typeof WebSocket === 'undefined') {
-    publish({ error: 'This environment has no WebSocket.' })
+    publish({ error: t('This environment has no WebSocket.') })
     return
   }
   rememberAddress(address.trim())
@@ -468,10 +478,11 @@ export function sendChat(text: string): void {
   if (!trimmed) return
   if (hostSessionHandle) hostSessionHandle.sendChat(trimmed)
   else if (clientSessionHandle) clientSessionHandle.sendChat(trimmed)
-  else notify('Join a session to chat.')
+  else notify(t('Join a session to chat.'))
 }
 
 useStore.subscribe((state, prev) => {
   if (state.message === prev.message) return
-  if (state.message === UNDO_BLOCKED || state.message === REDO_BLOCKED) notify(state.message)
+  const language = useSettings.getState().language
+  if (state.message === translate(language, UNDO_BLOCKED) || state.message === translate(language, REDO_BLOCKED)) notify(state.message)
 })
