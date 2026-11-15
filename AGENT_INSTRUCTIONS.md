@@ -242,7 +242,8 @@ All five must exit 0. For anything visible, also run `npm run dev` and check it 
 
 ## Ship
 
-The whole path is scripted in `scripts/release/` (zsh, run on the Mac):
+The whole path is scripted in `scripts/ship/` (zsh, run on the Mac; not `scripts/release/`,
+which `.gitignore` swallows):
 - `gate.sh <pr>...` — merge gate: squash-merges each PR only when no check is pending and all
   passed; red or conflicting PRs are dropped and reported.
 - `bump-release.sh <ver> "<notes>" [<pr>...]` — gates the listed PRs, opens a `release`-labelled
