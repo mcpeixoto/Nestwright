@@ -1,5 +1,6 @@
 import { useStore } from '../store'
-import { gainedRooms, historyKind, sfxForLabel } from './logic'
+import { emitCelebrate } from '../ui/events'
+import { gainedRooms, historyKind, newRoomNames, sfxForLabel } from './logic'
 import { sfx } from './sfx'
 
 /** One subscription for undo, redo, labelled edits, and a room count that grew. */
@@ -16,6 +17,7 @@ export function installEditSounds(): () => void {
       }
       if ((kind === 'apply' || kind === 'redo') && gainedRooms(prev.project.levels, state.project.levels)) {
         sfx('room-complete')
+        emitCelebrate({ kind: 'room-complete', names: newRoomNames(prev.project.levels, state.project.levels) })
       }
     } catch {
       /* sound must not break the edit */

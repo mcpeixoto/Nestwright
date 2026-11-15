@@ -739,6 +739,37 @@ input, select {
   border-left: 3px solid var(--sand);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
+.celebrate {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  overflow: hidden;
+  pointer-events: none;
+}
+.celebrate-bit {
+  position: absolute;
+  width: 7px;
+  height: 10px;
+  opacity: 0;
+  pointer-events: none;
+  animation-name: celebrate-burst;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+.celebrate-bit.leaf {
+  width: 8px;
+  height: 11px;
+  border-radius: 0 80% 0 80%;
+}
+@keyframes celebrate-burst {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg); }
+  10% { opacity: 1; }
+  65% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .celebrate-bit { display: none; }
+}
 .plan-pdf-dialog { width: min(380px, calc(100vw - 48px)); }
 .plan-pdf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
 .plan-pdf-levels { display: flex; flex-direction: column; gap: 6px; margin: 0 0 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }

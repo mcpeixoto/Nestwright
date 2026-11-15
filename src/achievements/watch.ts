@@ -1,4 +1,5 @@
 import { sfx } from '../audio/sfx'
+import { emitCelebrate } from '../ui/events'
 import { fill, translate } from '../i18n'
 import { getPlatform } from '../platform'
 import { useSettings } from '../settings'
@@ -94,7 +95,10 @@ export function installAchievementWatch(): void {
   const sync = (before: AchievementContext, after: AchievementContext) => {
     const result = progressForEdit(progress, before, after)
     publish(result.next)
-    if (announced && result.fresh.length > 0) sfx('unlock')
+    if (announced && result.fresh.length > 0) {
+      sfx('unlock')
+      emitCelebrate({ kind: 'unlock' })
+    }
     for (const id of result.fresh) {
       void forwardSteam(id)
       if (announced) {

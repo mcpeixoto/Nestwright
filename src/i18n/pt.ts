@@ -534,6 +534,7 @@ export const pt: { [K in MessageKey]: string } = {
   '{n} h ago': 'há {n} h',
   '{n} d ago': 'há {n} d',
   'Unlocked: {name}': 'Desbloqueado: {name}',
+  'Room complete: {name}': 'Divisão concluída: {name}',
   'Playing as {name}': 'A jogar como {name}',
   'Current against {name}. Switching files the live design as “{before}”. {summary}':
     'Atual face a {name}. Mudar arquiva o desenho vivo como “{before}”. {summary}',
