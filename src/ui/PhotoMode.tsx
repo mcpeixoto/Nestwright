@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { exportViewImage } from '../io/export/images'
+import { EV_COMP_MAX, EV_COMP_MIN, formatEv } from '../model/exposure'
 import { useStore } from '../store'
 import { getController } from '../view3d/SceneController'
 import {
@@ -174,7 +175,8 @@ export function PhotoMode() {
       </label>
       <label>
         <T k="Exposure" />
-        <input type="range" aria-label={tr('Exposure')} min={0.4} max={2} step={0.01} value={photo.exposure} onChange={(event) => setPhoto({ exposure: Number(event.target.value) })} />
+        <input type="range" aria-label={tr('Exposure')} min={EV_COMP_MIN} max={EV_COMP_MAX} step={0.1} value={photo.exposure} onChange={(event) => setPhoto({ exposure: Number(event.target.value) })} />
+        <span className="readout">{formatEv(photo.exposure)}</span>
       </label>
       <label>
         <T k="Time" />

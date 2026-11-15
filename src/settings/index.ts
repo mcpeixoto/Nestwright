@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { clampEvComp } from '../model/exposure'
 import { qualityProfile, RENDER_SCALE_MAX, RENDER_SCALE_MIN } from '../view3d/render/quality'
 
 export type GraphicsQuality = 'low' | 'medium' | 'high' | 'ultra'
@@ -35,6 +36,8 @@ export interface Settings {
    */
   qualityAuto: boolean
   toneMapping: ToneMapSetting
+  /** Exposure compensation in EV (−2…+2) on top of the metered auto-exposure. */
+  exposureComp: number
 }
 
 const KEY = 'nestwright:settings'
@@ -60,6 +63,7 @@ export const DEFAULT_SETTINGS: Settings = {
   renderScale: 0,
   qualityAuto: false,
   toneMapping: 'agx',
+  exposureComp: 0,
 }
 
 function clamp(value: number, min: number, max: number, fallback: number): number {
@@ -97,6 +101,7 @@ export function normalizeSettings(partial: Partial<Settings> | null | undefined)
     renderScale: normalizeRenderScale(source.renderScale),
     qualityAuto: source.qualityAuto === true,
     toneMapping: source.toneMapping === 'aces' ? 'aces' : 'agx',
+    exposureComp: typeof source.exposureComp === 'number' ? clampEvComp(Math.round(source.exposureComp * 10) / 10) : 0,
   }
 }
 

@@ -193,6 +193,7 @@ export const pt: { [K in MessageKey]: string } = {
   Focus: 'Foco',
   Aperture: 'Abertura',
   Exposure: 'Exposição',
+  'Exposure compensation': 'Compensação de exposição',
   Aspect: 'Proporção',
   Capture: 'Capturar',
   'Add keyframe': 'Acrescentar fotograma',

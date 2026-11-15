@@ -191,6 +191,7 @@ export const en = {
   Focus: 'Focus',
   Aperture: 'Aperture',
   Exposure: 'Exposure',
+  'Exposure compensation': 'Exposure compensation',
   Aspect: 'Aspect',
   Capture: 'Capture',
   'Add keyframe': 'Add keyframe',
