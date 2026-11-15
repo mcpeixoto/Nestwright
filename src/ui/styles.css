@@ -755,3 +755,4 @@ input, select {
 .budget-row-actions { display: flex; gap: 6px; align-items: center; }
 .budget-variants { width: 100%; border-collapse: collapse; }
 .budget-variants td, .budget-variants th { text-align: left; padding: 2px 4px 2px 0; font-weight: 400; }
+.trace-actions { display: flex; flex-wrap: wrap; gap: 8px; }

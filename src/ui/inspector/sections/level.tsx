@@ -2,6 +2,7 @@ import { levelAreas } from '../../../model/areas'
 import { formatArea } from '../../../model/units'
 import { roomsFor, selectActiveLevel, useStore } from '../../../store'
 import { useTranslate } from '../../../i18n'
+import { importTraceImage } from '../../levelActions'
 import { selectionFacts } from '../facts'
 import { NumberField, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
@@ -10,6 +11,7 @@ import { T } from '../../../i18n/T'
 function LevelSection() {
   const level = useStore(selectActiveLevel)
   const units = useStore((s) => s.project.units)
+  const hasTrace = useStore((s) => s.project.traces.some((item) => item.levelId === s.activeLevelId))
   const tr = useTranslate()
   if (!level) return null
   const areas = levelAreas(level, roomsFor(level))
@@ -71,6 +73,11 @@ function LevelSection() {
           })
         }
       />
+      {hasTrace ? null : (
+        <button type="button" onClick={() => void importTraceImage()}>
+          <T k="Import trace image…" />
+        </button>
+      )}
       <p className="hint"><T k="Select a wall, opening, room or piece of furniture." /></p>
     </div>
   )

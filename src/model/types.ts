@@ -368,6 +368,15 @@ export interface TraceImage {
   scale: number;
   rotation: number;
   opacity: number;
+  /** Pixel size of `src`. Omitted on traces saved before it was stored. */
+  width?: number;
+  height?: number;
+  /** When false, the plan hides the image. Omitted means visible. */
+  visible?: boolean;
+  /** A locked trace is not dragged. */
+  locked?: boolean;
+  /** Set once a real distance has been calibrated. */
+  calibrated?: boolean;
 }
 
 export type ProjectKind = 'house' | 'apartment';

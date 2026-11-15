@@ -582,14 +582,17 @@ function registerIpc(steam: SteamRuntime) {
   ipcMain.handle('nestwright:open-file', async (_event, accept: string) => {
     const acceptText = String(accept)
     const model = /glb|gltf|\bobj\b/i.test(acceptText)
+    const trace = /png|jpe?g|webp|pdf|image\/|application\/pdf/i.test(acceptText)
     const wantJson = acceptText.includes('json') && !acceptText.includes('nest')
     const result = await dialog.showOpenDialog({
-      title: model ? 'Import model' : 'Open project',
+      title: trace ? 'Import trace image' : model ? 'Import model' : 'Open project',
       properties: ['openFile'],
       filters: [
-        model
-          ? { name: '3D model', extensions: ['glb', 'gltf', 'obj'] }
-          : { name: 'Nestwright', extensions: wantJson ? ['json'] : ['nest', 'json'] },
+        trace
+          ? { name: 'Image', extensions: ['png', 'jpg', 'jpeg', 'webp', 'pdf'] }
+          : model
+            ? { name: '3D model', extensions: ['glb', 'gltf', 'obj'] }
+            : { name: 'Nestwright', extensions: wantJson ? ['json'] : ['nest', 'json'] },
       ],
     })
     const filePath = result.filePaths[0]
@@ -598,6 +601,13 @@ function registerIpc(steam: SteamRuntime) {
     if (model) {
       const bytes = await fs.readFile(filePath)
       return { name: path.basename(filePath), data: bytes.toString('base64'), path: filePath }
+    }
+    if (trace) {
+      const bytes = await fs.readFile(filePath)
+      const ext = path.extname(filePath).toLowerCase()
+      const mime =
+        ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.pdf' ? 'application/pdf' : 'image/jpeg'
+      return { name: path.basename(filePath), data: `data:${mime};base64,${bytes.toString('base64')}`, path: filePath }
     }
     const data = await fs.readFile(filePath, 'utf8')
     return { name: path.basename(filePath), data, path: filePath }

@@ -12,6 +12,7 @@ import { itemCorners } from '../snap'
 import { fillPoly, paperLabel, strokeLine, strokePoly } from '../draw'
 import { registerPlanLayer, type PlanDrawContext } from '../layers'
 import './structure'
+import './trace'
 import { installOutsidePlan } from './outside'
 import './together'
 
