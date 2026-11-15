@@ -5,40 +5,41 @@ The picks are the `kind: "model"` entries in `content/sources.json`. Aspect is c
 against the catalog `defaultSize`; Poly Haven `dimensions` are [x, y, z] mm with z up. A match is rejected
 when one ratio is more than about 35% off, or when the style clashes and nothing better exists.
 
-27 of 115 catalog ids have a model; 88 have none. 4 scatter species have one (bush-round, bush-flowering,
-flowers-mixed, palm).
+22 of 115 catalog ids have a model; 93 have none. 1 scatter species has one (flowers-mixed).
+Eight first-round picks were dropped after review of the contact sheet; they are the first rows of the
+rejected table.
 
 ## Picks with a caveat
 
 | catalog id / species | Poly Haven id | caveat |
 | --- | --- | --- |
-| sofa-3 | sofa_02 | tufted chesterfield, classic rather than modern |
-| sofa-2 | Sofa_01 | camelback with carved frame; aspect d/h 32% |
+| sofa-3 | sofa_02 | tufted chesterfield, classic rather than modern; 1k textures |
 | armchair-wingback | ArmChair_01 | Victorian bergere |
 | nightstand | painted_wooden_nightstand | rustic painted |
-| dining-table | painted_wooden_table | farmhouse trestle; model is 0.96 m high, catalog box governs |
 | round-table | round_wooden_table_01 | traditional dark pedestal; model is 1.01 m high |
 | bar-stool | bar_chair_round_01 | LOD1 does not simplify (14 372 of 14 373 tris at error 0.01) |
 | dining-island-stool | painted_wooden_stool | rustic painted |
-| dresser | GothicCommode_01 | carved dark wood |
 | chandelier | Chandelier_01 | ornate brass; 26.9k tris |
 | wall-sconce | industrial_wall_sconce | brass farmhouse |
-| microwave | vintage_microwave | 1970s; source is 1.07 m wide, catalog size governs |
-| wall-art | hanging_picture_frame_01 | glass pane dropped (`dropMaterials`); placeholder print reads "Ray Homes" |
 | coffee-table | modern_coffee_table_01 | glTF runs its long side along Z; `rotateY: 90` |
 | shelving-unit | steel_frame_shelves_01 | glTF is in decimetres; `units: "dm"` |
 | plant-pot | potted_plant_01 | 96k source tris, capped to 30k (`maxTriangles`) |
 | monstera | potted_plant_02 | not a monstera; 42% wider than the catalog box (over the limit, kept for review); dirt mesh capped |
 | cactus | potted_plant_04 | aloe, not a cactus; aspect 36% |
-| species bush-round | shrub_02 (`node: shrub_02_b`) | sapling rather than a round bush |
-| species bush-flowering | periwinkle_plant (`node: periwinkle_plant_02_LOD0`) | sparse, 0.41 m |
 | species flowers-mixed | flower_gazania (`node: flower_gazania_h_LOD0`) | one clump |
-| species palm | quiver_tree_02 | quiver tree (aloe), no palm on Poly Haven; capped to 30k |
 
 ## Rejected candidates
 
 | catalog id / species | Poly Haven id | reason |
 | --- | --- | --- |
+| microwave | vintage_microwave | dropped in review: 1970s style, and 1.07 m wide against a 0.5 m catalog item |
+| dresser | GothicCommode_01 | dropped in review: gothic, jarring |
+| sofa-2 | Sofa_01 | dropped in review: rococo, jarring |
+| dining-table | painted_wooden_table | dropped in review: farmhouse; 2.41 m long against 1.6 m |
+| wall-art | hanging_picture_frame_01 | dropped in review: the print carries "Ray Homes" text |
+| species bush-round | shrub_02 (`node: shrub_02_b`) | dropped in review: reads as a dry weed |
+| species bush-flowering | periwinkle_plant (`node: periwinkle_plant_02_LOD0`) | dropped in review: a sparse single stem, not a bush |
+| species palm | quiver_tree_02 | dropped in review: a quiver tree is not a palm |
 | sofa-modular | sofa_03 | d/h 47% off; ornate |
 | chaise | vintage_day_bed | d/h 35%; floral antique day bed |
 | pouf | Ottoman_01 | w/d 42% off (used for ottoman) |
@@ -81,14 +82,14 @@ flowers-mixed, palm).
 
 ## Catalog ids with no Poly Haven match
 
-- living: bookshelf, sofa-corner, sofa-modular, chaise, pouf, tv, sideboard, fireplace, bean-bag, piano
-- dining: extendable-table, bench, buffet, pendant-cluster
-- bedroom: bed-double, bed-single, bed-king, bunk-bed, crib, wardrobe, wardrobe-sliding, vanity, mirror-standing
+- living: sofa-2, bookshelf, sofa-corner, sofa-modular, chaise, pouf, tv, sideboard, fireplace, bean-bag, piano
+- dining: dining-table, extendable-table, bench, buffet, pendant-cluster
+- bedroom: dresser, bed-double, bed-single, bed-king, bunk-bed, crib, wardrobe, wardrobe-sliding, vanity, mirror-standing
 - office: desk, desk-l, standing-desk, office-chair, gaming-chair, filing-cabinet, monitor
-- kitchen: fridge-tall, fridge-american, range-hood, coffee-machine, kitchen-run, kitchen-l, kitchen-island
+- kitchen: microwave, fridge-tall, fridge-american, range-hood, coffee-machine, kitchen-run, kitchen-l, kitchen-island
 - bathroom: all 12 (toilet, bathtub, shower, washbasin, double-washbasin, freestanding-tub, walk-in-shower, wc-wall-hung, towel-radiator, bathroom-cabinet, washing-machine, dryer)
 - lighting: floor-lamp, arc-floor-lamp, table-lamp, ceiling-light, spotlight-track, led-strip
-- decor: rug, rug-round, rug-runner, curtains, blinds, mirror-round, books, candles, cushion, throw-blanket, shelf-wall
+- decor: wall-art, rug, rug-round, rug-runner, curtains, blinds, mirror-round, books, candles, cushion, throw-blanket, shelf-wall
 - outdoor: fountain, garden-sofa, lounger, parasol, outdoor-dining-set, bbq, hot-tub, firepit, swing, trampoline, bicycle, car, dog-house, cat-tree
 - plants: fiddle-leaf, hanging-plant, olive-tree-pot, herb-box
 - structure: radiator, air-conditioner, wood-stove, fireplace-insert

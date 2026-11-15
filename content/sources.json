@@ -1134,24 +1134,12 @@
       "kind": "model",
       "provider": "polyhaven",
       "sourceId": "sofa_02",
-      "resolution": "2k",
+      "resolution": "1k",
       "licence": "CC0",
       "targets": {
         "catalogId": "sofa-3"
       },
       "notes": "tufted leather sofa; classic, not modern"
-    },
-    {
-      "key": "sofa-01-model",
-      "kind": "model",
-      "provider": "polyhaven",
-      "sourceId": "Sofa_01",
-      "resolution": "2k",
-      "licence": "CC0",
-      "targets": {
-        "catalogId": "sofa-2"
-      },
-      "notes": "camelback sofa with carved frame; classic, nothing modern at this size"
     },
     {
       "key": "modern-arm-chair-01-model",
@@ -1248,19 +1236,6 @@
       "notes": "the glTF is authored in decimetres (21.4 units tall)"
     },
     {
-      "key": "hanging-picture-frame-01-model",
-      "kind": "model",
-      "provider": "polyhaven",
-      "sourceId": "hanging_picture_frame_01",
-      "resolution": "1k",
-      "licence": "CC0",
-      "dropMaterials": ["hanging_picture_frame_01_glass"],
-      "targets": {
-        "catalogId": "wall-art"
-      },
-      "notes": "the glass pane is BLEND with an opaque JPEG and hides the print"
-    },
-    {
       "key": "wall-clock-model",
       "kind": "model",
       "provider": "polyhaven",
@@ -1281,18 +1256,6 @@
       "targets": {
         "catalogId": "vase"
       }
-    },
-    {
-      "key": "painted-wooden-table-model",
-      "kind": "model",
-      "provider": "polyhaven",
-      "sourceId": "painted_wooden_table",
-      "resolution": "1k",
-      "licence": "CC0",
-      "targets": {
-        "catalogId": "dining-table"
-      },
-      "notes": "painted farmhouse trestle table"
     },
     {
       "key": "round-wooden-table-01-model",
@@ -1342,18 +1305,6 @@
       "notes": "rustic painted stool"
     },
     {
-      "key": "gothic-commode-01-model",
-      "kind": "model",
-      "provider": "polyhaven",
-      "sourceId": "GothicCommode_01",
-      "resolution": "1k",
-      "licence": "CC0",
-      "targets": {
-        "catalogId": "dresser"
-      },
-      "notes": "carved dark-wood chest of drawers; classic"
-    },
-    {
       "key": "modern-ceiling-lamp-01-model",
       "kind": "model",
       "provider": "polyhaven",
@@ -1401,18 +1352,6 @@
       "notes": "painted wooden settle bench"
     },
     {
-      "key": "vintage-microwave-model",
-      "kind": "model",
-      "provider": "polyhaven",
-      "sourceId": "vintage_microwave",
-      "resolution": "1k",
-      "licence": "CC0",
-      "targets": {
-        "catalogId": "microwave"
-      },
-      "notes": "1970s microwave; source dims are oversized, catalog size governs"
-    },
-    {
       "key": "potted-plant-01-model",
       "kind": "model",
       "provider": "polyhaven",
@@ -1450,32 +1389,6 @@
       "notes": "aloe in a white pot; aspect 36% off (flagged)"
     },
     {
-      "key": "shrub-02-model",
-      "kind": "model",
-      "provider": "polyhaven",
-      "sourceId": "shrub_02",
-      "resolution": "1k",
-      "licence": "CC0",
-      "node": "shrub_02_b",
-      "targets": {
-        "species": "bush-round"
-      },
-      "notes": "variant b of four saplings"
-    },
-    {
-      "key": "periwinkle-plant-model",
-      "kind": "model",
-      "provider": "polyhaven",
-      "sourceId": "periwinkle_plant",
-      "resolution": "1k",
-      "licence": "CC0",
-      "node": "periwinkle_plant_02_LOD0",
-      "targets": {
-        "species": "bush-flowering"
-      },
-      "notes": "variant 02 of six"
-    },
-    {
       "key": "flower-gazania-model",
       "kind": "model",
       "provider": "polyhaven",
@@ -1487,19 +1400,6 @@
         "species": "flowers-mixed"
       },
       "notes": "variant h of eight"
-    },
-    {
-      "key": "quiver-tree-02-model",
-      "kind": "model",
-      "provider": "polyhaven",
-      "sourceId": "quiver_tree_02",
-      "resolution": "1k",
-      "licence": "CC0",
-      "maxTriangles": 30000,
-      "targets": {
-        "species": "palm"
-      },
-      "notes": "quiver tree (aloe) standing in for a palm; no CC0 palm on Poly Haven"
     }
   ]
 }

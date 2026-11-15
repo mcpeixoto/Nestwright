@@ -6,16 +6,16 @@
   "sourceUrl": "https://polyhaven.com/a/sofa_02",
   "author": "Kirill Sannikov",
   "licence": "CC0",
-  "fetchedAt": "2026-11-15T03:34:06.455Z",
-  "sha256Source": "a0609ed97dd35d9b5fe6fd8e4c1373feaaa528080e98262f957bb9125b4f953a",
+  "fetchedAt": "2026-11-15T03:47:52.996Z",
+  "sha256Source": "400651b0e73a0a1bfbc4840640b6efc816d88e1d2fecb631156cec91a5ebd16b",
   "targets": {
     "catalogId": "sofa-3"
   },
   "files": [
     {
       "path": "models/sofa-02-model/sofa-02-model.glb",
-      "bytes": 4992840,
-      "sha256": "33de24470e0cfea5843e58297135bc64a36c2f140d3093d543d11d9b0ca691e6"
+      "bytes": 1418320,
+      "sha256": "3c2c5397d5db875aef28be1511c3b73769e9c4ac9b418f96344e21ffe9d6cdbb"
     },
     {
       "path": "models/sofa-02-model/sofa-02-model.lod1.glb",
