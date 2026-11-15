@@ -3,6 +3,10 @@ import { attribute, cos, positionGeometry, positionLocal, sin, uniform, vec3 } f
 import { sampleHeight } from '../../model/terrain'
 import type { Terrain } from '../../model/types'
 import { srgbByteToLinear } from '../colorLinear'
+import { windTime } from './foliageMaterials'
+import { TreeField } from './treeField'
+import { foliageLibrary } from './treeLibrary'
+import { foliageSpec, PLANT_SWAY_ATTRIBUTE, swayPhase } from './treeSpecies'
 
 interface Scratch {
   pos: number[]
@@ -279,13 +283,7 @@ interface Batch {
   info: THREE.InstancedBufferAttribute
 }
 
-/** Per-instance sway data: [gust phase from the plant's ground position, plant scale]. */
-export const PLANT_SWAY_ATTRIBUTE = 'plantSway'
-
-/** Gust phase keyed off the plant's origin, so a whole plant moves together. */
-export function swayPhase(x: number, z: number): number {
-  return x * 0.37 + z * 0.23
-}
+export { PLANT_SWAY_ATTRIBUTE, swayPhase }
 
 /**
  * A geometry per batch that shares the species' vertex buffers and adds its own per-instance
@@ -307,6 +305,9 @@ export class PlantField {
   private material: THREE.MeshStandardNodeMaterial
   private time = uniform(0)
   private dummy = new THREE.Object3D()
+  private trees = new TreeField()
+  private terrain: Terrain | null = null
+  private libraryVersion = -1
 
   constructor() {
     this.group.name = 'plants'
@@ -344,9 +345,18 @@ export class PlantField {
   }
 
   sync(terrain: Terrain): void {
+    this.terrain = terrain
     const groups = new Map<string, Terrain['plants']>()
+    const generated: Terrain['plants'] = []
     for (const plant of terrain.plants) {
       if (!plant || !Number.isFinite(plant.position?.x) || !Number.isFinite(plant.position?.y)) continue
+      if (foliageSpec(plant.species)) {
+        foliageLibrary.request(plant.species)
+        if (foliageLibrary.get(plant.species)) {
+          generated.push(plant)
+          continue
+        }
+      }
       const key = chunkKey(plant.species || 'bush-round', plant.position.x, plant.position.y)
       const list = groups.get(key)
       if (list) list.push(plant)
@@ -400,6 +410,12 @@ export class PlantField {
       this.drop(batch)
       this.batches.delete(key)
     }
+    if (generated.length > 0 || this.trees.group.parent) {
+      // Under `plants`, so the foliage shadow pass finds them; added only once used.
+      if (!this.trees.group.parent) this.group.add(this.trees.group)
+      this.trees.sync(terrain, generated, (species) => foliageLibrary.get(species))
+    }
+    this.libraryVersion = foliageLibrary.version
   }
 
   private drop(batch: Batch): void {
@@ -409,11 +425,21 @@ export class PlantField {
     batch.info.dispose()
   }
 
-  update(elapsed: number): void {
+  /**
+   * Wind clock, one slice of foliage generation, and the trees' LOD pick for this camera.
+   * When a species finishes generating, its plants move from the simple batches to the trees.
+   */
+  update(elapsed: number, camera?: THREE.Camera, renderer?: THREE.WebGPURenderer | null): void {
     this.time.value = elapsed
+    windTime.value = elapsed
+    foliageLibrary.pump(renderer ?? null)
+    if (this.terrain && foliageLibrary.version !== this.libraryVersion) this.sync(this.terrain)
+    if (camera && this.trees.group.parent) this.trees.update(camera)
   }
 
   dispose(): void {
+    this.trees.dispose()
+    this.group.remove(this.trees.group)
     for (const batch of this.batches.values()) this.drop(batch)
     this.batches.clear()
     for (const geo of this.geos.values()) geo.dispose()
