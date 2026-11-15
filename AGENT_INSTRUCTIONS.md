@@ -242,7 +242,20 @@ All five must exit 0. For anything visible, also run `npm run dev` and check it 
 
 ## Ship
 
-Merge to `main`, then tag `vX.Y.Z` and push the tag. Locally on the Mac:
+The whole path is scripted in `scripts/release/` (zsh, run on the Mac):
+- `gate.sh <pr>...` — merge gate: squash-merges each PR only when no check is pending and all
+  passed; red or conflicting PRs are dropped and reported.
+- `bump-release.sh <ver> "<notes>" [<pr>...]` — gates the listed PRs, opens a `release`-labelled
+  version-bump PR from main, then runs `release.sh`.
+- `release.sh <bump-pr> <ver> "<notes>"` — gates the bump PR, builds the universal app with the
+  content pack (`npm run content:fetch` first: without it the app ships procedural-only), and only
+  after a good build tags, publishes the pre-release, installs and runs `--smoke` (its
+  console.log must say "content pack: N texture sets").
+
+A universal build fails on any single-arch native module in `node_modules`; keep renderer-only
+dependencies (bundled by Vite) out of electron-builder `files`. CI cannot catch this (no mac runner).
+
+Manual equivalent: merge to `main`, then tag `vX.Y.Z` and push the tag. Locally on the Mac:
 `npm run dist:mac` builds an unsigned universal (arm64 + x64)
 `release/Nestwright-<ver>-mac-universal.dmg` and `release/mac-universal/Nestwright.app`;
 `npm run dist:mac:signed` does the same signed with the Developer ID in the login keychain and
