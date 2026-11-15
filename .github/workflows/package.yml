@@ -1,0 +1,61 @@
+name: Package
+
+# Cross-builds the Windows and Linux apps on the self-hosted Linux runner and enforces the
+# installed-size budget. Runs on PRs labelled `release` and on version tags only: a package
+# run takes several minutes and downloads two Electron builds.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: package-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    if: startsWith(github.ref, 'refs/tags/v') || contains(github.event.pull_request.labels.*.name, 'release')
+    runs-on: [self-hosted, vrserver]
+    timeout-minutes: 30
+    env:
+      # electron-builder fetches the per-OS Electron zips itself; the host binary is not needed.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+      # Steam installed size (unpacked depot) must stay within 2 GiB.
+      MAX_INSTALLED_MIB: "2048"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Windows x64 (dir + portable)
+        run: node scripts/dist.mjs win
+      - name: Linux x64 (dir + AppImage)
+        run: node scripts/dist.mjs linux
+      - name: Size budget
+        run: |
+          node scripts/packaging/check-size.mjs --max-mib "$MAX_INSTALLED_MIB" release/win-unpacked release/linux-unpacked | tee size.txt
+          {
+            echo '### Installed size'
+            echo '```'
+            cat size.txt
+            ls -l release/*.AppImage release/*.exe
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      # Artifact storage on a private repo is metered, so only tags keep the binaries, briefly.
+      - name: Upload installers (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: nestwright-win-linux
+          path: |
+            release/*.AppImage
+            release/*-portable.exe
+          retention-days: 3
+          compression-level: 0
+      - name: Clean release dir
+        if: always()
+        run: rm -rf release
