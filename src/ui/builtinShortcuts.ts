@@ -1,5 +1,15 @@
 import { selectActiveLevel, useStore, type ViewMode } from '../store'
-import { deleteSelection, duplicateSelection, rotateSelection, saveProject, saveProjectAs } from './actions'
+import {
+  copySelection,
+  deleteSelection,
+  duplicateSelection,
+  hasItemClipboard,
+  pasteClipboard,
+  rotateSelection,
+  saveProject,
+  saveProjectAs,
+  selectAllItems,
+} from './actions'
 import { fitVisible } from './fit'
 import { registerShortcut, setHelpOpen } from './shortcuts'
 
@@ -45,6 +55,45 @@ registerShortcut({
   keys: 'mod+d',
   description: 'Duplicate selection',
   run: () => duplicateSelection(),
+})
+
+function selectionHasItems(): boolean {
+  const state = useStore.getState()
+  const level = selectActiveLevel(state)
+  return level?.items.some((item) => state.selection.includes(item.id)) ?? false
+}
+
+/** Copying page text still works when no item is selected. */
+function noTextSelected(): boolean {
+  if (typeof window === 'undefined') return true
+  const text = window.getSelection?.()?.toString() ?? ''
+  return text.length === 0
+}
+
+registerShortcut({
+  id: 'copy-items',
+  keys: 'mod+c',
+  description: 'Copy selected items',
+  when: () => selectionHasItems() && noTextSelected(),
+  run: () => void copySelection(),
+})
+
+registerShortcut({
+  id: 'paste-items',
+  keys: 'mod+v',
+  description: 'Paste items',
+  when: () => hasItemClipboard(),
+  run: () => void pasteClipboard(),
+})
+
+registerShortcut({
+  id: 'select-all-items',
+  keys: 'mod+a',
+  description: 'Select all items',
+  run: () => {
+    selectAllItems()
+    window.getSelection?.()?.removeAllRanges()
+  },
 })
 
 registerShortcut({

@@ -1,14 +1,29 @@
 import { useStore } from '../../../store'
+import { duplicateSelection, rotateSelectionQuarter } from '../../actions'
 import { selectionFacts } from '../facts'
-import { registerInspectorSection } from '../registry'
+import { registerInspectorSection, type InspectorSectionProps } from '../registry'
 import { useTranslate } from '../../../i18n'
 
-function MultiSection() {
+function MultiSection({ selection, state }: InspectorSectionProps) {
   const tr = useTranslate()
   const count = useStore((s) => s.selection.length)
+  const items = selectionFacts(selection, state).items.length
   return (
     <div className="props">
       <h2>{tr('{count} selected', { count })}</h2>
+      {items > 0 && (
+        <>
+          <p className="readout multi-items">{tr('{count} items', { count: items })}</p>
+          <div className="multi-actions">
+            <button type="button" onClick={duplicateSelection}>
+              {tr('Duplicate')}
+            </button>
+            <button type="button" onClick={rotateSelectionQuarter}>
+              {tr('Rotate 90°')}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }
