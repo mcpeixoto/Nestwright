@@ -1,7 +1,7 @@
 "DepotBuild"
 {
-	"DepotID" "YOUR_DEPOT_MAC_ARM64"
-	"ContentRoot" "../../release/mac-arm64"
+	"DepotID" "YOUR_DEPOT_LINUX_X64"
+	"ContentRoot" "../../release/linux-unpacked"
 	"FileMapping"
 	{
 		"LocalPath" "*"

@@ -2,10 +2,13 @@ import { dist } from '../model/geometry'
 import { addWallChain } from '../model/ops'
 import type { Vec2 } from '../model/types'
 import { formatLength, parseLength } from '../model/units'
+import { translate } from '../i18n'
+import { useSettings } from '../settings'
 import { useStore } from '../store'
 import { icon } from './icons'
 import { registerTool } from './registry'
 import { chainExtend, chainFinish, chainPointerDown, initialChain, type ChainState } from './wallChain'
+import { typeKey } from './typedInput'
 import { wallDrawProps } from './wallOptions'
 
 let chain: ChainState = initialChain()
@@ -96,8 +99,10 @@ registerTool({
       ctx.handled = true
       return
     }
-    if (/^[0-9.]$/.test(ctx.key) && typed.length < 8) {
-      typed += ctx.key
+    if (chain.points.length === 0) return
+    const next = typeKey(typed, ctx.key)
+    if (next != null) {
+      typed = next
       ctx.handled = true
     }
   },
@@ -124,6 +129,13 @@ registerTool({
       ctx2d.font = '12px ui-sans-serif, system-ui, sans-serif'
       ctx2d.fillStyle = '#1b2422'
       ctx2d.fillText(label, mid.x + 8, mid.y - 6)
+      const cursor = ctx.transform.worldToScreen(b)
+      const hint = typed
+        ? `${typed} ↵`
+        : translate(useSettings.getState().language, 'Type a length, then Enter')
+      ctx2d.font = '11px ui-sans-serif, system-ui, sans-serif'
+      ctx2d.fillStyle = typed ? '#1b2422' : 'rgba(27, 36, 34, 0.6)'
+      ctx2d.fillText(hint, cursor.x + 14, cursor.y + 22)
     }
     ctx2d.restore()
   },

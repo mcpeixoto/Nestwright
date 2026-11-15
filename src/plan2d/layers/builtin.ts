@@ -1,6 +1,7 @@
 import { getEntry } from '../../catalog/registry'
 import { swatchColor } from '../../materials/library'
 import { add, perp, polylabel, scale, sub } from '../../model/geometry'
+import { roomNetArea } from '../../model/areas'
 import { formatArea, formatLength } from '../../model/units'
 import type { Level, Opening, RoomType, Vec2, Wall } from '../../model/types'
 import { openingInterval, pointAlongWall, wallDirection, wallPolygon } from '../../model/walls'
@@ -167,7 +168,8 @@ registerPlanLayer({
   draw(ctx2d, ctx) {
     if (!ctx.level) return
     const units = ctx.project.units
-    for (const room of roomsFor(ctx.level)) {
+    const level = ctx.level
+    for (const room of roomsFor(level)) {
       const at = roomLabelPoint(room.polygon)
       const anchor = ctx.worldToScreen(at)
       let reach = 0
@@ -178,7 +180,7 @@ registerPlanLayer({
       if (reach < 28) continue
       paperLabel(ctx2d, anchor.x, anchor.y, [
         { text: room.name, font: `13px ${FONT}`, color: '#3a342c' },
-        { text: formatArea(room.area, units), font: `11px ${FONT}`, color: '#5c564c' },
+        { text: formatArea(roomNetArea(level, room), units), font: `11px ${FONT}`, color: '#5c564c' },
       ])
     }
     const showAllNames = ctx.zoom > ctx.defaultZoom * 2

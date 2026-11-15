@@ -243,9 +243,14 @@ All five must exit 0. For anything visible, also run `npm run dev` and check it 
 ## Ship
 
 Merge to `main`, then tag `vX.Y.Z` and push the tag. Locally on the Mac:
-`npm run dist:mac` builds `release/Nestwright-<ver>-arm64.dmg` and the `.app`;
+`npm run dist:mac` builds an unsigned universal (arm64 + x64)
+`release/Nestwright-<ver>-mac-universal.dmg` and `release/mac-universal/Nestwright.app`;
+`npm run dist:mac:signed` does the same signed with the Developer ID in the login keychain and
+notarised with the App Store Connect key in `~/.appstoreconnect` (nothing exported).
 `scripts/install-mac.sh` copies the `.app` into `~/Applications`, and the dmg is attached to the
-GitHub release with `gh release create vX.Y.Z release/*.dmg`. No Steam upload yet.
+GitHub release with `gh release create vX.Y.Z release/*.dmg`. `npm run dist:win` / `dist:linux`
+cross-build x64 from the Mac or the Linux runner (CI job `Package` on PRs labelled `release`
+and on tags). No Steam upload yet; see `docs/STEAM.md`.
 
 ## Live check
 

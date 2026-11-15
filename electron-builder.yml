@@ -1,12 +1,22 @@
+# Build through `npm run dist:mac|dist:win|dist:linux` (scripts/dist.mjs), not electron-builder
+# directly: the wrapper decides signing and notarisation from the environment and never publishes.
 appId: com.peixotolabs.nestwright
 productName: Nestwright
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 directories:
   output: release
 asar: true
+publish: null
+fileAssociations:
+  - ext: nest
+    name: Nestwright Project
+    role: Editor
 files:
   - dist/**
   - dist-electron/**
   - package.json
+  # The native Steam addon ships prebuilt binaries for every OS; keep only the target's.
+  - "!node_modules/steamworks.js/dist/**/*.lib"
 asarUnpack:
   - node_modules/steamworks.js/**
 extraResources:
@@ -25,18 +35,40 @@ extraResources:
       - basis_transcoder.wasm
 mac:
   icon: build/icon.icns
-  hardenedRuntime: false
-  identity: null
   category: public.app-category.games
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  # steamworks.js ships one addon per arch plus a fat libsteam_api.dylib; both slices of a
+  # universal build carry the same files, which @electron/universal must be told is fine.
+  x64ArchFiles: Contents/Resources/app.asar.unpacked/node_modules/steamworks.js/dist/osx/*
+  files:
+    - "!node_modules/steamworks.js/dist/{win64,linux64}/**"
   target:
     - target: dmg
-      arch:
-        - arm64
+      arch: [universal]
     - target: zip
-      arch:
-        - arm64
+      arch: [universal]
 win:
+  icon: build/icon.png
+  files:
+    - "!node_modules/steamworks.js/dist/{osx,linux64}/**"
   target:
-    - target: nsis
-      arch:
-        - x64
+    - target: dir
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+portable:
+  artifactName: ${productName}-${version}-win-x64-portable.${ext}
+linux:
+  icon: build/icon.png
+  category: Game
+  executableName: nestwright
+  files:
+    - "!node_modules/steamworks.js/dist/{osx,win64}/**"
+  target:
+    - target: dir
+      arch: [x64]
+    - target: AppImage
+      arch: [x64]

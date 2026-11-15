@@ -3,8 +3,37 @@ export {}
 declare global {
   interface Window {
     nestwright?: {
-      openFile(accept: string): Promise<{ name: string; data: string } | null>
-      saveFile(name: string, data: string): Promise<boolean>
+      /** Read once in the preload with sendSync, before the store boots. */
+      boot?: {
+        autosave: string | null
+        hasAutosaveFile: boolean
+        recent: { id: string; name: string; updatedAt: number; path?: string }[]
+        hasRecentFile: boolean
+        recentCorrupt?: boolean
+      }
+      openFile(accept: string): Promise<{ name: string; data: string; path?: string } | null>
+      saveFile(name: string, data: string): Promise<{ path: string } | boolean | null>
+      saveToPath?(filePath: string, data: string): Promise<boolean>
+      writeAutosave?(data: string): Promise<boolean>
+      writeRecent?(payload: {
+        id: string
+        name: string
+        updatedAt: number
+        path?: string
+        project: string
+        thumb?: string
+      }): Promise<boolean>
+      readRecentProject?(id: string): Promise<string | null>
+      readRecentThumb?(id: string): Promise<string | null>
+      setEditorState?(state: {
+        dirty: boolean
+        prompt: { message: string; save: string; dontSave: string; cancel: string }
+        menu: { file: string; new: string; open: string; save: string; saveAs: string; close: string }
+      }): void
+      notifyReady?(): void
+      onMenu?(cb: (action: 'new' | 'open' | 'save' | 'save-as') => void): () => void
+      onRequestSave?(cb: () => Promise<boolean> | boolean): () => void
+      onOpenPath?(cb: (file: { name: string; data: string; path: string }) => void): () => void
       username?: () => Promise<string>
       hostSession?: () => Promise<{ addresses: string[]; port: number; code: string }>
       leaveSession?: () => Promise<void>

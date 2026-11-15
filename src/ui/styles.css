@@ -41,6 +41,17 @@ button.on { background: rgba(63, 184, 175, 0.2); border-color: rgba(63, 184, 175
 button:disabled { opacity: 0.35; cursor: default; }
 button.danger { color: var(--danger); border-color: rgba(212, 101, 90, 0.4); }
 
+:is(button, input, select, textarea, .rail, .rail-flyout, .menu, [role='menu'], [role='menuitem']):focus-visible,
+.rail :focus-visible,
+.rail-flyout :focus-visible,
+.menu :focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+:is(button, input, select, textarea, [role='menuitem']):focus:not(:focus-visible) {
+  outline: none;
+}
+
 input, select {
   background: rgba(0, 0, 0, 0.28);
   border: 1px solid var(--line);
@@ -90,7 +101,22 @@ input, select {
   font-size: 14px;
 }
 
-.project-name { max-width: 180px; min-width: 48px; flex: 1 1 80px; }
+.project-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 80px;
+  max-width: 210px;
+}
+.project-title .project-name { max-width: none; min-width: 0; flex: 1 1 auto; width: auto; }
+.unsaved-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sand);
+  flex: none;
+}
 
 .view-switch, .top-actions { display: flex; gap: 4px; flex-wrap: nowrap; flex: none; }
 .view-switch button, .top-actions button { white-space: nowrap; }
@@ -135,6 +161,42 @@ input, select {
   text-align: left;
 }
 .rail-flyout kbd { margin-left: auto; color: var(--muted); font-size: 11px; }
+.tip-anchor { display: contents; }
+.nw-tooltip {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  max-width: 240px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #222830;
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.tool-glyph { display: grid; place-items: center; width: 22px; height: 22px; }
+.tool-glyph svg { width: 22px; height: 22px; }
+.rail.with-labels { width: 84px; }
+.rail.with-labels .tool {
+  width: 68px;
+  height: auto;
+  min-height: 40px;
+  padding: 4px 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.rail-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  line-height: 1.15;
+  color: var(--muted);
+}
+.rail.with-labels .rail-flyout { left: calc(100% + 6px); }
 .flyout-icon { width: 18px; height: 18px; display: grid; place-items: center; }
 .flyout-icon svg { width: 18px; height: 18px; }
 
@@ -251,6 +313,8 @@ input, select {
 .check { flex-direction: row; align-items: center; }
 .check input { width: auto; }
 .field input[type='range'] { padding: 0; }
+.field.invalid input { border-color: #d0574f; outline-color: #d0574f; }
+.field-error { color: #d0574f; font-size: 0.85em; }
 .hint, .readout { color: var(--muted); margin: 8px 0; }
 .hint { line-height: 1.4; }
 
@@ -630,3 +694,9 @@ input, select {
   border-left: 3px solid var(--sand);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
+.plan-pdf-dialog { width: min(380px, calc(100vw - 48px)); }
+.plan-pdf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.plan-pdf-levels { display: flex; flex-direction: column; gap: 6px; margin: 0 0 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+.plan-pdf-levels legend { color: var(--muted); padding: 0 4px; }
+.plan-pdf-warn { margin: 0 0 8px; color: var(--sand); }
+.plan-pdf-actions { justify-content: flex-end; }

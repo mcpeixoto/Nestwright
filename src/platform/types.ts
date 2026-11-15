@@ -1,6 +1,8 @@
 export interface OpenedFile {
   name: string
   data: string
+  /** Absolute path in Electron. Absent in the browser. */
+  path?: string | null
 }
 
 export interface CoopHostInfo {
@@ -32,6 +34,10 @@ export interface SteamApi {
 export interface Platform {
   openFile(accept: string): Promise<OpenedFile | null>
   saveFile(name: string, data: string): Promise<boolean>
+  /** Electron save dialog. Returns the chosen absolute path. */
+  chooseSavePath?(name: string, data: string): Promise<string | null>
+  /** Electron write to a path the user already picked or opened. */
+  saveToPath?(filePath: string, data: string): Promise<boolean>
   isElectron: boolean
   quit?: () => Promise<void>
   username?: () => Promise<string>

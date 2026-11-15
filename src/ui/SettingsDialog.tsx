@@ -156,6 +156,14 @@ export function SettingsDialog() {
           <input type="checkbox" checked={settings.showFps} onChange={(event) => set({ showFps: event.target.checked })} />
           <T k="Show FPS" />
         </label>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={settings.railLabels}
+            onChange={(event) => set({ railLabels: event.target.checked })}
+          />
+          <T k="Show tool labels" />
+        </label>
         <label className="field">
           <T k="UI scale" />
           <input

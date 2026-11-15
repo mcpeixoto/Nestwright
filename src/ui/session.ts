@@ -1,7 +1,10 @@
 import { useSyncExternalStore } from 'react'
 import { loadAutosave } from '../io/autosave'
+import { setFilePath } from '../io/documentPath'
+import { markSaved } from '../io/dirty'
 import { useSettings } from '../settings'
 import { useStore, type ViewMode } from '../store'
+import { registerEnterEditor } from './enterEditor'
 import { presentProject } from './presentProject'
 import { studioApartment } from '../templates'
 import type { Project } from '../model/types'
@@ -80,18 +83,23 @@ export function openHome(): void {
 }
 
 export function enterEditor(): void {
+  if (screen === 'editor') return
   screen = 'editor'
   if (returnView) useStore.getState().setView(returnView)
   publish()
 }
 
-export function beginProject(project: Project): void {
+export function beginProject(project: Project, filePath: string | null = null): void {
   const units = useSettings.getState().units
   project.units = units
+  setFilePath(filePath)
   presentProject(project)
+  markSaved()
   returnView = 'split'
   useStore.getState().setView('split')
   canContinue = true
   screen = 'editor'
   publish()
 }
+
+registerEnterEditor(enterEditor)
