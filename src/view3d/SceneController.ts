@@ -7,6 +7,7 @@ import { isSharedGeometry, modelFor, modelsLoading, releaseModelGeometry, subscr
 import { ModelInstancer } from './modelInstances'
 import { buildOpening } from '../builders/openings'
 import { buildWall } from '../builders/walls'
+import { resolveTrim } from '../model/trim'
 import type { Item, Level, Project } from '../model/types'
 import { gizmoOwnsPointer, releaseGizmo } from './layers/gizmo'
 import { paintFromHits, type ViewHit } from './paintPick'
@@ -53,6 +54,10 @@ interface Bucket {
   rooms: Level['rooms']
   belowStairs: Level['stairs'] | undefined
   roofs: Level['roofs']
+  trim: Level['trim']
+  /** The storey above sets the ceiling line the wall trim follows. */
+  aboveWalls: Level['walls'] | undefined
+  aboveSlab: number | undefined
   elevation: number
   height: number
   slab: number
@@ -454,6 +459,7 @@ export class SceneController {
         this.root.add(bucket.group)
       }
       const below = levelBelow(project, level)
+      const above = levelAbove(project, level)
       const belowStairs = below?.stairs
       const same =
         bucket.walls === level.walls &&
@@ -463,15 +469,21 @@ export class SceneController {
         bucket.height === level.height &&
         bucket.slab === level.slabThickness &&
         bucket.belowStairs === belowStairs &&
-        bucket.roofs === level.roofs
+        bucket.roofs === level.roofs &&
+        bucket.trim === level.trim &&
+        bucket.aboveWalls === above?.walls &&
+        bucket.aboveSlab === above?.slabThickness
       if (!same) {
         disposeTree(bucket.structural)
         bucket.structural.clear()
+        const rooms = roomsFor(level)
+        const trim = resolveTrim(level.trim)
+        const ceiling = above ? { rooms: roomsFor(above), slab: above.slabThickness } : undefined
         for (const wall of level.walls) {
-          bucket.structural.add(buildWall(wall, level, level.walls))
+          bucket.structural.add(buildWall(wall, level, level.walls, { rooms, trim, above: ceiling }))
           if (wall.kind === 'railing') continue
           for (const opening of level.openings) {
-            if (opening.wallId === wall.id) bucket.structural.add(buildOpening(opening, wall, level.elevation))
+            if (opening.wallId === wall.id) bucket.structural.add(buildOpening(opening, wall, level.elevation, { rooms }))
           }
         }
         bucket.structural.add(
@@ -484,6 +496,9 @@ export class SceneController {
         bucket.walls = level.walls
         bucket.belowStairs = belowStairs
         bucket.roofs = level.roofs
+        bucket.trim = level.trim
+        bucket.aboveWalls = above?.walls
+        bucket.aboveSlab = above?.slabThickness
         bucket.openings = level.openings
         bucket.rooms = level.rooms
         bucket.elevation = level.elevation
@@ -866,12 +881,21 @@ function emptyBucket(): Bucket {
     rooms: [],
     belowStairs: undefined,
     roofs: [],
+    trim: undefined,
+    aboveWalls: undefined,
+    aboveSlab: undefined,
     elevation: Number.NaN,
     height: Number.NaN,
     slab: Number.NaN,
     itemMap: new Map(),
     instancer: new ModelInstancer(items),
   }
+}
+
+/** The storey whose floor is this level's ceiling (its elevation is this level's top). */
+function levelAbove(project: Project, level: Level): Level | null {
+  const top = level.elevation + level.height
+  return project.levels.find((other) => other.id !== level.id && Math.abs(other.elevation - top) < 0.05) ?? null
 }
 
 function levelBelow(project: Project, level: Level): Level | null {

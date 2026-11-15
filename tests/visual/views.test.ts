@@ -115,6 +115,8 @@ describe('visual views', () => {
       url: 'http://localhost:5181',
     })
     expect(() => parseArgs(['--nope'])).toThrow(/Unknown argument/)
+    expect(parseArgs([]).viewsFile).toBeNull()
+    expect(parseArgs(['--views-file', 'close.json']).viewsFile).toBe('close.json')
     expect(parseArgs([]).backend).toBe('webgpu')
     expect(parseArgs(['--backend', 'webgl']).backend).toBe('webgl')
     expect(() => parseArgs(['--backend', 'metal'])).toThrow(/webgpu or webgl/)

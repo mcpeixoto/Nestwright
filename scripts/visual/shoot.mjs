@@ -2,7 +2,7 @@
  * Baseline screenshots of the named views in views.json.
  *
  *   node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181]
- *     [--views a,b] [--serve] [--ref <dir>] [--backend webgpu|webgl]
+ *     [--views a,b] [--views-file <json>] [--serve] [--ref <dir>] [--backend webgpu|webgl]
  *     [--quality low|medium|high|ultra] [--novsync] [--no-models]
  *
  * --backend webgl loads the page with ?renderer=webgl (forced WebGL2 fallback).
@@ -28,7 +28,7 @@ const root = fileURLToPath(new globalThis.URL('../..', import.meta.url))
 const here = dirname(fileURLToPath(import.meta.url))
 
 function help() {
-  return `node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181] [--views a,b] [--serve] [--ref <dir>] [--backend webgpu|webgl] [--quality low|medium|high|ultra] [--novsync] [--no-models]
+  return `node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181] [--views a,b] [--views-file <json>] [--serve] [--ref <dir>] [--backend webgpu|webgl] [--quality low|medium|high|ultra] [--novsync] [--no-models]
 Default reference folder: ${join(homedir(), 'Documents', 'Coding', '_assets', 'architecture-design-steam-screenshots')}`
 }
 
@@ -257,7 +257,7 @@ async function main() {
     process.stdout.write(`${help()}\n`)
     return
   }
-  const views = JSON.parse(await readFile(join(here, 'views.json'), 'utf8'))
+  const views = JSON.parse(await readFile(opts.viewsFile ?? join(here, 'views.json'), 'utf8'))
   const problems = validateViews(views)
   if (problems.length) throw new Error(problems.join('\n'))
   let selected = opts.quality ? views.map((view) => ({ ...view, quality: opts.quality })) : views
