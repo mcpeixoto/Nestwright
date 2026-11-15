@@ -1,6 +1,6 @@
 import { useStore } from '../store'
 import { addLevelAbove } from './actions'
-import { addLevelBelow, deleteActiveLevel, duplicateActiveLevel } from './levelActions'
+import { addLevelBelow, deleteActiveLevel, duplicateActiveLevel, importTraceImage } from './levelActions'
 import { T } from '../i18n/T'
 import { useTranslate } from '../i18n'
 
@@ -49,6 +49,9 @@ export function LevelBar() {
       </button>
       <button type="button" onClick={deleteActiveLevel} disabled={last}>
         <T k="Delete level" />
+      </button>
+      <button type="button" onClick={() => void importTraceImage()}>
+        <T k="Import trace image…" />
       </button>
       <label className="check">
         <input

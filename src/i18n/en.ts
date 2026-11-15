@@ -634,6 +634,18 @@ export const en = {
   Quote: 'Quote',
   Walls: 'Walls',
   'Clear quote': 'Clear quote',
+  'Import trace image…': 'Import trace image…',
+  'Could not read that image.': 'Could not read that image.',
+  Trace: 'Trace',
+  Opacity: 'Opacity',
+  'Hide trace': 'Hide trace',
+  'Show trace': 'Show trace',
+  'Calibrate…': 'Calibrate…',
+  'Remove trace': 'Remove trace',
+  'Type the real distance, then Enter': 'Type the real distance, then Enter',
+  'Trace scale {scale} m per pixel': 'Trace scale {scale} m per pixel',
+  'Origin X': 'Origin X',
+  'Origin Y': 'Origin Y',
 } as const
 
 export type MessageKey = keyof typeof en

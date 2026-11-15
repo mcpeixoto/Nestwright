@@ -30,6 +30,8 @@ export interface Tool {
   icon: string
   shortcut?: string
   group: 'build' | 'openings' | 'interior' | 'outside' | 'measure'
+  /** Omit from the tool rail. The calibrate flow is started from the inspector. */
+  hidden?: boolean
   cursor?: string
   onPointerDown?(ctx: ToolContext): void
   onPointerMove?(ctx: ToolContext): void

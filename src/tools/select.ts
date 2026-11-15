@@ -1,5 +1,6 @@
 import { bulgeDelta, clampBulge, curveHandle } from '../model/curve'
 import { add, dist, len, sub } from '../model/geometry'
+import { traceContains } from '../model/trace'
 import { moveItems, moveRoom, moveWall, moveWallEndpoint } from '../model/ops'
 import { slideOpening } from '../model/ops/sizes'
 import { roomAt } from '../model/rooms'
@@ -19,6 +20,7 @@ type Drag =
   | { kind: 'bulge'; wallId: string; origin: number; start: Vec2 }
   | { kind: 'room'; roomKey: string; start: Vec2 }
   | { kind: 'opening'; openingId: string; wallId: string; grab: number }
+  | { kind: 'trace'; origin: Vec2; start: Vec2; screenX: number; screenY: number; active: boolean }
   | { kind: 'marquee'; x0: number; y0: number; x1: number; y1: number; additive: boolean }
 
 let drag: Drag | null = null
@@ -191,6 +193,18 @@ registerTool({
       } else state.select([room.key], ctx.shift)
       return
     }
+    const trace = state.project.traces.find((item) => item.levelId === level.id)
+    if (trace && trace.visible !== false && trace.locked !== true && traceContains(trace, ctx.point)) {
+      drag = {
+        kind: 'trace',
+        origin: { ...trace.origin },
+        start: { ...ctx.point },
+        screenX: ctx.screen.x,
+        screenY: ctx.screen.y,
+        active: false,
+      }
+      return
+    }
     if (!ctx.shift) state.select([])
     drag = { kind: 'marquee', x0: ctx.screen.x, y0: ctx.screen.y, x1: ctx.screen.x, y1: ctx.screen.y, additive: ctx.shift }
   },
@@ -255,6 +269,22 @@ registerTool({
       applyMove('Move room', (draft) => moveRoom(draft, roomKey, delta))
       return
     }
+    if (drag.kind === 'trace') {
+      if (!drag.active) {
+        if (Math.hypot(ctx.screen.x - drag.screenX, ctx.screen.y - drag.screenY) < 4) return
+        drag.active = true
+        useStore.getState().select([])
+        useStore.getState().beginStroke('Move trace')
+      }
+      const levelId = useStore.getState().activeLevelId
+      const origin = add(drag.origin, sub(ctx.point, drag.start))
+      useStore.getState().apply('Move trace', (draft) => {
+        const found = draft.traces.find((item) => item.levelId === levelId)
+        if (!found || found.locked) return
+        found.origin = { x: origin.x, y: origin.y }
+      })
+      return
+    }
     if (drag.kind === 'wall') {
       const wallId = drag.wallId
       const originA = drag.originA
@@ -272,6 +302,11 @@ registerTool({
   onPointerUp(ctx) {
     const current = drag
     drag = null
+    if (current?.kind === 'trace') {
+      if (!current.active && !ctx.shift) useStore.getState().select([])
+      useStore.getState().endStroke()
+      return
+    }
     if (current?.kind === 'room' || current?.kind === 'opening') {
       useStore.getState().endStroke()
       return
