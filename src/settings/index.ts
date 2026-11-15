@@ -38,6 +38,11 @@ export interface Settings {
   toneMapping: ToneMapSetting
   /** Exposure compensation in EV (−2…+2) on top of the metered auto-exposure. */
   exposureComp: number
+  /** 0–100. Older saved settings omit these; normalize fills the defaults. */
+  volumeMaster: number
+  volumeEffects: number
+  volumeAmbience: number
+  muted: boolean
 }
 
 const KEY = 'nestwright:settings'
@@ -64,6 +69,10 @@ export const DEFAULT_SETTINGS: Settings = {
   qualityAuto: false,
   toneMapping: 'agx',
   exposureComp: 0,
+  volumeMaster: 80,
+  volumeEffects: 70,
+  volumeAmbience: 50,
+  muted: false,
 }
 
 function clamp(value: number, min: number, max: number, fallback: number): number {
@@ -102,7 +111,16 @@ export function normalizeSettings(partial: Partial<Settings> | null | undefined)
     qualityAuto: source.qualityAuto === true,
     toneMapping: source.toneMapping === 'aces' ? 'aces' : 'agx',
     exposureComp: typeof source.exposureComp === 'number' ? clampEvComp(Math.round(source.exposureComp * 10) / 10) : 0,
+    volumeMaster: volumePercent(source.volumeMaster, DEFAULT_SETTINGS.volumeMaster),
+    volumeEffects: volumePercent(source.volumeEffects, DEFAULT_SETTINGS.volumeEffects),
+    volumeAmbience: volumePercent(source.volumeAmbience, DEFAULT_SETTINGS.volumeAmbience),
+    muted: source.muted === true,
   }
+}
+
+function volumePercent(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback
+  return clamp(value, 0, 100, fallback)
 }
 
 function normalizeRenderScale(value: unknown): number {

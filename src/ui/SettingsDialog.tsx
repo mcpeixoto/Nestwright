@@ -198,6 +198,52 @@ export function SettingsDialog() {
           />
           <T k="Continue last project" />
         </label>
+        <h3>
+          <T k="Sound" />
+        </h3>
+        <label className="field">
+          <T k="Master volume" />
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            aria-label={tr('Master volume')}
+            value={settings.volumeMaster}
+            onChange={(event) => set({ volumeMaster: Number(event.target.value) })}
+          />
+          <span className="readout">{settings.volumeMaster}%</span>
+        </label>
+        <label className="field">
+          <T k="Effects volume" />
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            aria-label={tr('Effects volume')}
+            value={settings.volumeEffects}
+            onChange={(event) => set({ volumeEffects: Number(event.target.value) })}
+          />
+          <span className="readout">{settings.volumeEffects}%</span>
+        </label>
+        <label className="field">
+          <T k="Ambience volume" />
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            aria-label={tr('Ambience volume')}
+            value={settings.volumeAmbience}
+            onChange={(event) => set({ volumeAmbience: Number(event.target.value) })}
+          />
+          <span className="readout">{settings.volumeAmbience}%</span>
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={settings.muted} onChange={(event) => set({ muted: event.target.checked })} />
+          <T k="Mute" />
+        </label>
         {showPlayer && (
           <>
             <label className="field">

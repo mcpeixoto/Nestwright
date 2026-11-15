@@ -1,3 +1,4 @@
+import { noteSnapPoint } from '../audio/cue'
 import { add, dist, dot, lerp, perp, scale, snapAngle, snapToGrid, sub } from '../model/geometry'
 import type { Level, Vec2 } from '../model/types'
 import { locateOnWall, wallDirection } from '../model/walls'
@@ -24,7 +25,25 @@ export function snapPlanPoint(
     settings: SnapSettings
   },
 ): Vec2 {
-  if (opts.shift) return { x: raw.x, y: raw.y }
+  const { point, hard } = resolveSnapPlanPoint(raw, level, opts)
+  // Only feature snaps (ends, midpoints, wall lines, perpendiculars) tick; grid and angle
+  // rounding change on almost every pointer move and would chatter.
+  if (hard) noteSnapPoint(raw, point)
+  return point
+}
+
+function resolveSnapPlanPoint(
+  raw: Vec2,
+  level: Level,
+  opts: {
+    prev: Vec2 | null
+    extra: readonly Vec2[]
+    shift: boolean
+    zoom: number
+    settings: SnapSettings
+  },
+): { point: Vec2; hard: boolean } {
+  if (opts.shift) return { point: { x: raw.x, y: raw.y }, hard: false }
   const tol = 14 / (50 * Math.max(opts.zoom, 0.05))
   type Cand = { p: Vec2; pri: number; d: number }
   const cands: Cand[] = []
@@ -57,13 +76,13 @@ export function snapPlanPoint(
 
   cands.sort((a, b) => a.pri - b.pri || a.d - b.d)
   const hard = cands.find((c) => c.pri <= 2)
-  if (hard) return hard.p
+  if (hard) return { point: hard.p, hard: true }
 
   let point = opts.settings.grid ? snapToGrid(raw, 0.05) : { x: raw.x, y: raw.y }
   if (opts.settings.angles && opts.prev && dist(opts.prev, point) > 1e-4) {
     point = snapAngle(opts.prev, point, Math.PI / 12)
   }
-  return point
+  return { point, hard: false }
 }
 
 export function screenTol(zoom: number, pixels: number): number {
