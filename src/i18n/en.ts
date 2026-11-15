@@ -746,6 +746,17 @@ export const en = {
   'Trace scale {scale} m per pixel': 'Trace scale {scale} m per pixel',
   'Origin X': 'Origin X',
   'Origin Y': 'Origin Y',
+  'Copy selected items': 'Copy selected items',
+  'Paste items': 'Paste items',
+  'Select all items': 'Select all items',
+  '{count} items copied': '{count} items copied',
+  '{count} items pasted': '{count} items pasted',
+  '{count} items': '{count} items',
+  'Rotate 90°': 'Rotate 90°',
+  'Overlaps another item or a wall': 'Overlaps another item or a wall',
+  'Blocks the door swing': 'Blocks the door swing',
+  'Walkway {gap} (min {min})': 'Walkway {gap} (min {min})',
+  'Clearance': 'Clearance',
 } as const
 
 export type MessageKey = keyof typeof en

@@ -756,3 +756,9 @@ input, select {
 .budget-variants { width: 100%; border-collapse: collapse; }
 .budget-variants td, .budget-variants th { text-align: left; padding: 2px 4px 2px 0; font-weight: 400; }
 .trace-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Furniture: multi-item actions and clearance hints. */
+.multi-actions { display: flex; gap: 8px; }
+.multi-actions button { flex: 1; }
+.clearance-hints .warning-line { color: #d9822b; margin: 0 0 4px; }
+.clearance-list { margin: 0; padding-left: 18px; color: #d9822b; }

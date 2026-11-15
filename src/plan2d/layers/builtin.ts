@@ -13,6 +13,7 @@ import { fillPoly, paperLabel, strokeLine, strokePoly } from '../draw'
 import { registerPlanLayer, type PlanDrawContext } from '../layers'
 import './structure'
 import './trace'
+import './furniture'
 import { installOutsidePlan } from './outside'
 import './together'
 
