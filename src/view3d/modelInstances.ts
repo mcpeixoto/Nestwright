@@ -29,6 +29,15 @@ interface Batch {
 
 const LOD_EVERY_FRAMES = 6
 
+/** `?instancing=off` draws every scanned item on its own (for draw-call comparisons). */
+function instancingOff(): boolean {
+  try {
+    return new URLSearchParams(globalThis.location?.search ?? '').get('instancing') === 'off'
+  } catch {
+    return false
+  }
+}
+
 function modelOf(object: THREE.Object3D): THREE.Object3D | null {
   let found: THREE.Object3D | null = null
   object.traverse((child) => {
@@ -89,8 +98,9 @@ export class ModelInstancer {
       if (list) list.push(member)
       else groups.set(info.instanceKey, [member])
     }
+    const solo = instancingOff()
     for (const members of groups.values()) {
-      if (members.length < 2) {
+      if (members.length < 2 || solo) {
         this.singles.push(...members)
         continue
       }
