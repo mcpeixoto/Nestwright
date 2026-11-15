@@ -1,0 +1,55 @@
+{
+  "key": "shrub-02-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "shrub_02",
+  "sourceUrl": "https://polyhaven.com/a/shrub_02",
+  "author": "Rico Cilliers",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:12.926Z",
+  "sha256Source": "2f7c94052e02896e339072ae136d2958a19ca17fe9f8daef768b3f170da8db1c",
+  "targets": {
+    "species": "bush-round"
+  },
+  "files": [
+    {
+      "path": "models/shrub-02-model/shrub-02-model.glb",
+      "bytes": 1253892,
+      "sha256": "ba2482a0ae6d8e18b4c9005bd8336de429493f5bcdb57659453d85730d3203c4"
+    },
+    {
+      "path": "models/shrub-02-model/shrub-02-model.lod1.glb",
+      "bytes": 28444,
+      "sha256": "660d0fa8dae963ead22401e3d512375aeaa3138f76a27964d29c0f2f929ef984"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 1.110234,
+      "d": 1.279917,
+      "h": 1.506313
+    },
+    "originalBounds": {
+      "w": 1.110234,
+      "d": 1.279917,
+      "h": 1.506313
+    },
+    "triangles": 5242,
+    "lods": [
+      {
+        "file": "shrub-02-model.glb",
+        "triangles": 5242
+      },
+      {
+        "file": "shrub-02-model.lod1.glb",
+        "triangles": 1832,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "shrub-02-model.glb"
+      }
+    ],
+    "materials": [
+      "shrub_02"
+    ]
+  }
+}

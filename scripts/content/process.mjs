@@ -95,6 +95,10 @@ async function processOne(entry, { webp, library }) {
       scale: unitsToMetres(entry.units),
       resolution: entry.resolution,
       webp,
+      node: entry.node,
+      maxTriangles: entry.maxTriangles,
+      rotateY: entry.rotateY ?? 0,
+      drop: entry.dropMaterials ?? [],
     })
     for (const file of result.files) manifest.files.push(await outputRecord(file))
     manifest.model = {
@@ -103,7 +107,7 @@ async function processOne(entry, { webp, library }) {
       triangles: result.triangles,
       lods: [
         { file: `${entry.key}.glb`, triangles: result.triangles },
-        { file: `${entry.key}.lod1.glb`, triangles: result.lodTriangles, ratio: 0.35, error: 0.01 },
+        { file: `${entry.key}.lod1.glb`, triangles: result.lodTriangles, ratio: 0.35, error: 0.01, texturesFrom: `${entry.key}.glb` },
       ],
       materials: result.materials,
     }

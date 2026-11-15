@@ -1,0 +1,55 @@
+{
+  "key": "sofa-02-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "sofa_02",
+  "sourceUrl": "https://polyhaven.com/a/sofa_02",
+  "author": "Kirill Sannikov",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:06.455Z",
+  "sha256Source": "a0609ed97dd35d9b5fe6fd8e4c1373feaaa528080e98262f957bb9125b4f953a",
+  "targets": {
+    "catalogId": "sofa-3"
+  },
+  "files": [
+    {
+      "path": "models/sofa-02-model/sofa-02-model.glb",
+      "bytes": 4992840,
+      "sha256": "33de24470e0cfea5843e58297135bc64a36c2f140d3093d543d11d9b0ca691e6"
+    },
+    {
+      "path": "models/sofa-02-model/sofa-02-model.lod1.glb",
+      "bytes": 15540,
+      "sha256": "b570a9a3b517fc723541f00e7175ee337af9f6a98f002ce1521074611b67f15a"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 1.807167,
+      "d": 0.817751,
+      "h": 0.709489
+    },
+    "originalBounds": {
+      "w": 1.807167,
+      "d": 0.817751,
+      "h": 0.709489
+    },
+    "triangles": 2728,
+    "lods": [
+      {
+        "file": "sofa-02-model.glb",
+        "triangles": 2728
+      },
+      {
+        "file": "sofa-02-model.lod1.glb",
+        "triangles": 954,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "sofa-02-model.glb"
+      }
+    ],
+    "materials": [
+      "sofa_02"
+    ]
+  }
+}

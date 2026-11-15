@@ -12,12 +12,16 @@ export const TOKTX_ARGS = {
   albedo: ['--t2', '--encode', 'etc1s', '--clevel', '4', '--qlevel', '192', '--genmipmap', '--assign_oetf', 'srgb'],
   orm: ['--t2', '--encode', 'etc1s', '--clevel', '4', '--qlevel', '192', '--genmipmap', '--assign_oetf', 'linear'],
   normal: ['--t2', '--encode', 'uastc', '--uastc_quality', '2', '--zcmp', '18', '--genmipmap', '--normal_mode', '--assign_oetf', 'linear'],
+  // Normals inside a glTF: plain XYZ in RGB, because GLTFLoader reads normalTexture as XYZ.
+  // --normal_mode (X in RGB, Y in alpha) only suits the game's own texture sets.
+  normalRgb: ['--t2', '--encode', 'uastc', '--uastc_quality', '2', '--zcmp', '18', '--genmipmap', '--assign_oetf', 'linear'],
 }
 
 export const KTX_CREATE_ARGS = {
   albedo: ['create', '--format', 'R8G8B8A8_SRGB', '--encode', 'basis-lz', '--clevel', '4', '--qlevel', '192', '--generate-mipmap', '--assign-oetf', 'srgb'],
   orm: ['create', '--format', 'R8G8B8A8_UNORM', '--encode', 'basis-lz', '--clevel', '4', '--qlevel', '192', '--generate-mipmap', '--assign-oetf', 'linear'],
   normal: ['create', '--format', 'R8G8B8A8_UNORM', '--encode', 'uastc', '--uastc-quality', '2', '--zstd', '18', '--generate-mipmap', '--normal-mode', '--assign-oetf', 'linear'],
+  normalRgb: ['create', '--format', 'R8G8B8A8_UNORM', '--encode', 'uastc', '--uastc-quality', '2', '--zstd', '18', '--generate-mipmap', '--assign-oetf', 'linear'],
 }
 
 export function resolveEncoder(env = process.env, home = homedir(), exists = existsSync) {
@@ -32,7 +36,7 @@ export function resolveEncoder(env = process.env, home = homedir(), exists = exi
 }
 
 export function encodeCommand(encoder, role, input, output) {
-  if (role !== 'albedo' && role !== 'orm' && role !== 'normal') throw new Error(`unknown texture role ${role}`)
+  if (!Object.hasOwn(TOKTX_ARGS, role)) throw new Error(`unknown texture role ${role}`)
   if (encoder.kind === 'toktx') return { cmd: encoder.bin, args: [...TOKTX_ARGS[role], output, input] }
   if (encoder.kind === 'ktx') return { cmd: encoder.bin, args: [...KTX_CREATE_ARGS[role], input, output] }
   throw new Error(`unknown encoder ${encoder.kind}`)

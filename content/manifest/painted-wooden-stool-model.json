@@ -1,0 +1,55 @@
+{
+  "key": "painted-wooden-stool-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "painted_wooden_stool",
+  "sourceUrl": "https://polyhaven.com/a/painted_wooden_stool",
+  "author": "Kirill Sannikov",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:10.573Z",
+  "sha256Source": "cfe5f9499c03d5b88eb65c43fa66d6d6a056bb9eca0ed348437fd1ca41d8080d",
+  "targets": {
+    "catalogId": "dining-island-stool"
+  },
+  "files": [
+    {
+      "path": "models/painted-wooden-stool-model/painted-wooden-stool-model.glb",
+      "bytes": 1238240,
+      "sha256": "abb2a0adf72bb2c860c4ee0ada2d2947308474ef703f0383137a452f78a04274"
+    },
+    {
+      "path": "models/painted-wooden-stool-model/painted-wooden-stool-model.lod1.glb",
+      "bytes": 6816,
+      "sha256": "b12577f340a2276ee9997d021269af62ad3a57eb49063b5018eb1d21d4f13381"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.384837,
+      "d": 0.406074,
+      "h": 0.578915
+    },
+    "originalBounds": {
+      "w": 0.384837,
+      "d": 0.406074,
+      "h": 0.578915
+    },
+    "triangles": 676,
+    "lods": [
+      {
+        "file": "painted-wooden-stool-model.glb",
+        "triangles": 676
+      },
+      {
+        "file": "painted-wooden-stool-model.lod1.glb",
+        "triangles": 236,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "painted-wooden-stool-model.glb"
+      }
+    ],
+    "materials": [
+      "painted_wooden_stool"
+    ]
+  }
+}

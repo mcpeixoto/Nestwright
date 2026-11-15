@@ -1,0 +1,56 @@
+{
+  "key": "potted-plant-01-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "potted_plant_01",
+  "sourceUrl": "https://polyhaven.com/a/potted_plant_01",
+  "author": "Rico Cilliers",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:12.246Z",
+  "sha256Source": "6227eddf82e936930c8f4b6dca28556df8db0db9df072b3b39f25095bf53c730",
+  "targets": {
+    "catalogId": "plant-pot"
+  },
+  "files": [
+    {
+      "path": "models/potted-plant-01-model/potted-plant-01-model.glb",
+      "bytes": 3377604,
+      "sha256": "4622a8ae4662b9fba362a2678b27c23bc17fcc61afb16c38b261d91598b4f597"
+    },
+    {
+      "path": "models/potted-plant-01-model/potted-plant-01-model.lod1.glb",
+      "bytes": 228128,
+      "sha256": "9514cfeaf9856b10019b8edc22376afc2fff21911619943f96275291c7bd2b91"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.587387,
+      "d": 0.633565,
+      "h": 1.350164
+    },
+    "originalBounds": {
+      "w": 0.587387,
+      "d": 0.633565,
+      "h": 1.350164
+    },
+    "triangles": 29979,
+    "lods": [
+      {
+        "file": "potted-plant-01-model.glb",
+        "triangles": 29979
+      },
+      {
+        "file": "potted-plant-01-model.lod1.glb",
+        "triangles": 13510,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "potted-plant-01-model.glb"
+      }
+    ],
+    "materials": [
+      "potted_plant_01_pot",
+      "potted_plant_01_leaves"
+    ]
+  }
+}

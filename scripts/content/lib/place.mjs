@@ -37,10 +37,11 @@ function measure(scene) {
 }
 
 /**
- * Scale the scene into metres and move it so the origin is the bottom centre.
+ * Scale the scene into metres, turn it `rotateY` degrees about +Y (counter-clockwise seen
+ * from above), and move it so the origin is the bottom centre.
  * Returns the bounds from before the transform and the bounds after it.
  */
-export function applyBottomCentre(document, scale = 1) {
+export function applyBottomCentre(document, scale = 1, rotateY = 0) {
   const scene = sceneOf(document)
   const original = measure(scene)
   const wrapper = document.createNode('nestwright-origin')
@@ -50,6 +51,10 @@ export function applyBottomCentre(document, scale = 1) {
   }
   scene.addChild(wrapper)
   wrapper.setScale([scale, scale, scale])
+  if (rotateY) {
+    const half = (rotateY * Math.PI) / 360
+    wrapper.setRotation([0, Math.sin(half), 0, Math.cos(half)])
+  }
   const scaled = getBounds(scene)
   const offset = bottomCentreOffset(scaled.min, scaled.max)
   wrapper.setTranslation([offset.x, offset.y, offset.z])

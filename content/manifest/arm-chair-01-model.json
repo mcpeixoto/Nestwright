@@ -1,0 +1,55 @@
+{
+  "key": "arm-chair-01-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "ArmChair_01",
+  "sourceUrl": "https://polyhaven.com/a/ArmChair_01",
+  "author": "Kirill Sannikov",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:07.203Z",
+  "sha256Source": "556039ff343527e4f8bff18d0aa6d221208de0ae8154fb4ddf44656cf6c73079",
+  "targets": {
+    "catalogId": "armchair-wingback"
+  },
+  "files": [
+    {
+      "path": "models/arm-chair-01-model/arm-chair-01-model.glb",
+      "bytes": 1685072,
+      "sha256": "a66de4dea7c859d97d9c068a130f9a325f6b68815808be80ca745ea321a0e0d9"
+    },
+    {
+      "path": "models/arm-chair-01-model/arm-chair-01-model.lod1.glb",
+      "bytes": 31072,
+      "sha256": "38199c7835d61baa87f6b4465dd0f7595bc8853d6f49bdf67a99330f334d962c"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.848431,
+      "d": 0.76576,
+      "h": 1.065088
+    },
+    "originalBounds": {
+      "w": 0.848431,
+      "d": 0.76576,
+      "h": 1.065088
+    },
+    "triangles": 5626,
+    "lods": [
+      {
+        "file": "arm-chair-01-model.glb",
+        "triangles": 5626
+      },
+      {
+        "file": "arm-chair-01-model.lod1.glb",
+        "triangles": 1969,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "arm-chair-01-model.glb"
+      }
+    ],
+    "materials": [
+      "Armchair_01"
+    ]
+  }
+}

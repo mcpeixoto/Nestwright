@@ -1,0 +1,56 @@
+{
+  "key": "vintage-microwave-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "vintage_microwave",
+  "sourceUrl": "https://polyhaven.com/a/vintage_microwave",
+  "author": "Adam Nekola",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:11.818Z",
+  "sha256Source": "b54abd91ec1b8580b165aae1172b24448c11c8dd67bde3b6d20bb7548147889c",
+  "targets": {
+    "catalogId": "microwave"
+  },
+  "files": [
+    {
+      "path": "models/vintage-microwave-model/vintage-microwave-model.glb",
+      "bytes": 1072980,
+      "sha256": "d27c0992c7e78efba7d3834c6ef0c592262860d1b89c21ab31f8129199836c63"
+    },
+    {
+      "path": "models/vintage-microwave-model/vintage-microwave-model.lod1.glb",
+      "bytes": 37128,
+      "sha256": "7c52c85a7ff17e84b8a5808b2024cce91ebf7f01de109ec7d24698b77c99e9be"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 1.073711,
+      "d": 0.745555,
+      "h": 0.525826
+    },
+    "originalBounds": {
+      "w": 1.073711,
+      "d": 0.745555,
+      "h": 0.525826
+    },
+    "triangles": 8120,
+    "lods": [
+      {
+        "file": "vintage-microwave-model.glb",
+        "triangles": 8120
+      },
+      {
+        "file": "vintage-microwave-model.lod1.glb",
+        "triangles": 2841,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "vintage-microwave-model.glb"
+      }
+    ],
+    "materials": [
+      "vintage_microwave",
+      "vintage_microwave_glass"
+    ]
+  }
+}

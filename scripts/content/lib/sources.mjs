@@ -24,6 +24,18 @@ export function assertEntry(entry, index = 0) {
   if (entry.normalScale != null && !(typeof entry.normalScale === 'number' && entry.normalScale > 0 && entry.normalScale <= 2)) {
     throw new Error(`${where} normalScale must be a number above 0 and at most 2`)
   }
+  if (entry.node != null && (entry.kind !== 'model' || typeof entry.node !== 'string' || entry.node === '')) {
+    throw new Error(`${where} node must be a node name on a model entry`)
+  }
+  if (entry.maxTriangles != null && (entry.kind !== 'model' || !Number.isInteger(entry.maxTriangles) || entry.maxTriangles < 100)) {
+    throw new Error(`${where} maxTriangles must be an integer of at least 100 on a model entry`)
+  }
+  if (entry.rotateY != null && (entry.kind !== 'model' || ![0, 90, 180, 270].includes(entry.rotateY))) {
+    throw new Error(`${where} rotateY must be 0, 90, 180 or 270 on a model entry`)
+  }
+  if (entry.dropMaterials != null && (entry.kind !== 'model' || !Array.isArray(entry.dropMaterials) || entry.dropMaterials.length === 0 || entry.dropMaterials.some((name) => typeof name !== 'string' || name === ''))) {
+    throw new Error(`${where} dropMaterials must be a non-empty list of material names on a model entry`)
+  }
   const manual = entry.provider === 'sketchfab' || entry.provider === 'local'
   if (entry.licence === 'CC-BY-4.0' && (!entry.author || !entry.url)) {
     throw new Error(`${where} CC-BY-4.0 needs author and url`)
