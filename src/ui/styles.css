@@ -92,6 +92,9 @@ input, select {
   border-width: 0 0 1px;
   flex-wrap: nowrap;
   overflow: visible;
+  /* Own stacking layer above the workspace, so menus that drop below the bar are not painted over by the canvas. */
+  position: relative;
+  z-index: 30;
 }
 
 .wordmark {
