@@ -1,0 +1,56 @@
+{
+  "key": "industrial-wall-sconce-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "industrial_wall_sconce",
+  "sourceUrl": "https://polyhaven.com/a/industrial_wall_sconce",
+  "author": "Ulan Cabanilla",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:11.360Z",
+  "sha256Source": "1ff720db7c07f6c023577d670aa9239b7926598b747386496d80c064afc7cc1c",
+  "targets": {
+    "catalogId": "wall-sconce"
+  },
+  "files": [
+    {
+      "path": "models/industrial-wall-sconce-model/industrial-wall-sconce-model.glb",
+      "bytes": 1116728,
+      "sha256": "14752d6e3acad9bde31d3192bc83eabbd6a577a5ed2b61bd41eaee58e514bfb9"
+    },
+    {
+      "path": "models/industrial-wall-sconce-model/industrial-wall-sconce-model.lod1.glb",
+      "bytes": 49716,
+      "sha256": "d811539417b466e0ccf1195eefcf6ac99dfb4890b3f86d7a65cf57da047d6f7b"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.150348,
+      "d": 0.251576,
+      "h": 0.341782
+    },
+    "originalBounds": {
+      "w": 0.150348,
+      "d": 0.251576,
+      "h": 0.341782
+    },
+    "triangles": 9826,
+    "lods": [
+      {
+        "file": "industrial-wall-sconce-model.glb",
+        "triangles": 9826
+      },
+      {
+        "file": "industrial-wall-sconce-model.lod1.glb",
+        "triangles": 3436,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "industrial-wall-sconce-model.glb"
+      }
+    ],
+    "materials": [
+      "industrial_wall_sconce",
+      "industrial_wall_sconce_bulb"
+    ]
+  }
+}

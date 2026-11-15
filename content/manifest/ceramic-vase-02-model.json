@@ -1,0 +1,55 @@
+{
+  "key": "ceramic-vase-02-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "ceramic_vase_02",
+  "sourceUrl": "https://polyhaven.com/a/ceramic_vase_02",
+  "author": "James Ray Cock",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:09.451Z",
+  "sha256Source": "66f6c0b47c1bdcd713fa8c93732719d049718e1d48da048722c9e1c01ad91b31",
+  "targets": {
+    "catalogId": "vase"
+  },
+  "files": [
+    {
+      "path": "models/ceramic-vase-02-model/ceramic-vase-02-model.glb",
+      "bytes": 1384740,
+      "sha256": "5a4b1e4cc842033e2eba997876816fe0ebd73d1fc92fc254c3791117dd75d3d3"
+    },
+    {
+      "path": "models/ceramic-vase-02-model/ceramic-vase-02-model.lod1.glb",
+      "bytes": 48408,
+      "sha256": "a9b3fb76c9aabed29c72cfd153d672b6c026e58992ee983325ed8232ee410f74"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.21838,
+      "d": 0.218382,
+      "h": 0.309185
+    },
+    "originalBounds": {
+      "w": 0.21838,
+      "d": 0.218382,
+      "h": 0.309185
+    },
+    "triangles": 11128,
+    "lods": [
+      {
+        "file": "ceramic-vase-02-model.glb",
+        "triangles": 11128
+      },
+      {
+        "file": "ceramic-vase-02-model.lod1.glb",
+        "triangles": 3894,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "ceramic-vase-02-model.glb"
+      }
+    ],
+    "materials": [
+      "ceramic_vase_02"
+    ]
+  }
+}

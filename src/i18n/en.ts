@@ -1006,6 +1006,14 @@ export const en = {
   'Not a valid Nestwright file: invalid JSON.': 'Not a valid Nestwright file: invalid JSON.',
   'level.Ground': 'Ground',
   'Level {n}': 'Level {n}',
+  'Scanned model — material fixed': 'Scanned model — material fixed',
+  Credits: 'Credits',
+  'Third-party textures and models in the content pack. Thank you to their authors.':
+    'Third-party textures and models in the content pack. Thank you to their authors.',
+  'No content pack installed: everything you see is built in code.': 'No content pack installed: everything you see is built in code.',
+  Models: 'Models',
+  Textures: 'Textures',
+  'by {author}': 'by {author}',
 } as const
 
 export type MessageKey = keyof typeof en

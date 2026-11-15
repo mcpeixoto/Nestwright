@@ -51,7 +51,16 @@ ambientCG's `dimensionX` is centimetres (`Concrete034` reports 110 for a 1.1 m t
 
 Optional on texture entries: `albedoContrast` (0–1, default 1) lerps the albedo toward its mean in linear light before encoding, and AO toward white by the same factor. Painted plaster is nearly one colour, so its character has to come from the normal and roughness maps. `normalScale` (default 1) sets the normal strength in the game; plaster uses about 0.5.
 
-`kind` is `texture`, `model` or `hdri`. `provider` is `polyhaven`, `ambientcg`, `sketchfab` or `local`. `resolution` is `1k`, `2k` or `4k`. Optional `units` is `m` (default), `cm` or `mm` and applies to models. Optional `tileMeters` is the fallback real-world width of one texture repeat.
+`kind` is `texture`, `model` or `hdri`. `provider` is `polyhaven`, `ambientcg`, `sketchfab` or `local`. `resolution` is `1k`, `2k` or `4k`. Optional `units` is `m` (default), `dm`, `cm` or `mm` and applies to models. Optional `tileMeters` is the fallback real-world width of one texture repeat.
+
+Optional on model entries:
+
+- `node`: keep one named node. Poly Haven plant files lay several variants side by side; the error lists the scene roots.
+- `maxTriangles`: simplify LOD0 toward this count (error bound 5% of the extent). Furniture aims at 30k, hero pieces at 60k.
+- `rotateY`: 0, 90, 180 or 270 degrees, so the model's width runs along +X and its front faces +Z like the catalog.
+- `dropMaterials`: material names whose primitives are removed, e.g. a glass pane exported as an opaque JPEG.
+
+Every model gets `<key>.glb` and `<key>.lod1.glb` (35% of the triangles). Only LOD0 carries textures: LOD1 keeps the same material names and UVs, and its manifest LOD entry says `texturesFrom: "<key>.glb"`, so the game copies the maps from LOD0's material of the same name. Normal maps inside models are three-channel UASTC (the `normalRgb` preset), because GLTFLoader reads a glTF normal texture as XYZ; the two-channel `--normal_mode` packing is only for texture sets. All Khronos material extensions are kept (the wall clock's glass uses `KHR_materials_transmission`). `scripts/content/model-picks.md` records what was picked, rejected and left without a match.
 
 ## Commands
 

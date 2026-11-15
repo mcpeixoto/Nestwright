@@ -1,0 +1,55 @@
+{
+  "key": "flower-gazania-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "flower_gazania",
+  "sourceUrl": "https://polyhaven.com/a/flower_gazania",
+  "author": "James Ray Cock, Jenelle van Heerden",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:16.066Z",
+  "sha256Source": "57aaa093ba84e0c2e8e7f9ca6bfe84ca2e71c5ff1ff006f28acaf76a5a918edd",
+  "targets": {
+    "species": "flowers-mixed"
+  },
+  "files": [
+    {
+      "path": "models/flower-gazania-model/flower-gazania-model.glb",
+      "bytes": 1649680,
+      "sha256": "a56f344d799e37f5315f19d7e481ffc15a5ae08c173a46e049b9e0ad044c509d"
+    },
+    {
+      "path": "models/flower-gazania-model/flower-gazania-model.lod1.glb",
+      "bytes": 30140,
+      "sha256": "7aa7dab75e9865ee0bfc1901354b577e1f4cfdb6746d65c71d13ad2e497371fa"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.337567,
+      "d": 0.32621,
+      "h": 0.165541
+    },
+    "originalBounds": {
+      "w": 0.337567,
+      "d": 0.32621,
+      "h": 0.165541
+    },
+    "triangles": 3540,
+    "lods": [
+      {
+        "file": "flower-gazania-model.glb",
+        "triangles": 3540
+      },
+      {
+        "file": "flower-gazania-model.lod1.glb",
+        "triangles": 1250,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "flower-gazania-model.glb"
+      }
+    ],
+    "materials": [
+      "flower_gazania"
+    ]
+  }
+}

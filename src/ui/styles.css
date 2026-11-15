@@ -446,6 +446,12 @@ input, select {
   border-top: 1px solid var(--line);
 }
 .shortcut-list kbd { color: var(--sand); font-family: ui-monospace, monospace; }
+.credits { max-height: min(60vh, 520px); overflow-y: auto; }
+.credit-list { list-style: none; margin: 0 0 12px; padding: 0; font-size: 12px; }
+.credit-list li { padding: 5px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.credit-name { color: var(--sand); }
+.credit-meta, .credit-url { opacity: 0.75; user-select: text; }
+.mat-locked { border: 0; margin: 0; padding: 0; min-width: 0; opacity: 0.45; }
 
 .icon-btn { display: grid; place-items: center; width: 34px; height: 32px; padding: 0; }
 .icon-btn svg { width: 18px; height: 18px; display: block; }

@@ -77,6 +77,13 @@ describe('Poly Haven file picker', () => {
     expect(hdri.hdr.size).toBe(50)
   })
 
+  it('adds a model part alpha map to the include list', () => {
+    const url = 'https://dl.polyhaven.org/file/ph-assets/Models/png/1k/example/example_leaves_alpha_1k.png'
+    const files = { ...modelFiles, leaves_alpha: { '1k': { png: { url, size: 9 }, jpg: { url: url.replace(/png/g, 'jpg'), size: 8 } } } }
+    const model = pickPolyhaven(files, { kind: 'model', resolution: '1k' })
+    expect(model.include.map((file) => file.path)).toContain('textures/example_leaves_alpha_1k.png')
+  })
+
   it('treats a Poly Haven info payload without a licence field as CC0', () => {
     expect(() => assertPolyhavenCc0({ authors: { Ada: 'All' }, dimensions: [50000, 50000] })).not.toThrow()
     expect(() => assertPolyhavenCc0({ licence: 'CC-BY-NC-4.0' })).toThrow(/not CC0/)

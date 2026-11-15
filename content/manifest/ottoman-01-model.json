@@ -1,0 +1,55 @@
+{
+  "key": "ottoman-01-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "Ottoman_01",
+  "sourceUrl": "https://polyhaven.com/a/Ottoman_01",
+  "author": "Caspian Fortune",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:07.489Z",
+  "sha256Source": "c2009c25802c37d4b2ebc294fc71e5fabaf5da8e96f9f94594b82094d27b8415",
+  "targets": {
+    "catalogId": "ottoman"
+  },
+  "files": [
+    {
+      "path": "models/ottoman-01-model/ottoman-01-model.glb",
+      "bytes": 1598172,
+      "sha256": "1c872fae37490b271677e8fb6e8f43ba5ece61baaf2f70cfd726cd19519ad76a"
+    },
+    {
+      "path": "models/ottoman-01-model/ottoman-01-model.lod1.glb",
+      "bytes": 23792,
+      "sha256": "1b08ef21b600fd25014dc77849f3f5d939960f7ca334b6ae974e5972130ed7ef"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.884558,
+      "d": 0.621148,
+      "h": 0.624324
+    },
+    "originalBounds": {
+      "w": 0.884558,
+      "d": 0.621148,
+      "h": 0.624324
+    },
+    "triangles": 4240,
+    "lods": [
+      {
+        "file": "ottoman-01-model.glb",
+        "triangles": 4240
+      },
+      {
+        "file": "ottoman-01-model.lod1.glb",
+        "triangles": 1484,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "ottoman-01-model.glb"
+      }
+    ],
+    "materials": [
+      "Ottoman_01"
+    ]
+  }
+}

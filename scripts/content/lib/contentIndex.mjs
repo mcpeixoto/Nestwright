@@ -30,7 +30,51 @@ export function buildContentIndex(manifests) {
       maps,
     }
   }
-  return { version: INDEX_VERSION, textures }
+  return { version: INDEX_VERSION, textures, models: modelEntries(sorted), credits: creditEntries(sorted) }
+}
+
+/** catalog id → the model's files and natural size. Scatter-species models are not listed yet. */
+function modelEntries(sorted) {
+  const models = {}
+  for (const manifest of sorted) {
+    if (manifest.kind !== 'model') continue
+    const catalogId = manifest.targets?.catalogId
+    if (!catalogId || models[catalogId]) continue
+    const files = (manifest.files ?? []).map((file) => file.path)
+    const lod0 = files.find((path) => path.endsWith('.glb') && !/\.lod\d+\.glb$/.test(path))
+    if (!lod0) continue
+    const lod1 = files.find((path) => path.endsWith('.lod1.glb'))
+    models[catalogId] = {
+      key: manifest.key,
+      lod0,
+      ...(lod1 ? { lod1 } : {}),
+      ...(manifest.model?.bounds ? { bounds: manifest.model.bounds } : {}),
+      ...(manifest.model?.triangles ? { triangles: manifest.model.triangles } : {}),
+    }
+  }
+  return models
+}
+
+function titleOf(sourceId) {
+  const words = String(sourceId ?? '').replace(/[_-]+/g, ' ').trim()
+  return words ? words[0].toUpperCase() + words.slice(1) : ''
+}
+
+/** One line per third-party asset for the in-game Credits screen, CC0 included. */
+function creditEntries(sorted) {
+  const credits = []
+  for (const manifest of sorted) {
+    if (manifest.kind !== 'texture' && manifest.kind !== 'model') continue
+    credits.push({
+      key: manifest.key,
+      kind: manifest.kind,
+      name: titleOf(manifest.sourceId) || manifest.key,
+      author: manifest.author ?? '',
+      licence: manifest.licence ?? '',
+      sourceUrl: manifest.sourceUrl ?? '',
+    })
+  }
+  return credits
 }
 
 /** Rewrite public/content/index.json from content/manifest. No-op when public/content is absent. */

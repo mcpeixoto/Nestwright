@@ -25,7 +25,8 @@ export function resolveTileMeters({ dimensionsMm, entryTileMeters } = {}) {
 
 export function unitsToMetres(units) {
   if (units == null || units === 'm' || units === 'metres' || units === 'meters') return 1
+  if (units === 'dm') return 0.1
   if (units === 'cm') return 0.01
   if (units === 'mm') return 0.001
-  throw new Error(`unknown units ${units} (expected m, cm or mm)`)
+  throw new Error(`unknown units ${units} (expected m, dm, cm or mm)`)
 }
