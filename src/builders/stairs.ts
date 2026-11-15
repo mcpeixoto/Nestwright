@@ -176,6 +176,8 @@ function board(
   return mesh
 }
 
+const RAIL_AXIS = new THREE.Vector3(1, 0, 0)
+
 function addRail(group: THREE.Group, chain: { x: number; y: number; h: number }[], base: number, material: THREE.Material, id: string) {
   const tops: THREE.Vector3[] = []
   for (const p of chain) {
@@ -196,8 +198,9 @@ function addRail(group: THREE.Group, chain: { x: number; y: number; h: number }[
     if (length < 1e-3) continue
     const rail = new THREE.Mesh(new THREE.BoxGeometry(length, 0.04, 0.04), material)
     rail.position.set((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2)
-    rail.rotation.y = Math.atan2(dz, dx)
-    rail.rotation.z = Math.atan2(dy, Math.hypot(dx, dz))
+    // Aim the box's long (X) axis from post top to post top. Euler angles got the heading
+    // mirrored (rotation.y turns +X toward -Z), so each rail stuck out sideways.
+    rail.quaternion.setFromUnitVectors(RAIL_AXIS, new THREE.Vector3(dx / length, dy / length, dz / length))
     tag(rail, id)
     group.add(rail)
   }

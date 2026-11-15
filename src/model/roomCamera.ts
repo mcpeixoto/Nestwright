@@ -1,5 +1,6 @@
 import { closestPointOnSegment, dist, lerp, pointInPolygon } from './geometry'
 import { detectRooms } from './rooms'
+import { computeStairSteps } from './stairs'
 import type { Item, Level, Project, Vec2 } from './types'
 
 export interface RoomCameraPose {
@@ -65,6 +66,49 @@ function nearestItem(level: Level, point: Vec2): number {
     if (gap < best) best = gap
   }
   return best
+}
+
+/** Railing posts stand just outside the treads; treat this band around a stair as solid. */
+const STAIR_MARGIN = 0.3
+/** A stair farther than this along the sightline is background, not an obstruction. */
+const STAIR_NEAR = 2.5
+
+function gapToPolygon(point: Vec2, polygon: readonly Vec2[]): number {
+  return pointInPolygon(point, polygon) ? 0 : edgeDistance(point, polygon)
+}
+
+/** Metres along eye → look before the sightline meets a stair (with railing margin); Infinity if never. */
+function stairHitDistance(level: Level, eye: Vec2, look: Vec2): number {
+  const stairs = level.stairs ?? []
+  if (stairs.length === 0) return Infinity
+  const treads = stairs.flatMap((stair) => computeStairSteps(stair, level.height).steps.map((step) => step.polygon))
+  const length = dist(eye, look)
+  if (length < 1e-4) return Infinity
+  for (let travelled = 0; travelled <= length; travelled += 0.1) {
+    const point = lerp(eye, look, travelled / length)
+    if (treads.some((polygon) => gapToPolygon(point, polygon) < STAIR_MARGIN)) return travelled
+  }
+  return Infinity
+}
+
+interface Candidate {
+  eye: Vec2
+  look: Vec2 | null
+  clear: number
+}
+
+/**
+ * Prefer the corner whose view is not blocked by a nearby stair (its railing posts fill the frame);
+ * otherwise the corner with more room around the eye.
+ */
+function pickEnd(level: Level, start: Candidate, end: Candidate): Candidate {
+  const startHit = start.look ? stairHitDistance(level, start.eye, start.look) : Infinity
+  const endHit = end.look ? stairHitDistance(level, end.eye, end.look) : Infinity
+  const startBlocked = startHit < STAIR_NEAR
+  const endBlocked = endHit < STAIR_NEAR
+  if (startBlocked !== endBlocked) return startBlocked ? end : start
+  if (startBlocked && endBlocked && Math.abs(startHit - endHit) > 1e-6) return endHit > startHit ? end : start
+  return end.clear > start.clear + 1e-6 ? end : start
 }
 
 /** A look point just inside the far corner when that corner itself is blocked. */
@@ -155,8 +199,7 @@ export function roomCameraPose(
   const nearEnd = placeNear(diagonal.to, diagonal.from, room.polygon, level)
   const start = nearStart ? { eye: nearStart, look: nearEnd, clear: nearestItem(level, nearStart) } : null
   const end = nearEnd ? { eye: nearEnd, look: nearStart, clear: nearestItem(level, nearEnd) } : null
-  const chosen =
-    start && end ? (end.clear > start.clear + 1e-6 ? end : start) : (start ?? end)
+  const chosen = start && end ? pickEnd(level, start, end) : (start ?? end)
   if (!chosen) return null
   const eyePoint = chosen.eye
   const lookPoint =
