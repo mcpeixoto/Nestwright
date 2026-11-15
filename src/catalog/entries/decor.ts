@@ -186,7 +186,7 @@ const entries: CatalogEntry[] = [
     defaultSize: { w: 0.22, d: 0.12, h: 0.2 },
     price: 18,
     materialSlots: { wax: ref('plaster-warm'), metal: ref('metal-brass') },
-    light: { color: '#ffb060', intensity: 4, distance: 1.6, offsetY: 0.16 },
+    light: { color: '#ffb060', intensity: 4, lumens: 60, kelvin: 1900, distance: 1.6, offsetY: 0.16 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()

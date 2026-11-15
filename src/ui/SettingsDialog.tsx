@@ -10,6 +10,7 @@ import {
   type RendererBackendSetting,
   type ToneMapSetting,
 } from '../settings'
+import { EV_COMP_MAX, EV_COMP_MIN, formatEv } from '../model/exposure'
 import { useStore } from '../store'
 import { Modal } from './Modal'
 import { isSettingsOpen, setSettingsOpen, subscribeSettings } from './settingsDialogState'
@@ -122,6 +123,19 @@ export function SettingsDialog() {
             <option value="agx">{tr('Natural (AgX)')}</option>
             <option value="aces">{tr('Filmic (ACES)')}</option>
           </select>
+        </label>
+        <label className="field">
+          <T k="Exposure compensation" />
+          <input
+            type="range"
+            min={EV_COMP_MIN}
+            max={EV_COMP_MAX}
+            step={0.1}
+            aria-label={tr('Exposure compensation')}
+            value={settings.exposureComp}
+            onChange={(event) => set({ exposureComp: Number(event.target.value) })}
+          />
+          <span className="readout">{formatEv(settings.exposureComp)}</span>
         </label>
         <label className="field">
           <T k="Mouse sensitivity" />

@@ -7,6 +7,7 @@ export interface PhotoSnapshot {
   photo: boolean
   focus: number
   aperture: number
+  /** Exposure compensation in EV (−2…+2). */
   exposure: number
   aspect: PhotoAspect
   resolution: PhotoResolution
@@ -20,7 +21,7 @@ let snapshot: PhotoSnapshot = {
   photo: false,
   focus: 8,
   aperture: 0.15,
-  exposure: 1,
+  exposure: 0,
   aspect: 'free',
   resolution: '1080p',
   grid: false,
@@ -49,9 +50,10 @@ export function isPhotoMode(): boolean {
   return snapshot.photo
 }
 
+/** Photo-mode exposure compensation in EV; 0 outside photo mode. */
 export function photoExposure(): number {
-  if (!snapshot.photo) return 1
-  return Number.isFinite(snapshot.exposure) ? snapshot.exposure : 1
+  if (!snapshot.photo) return 0
+  return Number.isFinite(snapshot.exposure) ? snapshot.exposure : 0
 }
 
 export function enterPhoto(fov: number | null): void {

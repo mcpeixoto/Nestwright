@@ -266,7 +266,7 @@ const entries: CatalogEntry[] = [
     defaultSize: { w: 0.4, d: 0.4, h: 1.6 },
     price: 180,
     materialSlots: { stand: ref('metal-brass'), shade: ref('fabric-linen') },
-    light: { color: '#ffd8a8', intensity: 30, distance: 8, offsetY: 1.45 },
+    light: { color: '#ffd8a8', intensity: 30, lumens: 1200, kelvin: 2700, distance: 8, offsetY: 1.45 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()
@@ -296,7 +296,7 @@ const entries: CatalogEntry[] = [
     defaultSize: { w: 0.42, d: 0.42, h: 0.9 },
     price: 150,
     materialSlots: { cord: ref('metal-black'), shade: ref('plaster-warm') },
-    light: { color: '#fff0d4', intensity: 40, distance: 7, offsetY: 0.35 },
+    light: { color: '#fff0d4', intensity: 40, lumens: 800, kelvin: 2700, distance: 7, offsetY: 0.35 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()

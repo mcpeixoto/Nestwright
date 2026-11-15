@@ -14,7 +14,7 @@ const entries: CatalogEntry[] = [
     price: 90,
     materialSlots: { shade: ref('plaster-white'), metal: ref('metal-brass') },
     mount: 'ceiling',
-    light: { color: '#fff4e0', intensity: 40, distance: 8, offsetY: 0.08 },
+    light: { color: '#fff4e0', intensity: 40, lumens: 1000, kelvin: 3000, distance: 8, offsetY: 0.08 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()
@@ -36,7 +36,7 @@ const entries: CatalogEntry[] = [
     materialSlots: { shade: ref('fabric-linen'), metal: ref('metal-brass') },
     mount: 'wall',
     mountHeight: 1.55,
-    light: { color: '#ffe0b8', intensity: 12, distance: 4, offsetY: 0.12 },
+    light: { color: '#ffe0b8', intensity: 12, lumens: 400, kelvin: 2700, distance: 4, offsetY: 0.12 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()
@@ -55,7 +55,7 @@ const entries: CatalogEntry[] = [
     price: 160,
     materialSlots: { metal: ref('metal-black'), shade: ref('paint-charcoal') },
     mount: 'ceiling',
-    light: { color: '#fff6ea', intensity: 28, distance: 6, offsetY: 0.04, spot: true, angle: 0.6 },
+    light: { color: '#fff6ea', intensity: 28, lumens: 400, kelvin: 3000, distance: 6, offsetY: 0.04, spot: true, angle: 0.6 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()
@@ -76,7 +76,7 @@ const entries: CatalogEntry[] = [
     defaultSize: { w: 0.28, d: 0.28, h: 0.48 },
     price: 75,
     materialSlots: { shade: ref('fabric-linen'), stand: ref('plaster-white') },
-    light: { color: '#ffe6c2', intensity: 14, distance: 4, offsetY: 0.32 },
+    light: { color: '#ffe6c2', intensity: 14, lumens: 450, kelvin: 2700, distance: 4, offsetY: 0.32 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()
@@ -97,7 +97,7 @@ const entries: CatalogEntry[] = [
     defaultSize: { w: 1.5, d: 0.4, h: 1.9 },
     price: 260,
     materialSlots: { shade: ref('fabric-linen'), stand: ref('metal-brass') },
-    light: { color: '#ffe3c0', intensity: 22, distance: 6, offsetY: 1.7 },
+    light: { color: '#ffe3c0', intensity: 22, lumens: 1200, kelvin: 2700, distance: 6, offsetY: 1.7 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()
@@ -122,7 +122,7 @@ const entries: CatalogEntry[] = [
     price: 480,
     materialSlots: { metal: ref('metal-brass'), shade: ref('plaster-warm') },
     mount: 'ceiling',
-    light: { color: '#fff0d0', intensity: 34, distance: 7, offsetY: 0.28 },
+    light: { color: '#fff0d0', intensity: 34, lumens: 1500, kelvin: 2700, distance: 7, offsetY: 0.28 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()
@@ -151,7 +151,7 @@ const entries: CatalogEntry[] = [
     materialSlots: { metal: ref('metal-black'), glow: ref('plaster-white') },
     mount: 'wall',
     mountHeight: 2.2,
-    light: { color: '#fff8ee', intensity: 16, distance: 4, offsetY: 0.02 },
+    light: { color: '#fff8ee', intensity: 16, lumens: 500, kelvin: 3000, distance: 4, offsetY: 0.02 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()
