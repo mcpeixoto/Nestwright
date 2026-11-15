@@ -345,7 +345,8 @@ export class ProbeBaker {
   /** CPU ms of the last capture's scene render and SH projection (perf diagnostics). */
   timing = { scene: 0, project: 0 }
   private faceTarget: THREE.RenderTarget
-  private faceSize: number
+  /** Cube face size, fixed for the baker's life (a new size gets a new baker). */
+  readonly faceSize: number
   private batchTarget: THREE.RenderTarget | null = null
   private batchRows = 0
   private readonly quad: THREE.QuadMesh = new (THREE.QuadMesh as any)()
@@ -384,15 +385,6 @@ export class ProbeBaker {
   /** The render target captures draw into; the precompile renders against the same format. */
   get target(): THREE.RenderTarget {
     return this.faceTarget
-  }
-
-  setFaceSize(size: number): void {
-    if (size === this.faceSize) return
-    this.faceTarget.dispose()
-    this.shMaterial.dispose()
-    this.faceSize = size
-    this.faceTarget = this.createFaceTarget(size)
-    this.shMaterial = this.createShMaterial(size)
   }
 
   private createFaceTarget(size: number): THREE.RenderTarget {

@@ -228,8 +228,13 @@ registerSceneLayer({
         slots.push({ volume, levelId: null, parts: [], env: '', due: null, reason: 'fresh', baked: false, lastStart: -Infinity })
       }
       stats.volumes = slots.length
-      if (!baker) baker = new ProbeBaker(tier.cubemapSize)
-      else baker.setFaceSize(tier.cubemapSize)
+      // A new face size gets a new baker: swapping the face target under a live one left
+      // capture pipelines that failed validation on the next frames (seen on Ultra at 12 px).
+      if (baker && baker.faceSize !== tier.cubemapSize) {
+        baker.dispose()
+        baker = null
+      }
+      baker ??= new ProbeBaker(tier.cubemapSize)
     }
 
     /** Mark slots dirty from what changed since the last look. */
