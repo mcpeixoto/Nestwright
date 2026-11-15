@@ -7,6 +7,7 @@ import { useStore } from '../store'
 import { Viewport3D } from '../view3d/Viewport3D'
 import '../achievements/boot'
 import { ToastHost } from '../achievements/toast'
+import { Celebrate } from './Celebrate'
 import { HelpDialog } from './HelpDialog'
 import { PerfHud } from './PerfHud'
 import { PhotoMode } from './PhotoMode'
@@ -101,6 +102,7 @@ function EditorShell() {
       <StatusBar />
       <TogetherChrome />
       <ToastHost />
+      <Celebrate />
       {photo && <PhotoMode />}
       <Tour />
     </>

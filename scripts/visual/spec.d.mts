@@ -9,6 +9,7 @@ export function parseArgs(argv: string[]): {
   out: string
   url: string
   views: string[] | null
+  viewsFile: string | null
   serve: boolean
   ref: string
   backend: 'webgpu' | 'webgl'

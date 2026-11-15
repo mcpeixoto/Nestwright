@@ -1,16 +1,25 @@
-export interface CelebrateEvent {
-  kind: 'unlock'
-}
+export type CelebrateEvent = { kind: 'unlock' } | { kind: 'room-complete'; names: readonly string[] }
 
-type CelebrateListener = (event: CelebrateEvent) => void
+type Listener = (event: CelebrateEvent) => void
 
-const listeners = new Set<CelebrateListener>()
+const listeners = new Set<Listener>()
 
+/** Achievement unlocks and newly closed rooms. Listeners run synchronously. */
 export function emitCelebrate(event: CelebrateEvent): void {
-  for (const listener of [...listeners]) listener(event)
+  for (const listener of listeners) {
+    try {
+      listener(event)
+    } catch {
+      /* a celebration must not break the edit that earned it */
+    }
+  }
 }
 
-export function onCelebrate(listener: CelebrateListener): () => void {
+export function onCelebrate(listener: Listener): () => void {
   listeners.add(listener)
   return () => listeners.delete(listener)
+}
+
+export function resetCelebrateForTests(): void {
+  listeners.clear()
 }

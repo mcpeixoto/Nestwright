@@ -152,6 +152,8 @@ export function parseArgs(argv) {
     out: 'visual-out',
     url: 'http://localhost:5181',
     views: /** @type {string[] | null} */ (null),
+    /** Another views file (same format as views.json), for one-off close-ups. */
+    viewsFile: /** @type {string | null} */ (null),
     serve: false,
     ref: defaultRefDir(),
     /** 'webgpu' (default: auto, which is WebGPU on a GPU browser) or 'webgl' (forced fallback). */
@@ -179,7 +181,8 @@ export function parseArgs(argv) {
         .split(',')
         .map((name) => name.trim())
         .filter(Boolean)
-    } else if (arg === '--ref') opts.ref = next()
+    } else if (arg === '--views-file') opts.viewsFile = next()
+    else if (arg === '--ref') opts.ref = next()
     else if (arg === '--serve') opts.serve = true
     else if (arg === '--backend') {
       const value = next()

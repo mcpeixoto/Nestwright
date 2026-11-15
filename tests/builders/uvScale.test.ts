@@ -131,12 +131,13 @@ describe('metric uv scale', () => {
       material: { id: 'roof-tiles' },
       cutouts: [],
     }
-    const all = meshes(buildRoof(roof, level)).map(triangles)
-    // Fascia and gable ends included.
+    const built = meshes(buildRoof(roof, level))
+    const all = built.map(triangles)
+    // Fascia, gable ends and trim (ridge caps, gutters, downpipes) included.
     for (const tris of all) expect(worstEdgeError(tris)).toBeLessThan(1e-4)
-    // Upper side of each sloped face, grouped by its normal.
+    // Upper side of each sloped face, grouped by its normal. Trim pieces are separate charts.
     const byNormal = new Map<string, Tri[]>()
-    for (const t of all.flat()) {
+    for (const t of built.filter((m) => !m.userData.trim).flatMap(triangles)) {
       if (t.n.y < 0.3 || t.n.y > 0.99) continue
       const key = `${t.n.x.toFixed(2)},${t.n.y.toFixed(2)},${t.n.z.toFixed(2)}`
       byNormal.set(key, [...(byNormal.get(key) ?? []), t])
