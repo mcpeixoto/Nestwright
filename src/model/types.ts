@@ -195,6 +195,15 @@ export interface Item {
 
 // ---------------------------------------------------------------- levels
 
+/** Where the wall meets the ceiling: a 10 mm recessed gap, a cove cornice, or a plain corner. */
+export type CeilingTrim = 'shadow-gap' | 'cove' | 'none';
+
+/** Interior trim of a level (3D only). Absent fields use the defaults: skirting, shadow gap. */
+export interface LevelTrim {
+  skirting?: boolean;
+  ceiling?: CeilingTrim;
+}
+
 export interface Level {
   id: Id;
   name: string;
@@ -215,6 +224,8 @@ export interface Level {
   items: Item[];
   /** Dimension lines drawn by the user. */
   dimensions: { id: Id; a: Vec2; b: Vec2; offset: number }[];
+  /** Skirting and ceiling-line trim; optional, defaults apply when absent. */
+  trim?: LevelTrim;
 }
 
 // ---------------------------------------------------------------- outside

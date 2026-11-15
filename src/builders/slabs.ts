@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { getMaterial } from '../materials/materialCache'
 import { polygonArea } from '../model/geometry'
 import type { Level, Slab, Vec2 } from '../model/types'
+import { edgeStrip, Sheet } from './trim'
 
 export function buildSlab(slab: Slab, level: Level): THREE.Group {
   const group = new THREE.Group()
@@ -27,6 +28,26 @@ export function buildSlab(slab: Slab, level: Level): THREE.Group {
   mesh.userData.entityId = slab.id
   mesh.userData.kind = 'slab'
   group.add(mesh)
+  // Bevel strips along the exposed top edge, so a terrace or step never ends in a knife edge.
+  const edges = new Sheet()
+  const up = new THREE.Vector3(0, 1, 0)
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i]!
+    const b = ring[(i + 1) % ring.length]!
+    const dx = b.x - a.x
+    const dz = b.y - a.y
+    const length = Math.hypot(dx, dz)
+    if (length < 1e-3) continue
+    // Counter-clockwise ring: outward is to the right of a→b.
+    const out = new THREE.Vector3(dz / length, 0, -dx / length)
+    edgeStrip(edges, new THREE.Vector3(a.x, top, a.y), new THREE.Vector3(b.x, top, b.y), out, up, 0.008)
+  }
+  const bevel = edges.mesh(mesh.material as THREE.Material)
+  if (bevel) {
+    bevel.userData.entityId = slab.id
+    bevel.userData.kind = 'slab'
+    group.add(bevel)
+  }
   group.userData.entityId = slab.id
   group.userData.kind = 'slab'
   return group

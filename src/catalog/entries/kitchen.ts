@@ -31,7 +31,8 @@ function drawModule(
   const hd = alongX ? depth : width
   roundedBox(g, body, 'body', hw, height, hd, x, yBase + height / 2, z, 0.006)
   const topT = Math.min(0.035, height * 0.08)
-  if (!tall) roundedBox(g, top, 'top', hw, topT, hd, x, yBase + height - topT / 2, z, 0.003)
+  // 4 mm eased edge: roundedBox only rounds above 3 mm, and a worktop must not end in a knife edge.
+  if (!tall) roundedBox(g, top, 'top', hw, topT, hd, x, yBase + height - topT / 2, z, 0.004)
   const doorH = tall ? height * 0.92 : height * 0.72
   const doorY = yBase + (spec.plinth ? height * 0.14 : height * 0.08) + doorH / 2
   const frontZ = alongX ? z + hd / 2 - 0.012 : x - hw / 2 + 0.012

@@ -1,10 +1,11 @@
 import earcut from 'earcut'
 import * as THREE from 'three'
 import { getMaterial } from '../materials/materialCache'
-import { pointInPolygon, polygonArea } from '../model/geometry'
+import { add, dot, normalize, perp, pointInPolygon, polygonArea, scale, sub } from '../model/geometry'
 import { clipToConvex, isConvex } from '../model/polygon'
 import { buildRoofModel, type RoofFace, type RoofModel, type RoofVertex } from '../model/roofs'
-import type { Level, Roof, Vec2 } from '../model/types'
+import type { Level, MaterialRef, Roof, Vec2 } from '../model/types'
+import { mitre, prism, Sheet, sweep, type PathFrame, type ProfilePoint, type UvBasis } from './trim'
 import { metricUVs } from './uv'
 
 /**
@@ -31,7 +32,262 @@ export function buildRoof(roof: Roof, level: Level): THREE.Group {
     const frame = skylight(cut, model, y0, roof.id)
     if (frame) group.add(frame)
   }
+  if (roof.shape !== 'flat' && roof.shape !== 'dome') {
+    const trim = roofTrim(model, y0, thickness, Math.max(0, roof.overhang), level.elevation)
+    for (const [sheet, mat, name] of [
+      [trim.tiles, material, 'ridge'],
+      [trim.fascia, getMaterial(FASCIA), 'fascia'],
+      [trim.metal, getMaterial(GUTTER), 'gutter'],
+    ] as const) {
+      const mesh = sheet.mesh(mat)
+      if (!mesh) continue
+      mesh.userData.entityId = roof.id
+      mesh.userData.kind = 'roof'
+      mesh.userData.roof = true
+      mesh.userData.trim = name
+      group.add(mesh)
+    }
+  }
   return group
+}
+
+const FASCIA: MaterialRef = { id: 'render-stucco' }
+const GUTTER: MaterialRef = { id: 'steel-brushed' }
+const GUTTER_RADIUS = 0.065
+const PIPE_RADIUS = 0.04
+
+const key2 = (x: number, y: number) => `${Math.round(x * 1000)},${Math.round(y * 1000)}`
+
+function world(p: RoofVertex, y0: number): THREE.Vector3 {
+  return new THREE.Vector3(p.x, y0 + p.h, p.y)
+}
+
+interface Eave {
+  a: Vec2
+  b: Vec2
+  /** Plan direction out of the roof, square to the edge. */
+  out: Vec2
+}
+
+/**
+ * Roof trim: ridge and hip caps where two slopes meet, a barge strip that thickens the tile edge
+ * at the verges, and along the eaves a fascia board, a half-round gutter and a downpipe at each
+ * gutter end (each corner on a hipped roof) running down the wall to the ground.
+ */
+function roofTrim(model: RoofModel, y0: number, thickness: number, overhang: number, floor: number): { tiles: Sheet; fascia: Sheet; metal: Sheet } {
+  const tiles = new Sheet()
+  const fascia = new Sheet()
+  const metal = new Sheet()
+  const slopes = model.faces
+    .filter((f) => f.kind === 'slope')
+    .map((f) => {
+      const ring = f.ring.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.h))
+      const outer = polygonArea(ring) < 0 ? [...ring].reverse() : ring
+      const centre = new THREE.Vector3()
+      for (const p of outer) centre.add(world(p, y0))
+      centre.divideScalar(Math.max(1, outer.length))
+      const normal = faceNormal(outer)
+      return { ring: outer, normal, centre, basis: planeBasis(world(outer[0] ?? { x: 0, y: 0, h: 0 }, y0), normal) }
+    })
+    .filter((f) => f.ring.length >= 3)
+  type Edge = { face: number; a: RoofVertex; b: RoofVertex }
+  const edges = new Map<string, Edge[]>()
+  slopes.forEach((face, fi) => {
+    for (let i = 0; i < face.ring.length; i++) {
+      const a = face.ring[i]!
+      const b = face.ring[(i + 1) % face.ring.length]!
+      if (Math.hypot(b.x - a.x, b.y - a.y, b.h - a.h) < 1e-3) continue
+      const ka = key2(a.x, a.y)
+      const kb = key2(b.x, b.y)
+      const k = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`
+      const list = edges.get(k) ?? []
+      list.push({ face: fi, a, b })
+      edges.set(k, list)
+    }
+  })
+  const eaves: Eave[] = []
+  for (const list of edges.values()) {
+    const first = list[0]!
+    const face = slopes[first.face]!
+    const a = world(first.a, y0)
+    const b = world(first.b, y0)
+    if (list.length >= 2) {
+      const other = slopes[list[1]!.face]!
+      ridgeCap(tiles, a, b, face, other, thickness)
+      continue
+    }
+    if (Math.abs(first.a.h) < 1e-3 && Math.abs(first.b.h) < 1e-3) {
+      const dir = normalize(sub({ x: first.b.x, y: first.b.y }, { x: first.a.x, y: first.a.y }))
+      let out = perp(dir)
+      const mid = { x: (first.a.x + first.b.x) / 2, y: (first.a.y + first.b.y) / 2 }
+      if (dot(out, { x: face.centre.x - mid.x, y: face.centre.z - mid.y }) > 0) out = { x: -out.x, y: -out.y }
+      eaves.push({ a: { x: first.a.x, y: first.a.y }, b: { x: first.b.x, y: first.b.y }, out })
+      continue
+    }
+    vergeStrip(tiles, a, b, face, thickness)
+  }
+  eaveTrim(fascia, metal, eaves, y0, overhang, floor)
+  return { tiles, fascia, metal }
+}
+
+interface SlopeInfo {
+  normal: THREE.Vector3
+  centre: THREE.Vector3
+  basis: UvBasis
+}
+
+/** Away from the edge a→b, within the face plane, towards the face's own side. */
+function inward(a: THREE.Vector3, b: THREE.Vector3, face: SlopeInfo): THREE.Vector3 {
+  const e = b.clone().sub(a).normalize()
+  const d = new THREE.Vector3().crossVectors(e, face.normal).normalize()
+  if (d.dot(face.centre.clone().sub(a)) < 0) d.negate()
+  return d
+}
+
+function ridgeCap(sheet: Sheet, a: THREE.Vector3, b: THREE.Vector3, A: SlopeInfo, B: SlopeInfo, thickness: number): void {
+  const lift = mitre(A.normal, B.normal).multiplyScalar(thickness)
+  const up = A.normal.clone().add(B.normal).normalize()
+  const dA = inward(a, b, A)
+  const dB = inward(a, b, B)
+  const wing = 0.13
+  const rows = (p: THREE.Vector3) => {
+    const r = p.clone().add(lift)
+    return {
+      r,
+      sa: r.clone().addScaledVector(dA, wing).addScaledVector(A.normal, 0.008),
+      ma: r.clone().addScaledVector(dA, wing * 0.45).addScaledVector(up, 0.03),
+      top: r.clone().addScaledVector(up, 0.042),
+      mb: r.clone().addScaledVector(dB, wing * 0.45).addScaledVector(up, 0.03),
+      sb: r.clone().addScaledVector(dB, wing).addScaledVector(B.normal, 0.008),
+    }
+  }
+  const p = rows(a)
+  const q = rows(b)
+  const strip = [p.sa, p.ma, p.top, p.mb, p.sb]
+  const strip2 = [q.sa, q.ma, q.top, q.mb, q.sb]
+  let v0 = 0
+  for (let k = 0; k < strip.length - 1; k++) {
+    const hint = strip[k]!.clone().add(strip[k + 1]!).multiplyScalar(0.5).sub(p.r)
+    sheet.quad(strip[k]!, strip2[k]!, strip2[k + 1]!, strip[k + 1]!, hint, 0, v0)
+    v0 += strip[k]!.distanceTo(strip[k + 1]!)
+  }
+  // Underside lips down to the tiles, then the open ends.
+  const e = b.clone().sub(a).normalize()
+  sheet.quad(p.sa, q.sa, q.sa.clone().addScaledVector(A.normal, -0.012), p.sa.clone().addScaledVector(A.normal, -0.012), dA)
+  sheet.quad(p.sb, q.sb, q.sb.clone().addScaledVector(B.normal, -0.012), p.sb.clone().addScaledVector(B.normal, -0.012), dB)
+  sheet.poly([p.r, ...strip], e.clone().negate())
+  sheet.poly([q.r, ...strip2], e)
+}
+
+function vergeStrip(sheet: Sheet, a: THREE.Vector3, b: THREE.Vector3, face: SlopeInfo, thickness: number): void {
+  const n = face.normal
+  const out = inward(a, b, face).negate()
+  const corners = (p: THREE.Vector3) => ({
+    ti: p.clone().addScaledVector(n, thickness + 0.014).addScaledVector(out, -0.09),
+    to: p.clone().addScaledVector(n, thickness + 0.014).addScaledVector(out, 0.03),
+    bo: p.clone().addScaledVector(n, -0.045).addScaledVector(out, 0.03),
+    bi: p.clone().addScaledVector(n, -0.045),
+  })
+  const p = corners(a)
+  const q = corners(b)
+  sheet.quad(p.ti, q.ti, q.to, p.to, n, 0, 0, face.basis)
+  sheet.quad(p.to, q.to, q.bo, p.bo, out)
+  sheet.quad(p.bo, q.bo, q.bi, p.bi, n.clone().negate())
+  // Close the lower end (the eave corner).
+  const low = a.y <= b.y ? p : q
+  const along = (a.y <= b.y ? a.clone().sub(b) : b.clone().sub(a)).normalize()
+  sheet.poly([low.ti, low.to, low.bo, low.bi], along)
+}
+
+/** Fascia board, half-round gutter and downpipes along chained eave edges. */
+/**
+ * Downpipes run to the floor of the roof's own level: the ground on a ground-floor roof, the
+ * terrace or lower roof under an upper storey (the storey below may stand further out).
+ */
+function eaveTrim(fascia: Sheet, metal: Sheet, eaves: readonly Eave[], y0: number, overhang: number, floor: number): void {
+  const at = new Map<string, Eave[]>()
+  for (const e of eaves) {
+    for (const p of [e.a, e.b]) {
+      const k = key2(p.x, p.y)
+      const list = at.get(k) ?? []
+      list.push(e)
+      at.set(k, list)
+    }
+  }
+  const up = new THREE.Vector3(0, 1, 0)
+  const r = GUTTER_RADIUS
+  const top = -0.012
+  // Fascia: a 200 mm board tucked under the eave, its face just behind the roof edge.
+  const board: ProfilePoint[] = [
+    [-0.2, -0.03],
+    [0, -0.03],
+    [0, -0.005],
+    [-0.196, -0.005],
+    [-0.2, -0.009],
+    [-0.2, -0.03],
+  ]
+  // Gutter: outer skin front lip → bottom → back lip, then the inner skin back again.
+  const gutter: ProfilePoint[] = []
+  const segs = 10
+  const centre: ProfilePoint = [top, r]
+  for (let k = segs; k >= 0; k--) {
+    const t = (k / segs) * Math.PI
+    gutter.push([centre[0] - r * Math.sin(t), centre[1] - r * Math.cos(t)])
+  }
+  for (let k = 0; k <= segs; k++) {
+    const t = (k / segs) * Math.PI
+    gutter.push([centre[0] - (r - 0.0025) * Math.sin(t), centre[1] - (r - 0.0025) * Math.cos(t)])
+  }
+  gutter.push(gutter[0]!)
+  const pipes: { p: Vec2; along: Vec2; out: Vec2 }[] = []
+  for (const e of eaves) {
+    const frame = (p: Vec2): { f: PathFrame; open: boolean; corner: boolean } => {
+      const others = (at.get(key2(p.x, p.y)) ?? []).filter((o) => o !== e)
+      const next = others[0]
+      const out = next ? mitre(new THREE.Vector3(e.out.x, 0, e.out.y), new THREE.Vector3(next.out.x, 0, next.out.y)) : new THREE.Vector3(e.out.x, 0, e.out.y)
+      // Outlines carry collinear points where inner walls meet the shell: not a corner.
+      const corner = !!next && dot(e.out, next.out) < 0.95
+      return { f: { p: new THREE.Vector3(p.x, y0, p.y), s: up, o: out }, open: !next, corner }
+    }
+    const fa = frame(e.a)
+    const fb = frame(e.b)
+    const path = [fa.f, fb.f]
+    sweep(fascia, path, board, { skip: [1], capStart: fa.open, capEnd: fb.open })
+    sweep(metal, path, gutter, {})
+    const dir = normalize(sub(e.b, e.a))
+    for (const [f, open, corner, along] of [
+      [fa.f, fa.open, fa.corner, dir],
+      [fb.f, fb.open, fb.corner, { x: -dir.x, y: -dir.y }],
+    ] as const) {
+      // Stop ends: a half disc over the open gutter end.
+      if (open) {
+        const disc = gutter.slice(0, segs + 1).map(([a, b]) => f.p.clone().addScaledVector(f.s, a).addScaledVector(f.o, b))
+        metal.poly(disc, new THREE.Vector3(-along.x, 0, -along.y))
+      }
+      // One downpipe per gutter end; at a shared corner, only the edge that starts there.
+      if (open || (corner && f === fa.f)) pipes.push({ p: { x: f.p.x, y: f.p.z }, along, out: e.out })
+    }
+  }
+  if (y0 - floor < 0.5) return
+  for (const pipe of pipes) {
+    const inset = overhang + 0.14
+    const base = add(pipe.p, scale(pipe.along, inset))
+    const outlet = add(base, scale(pipe.out, r))
+    const wall = add(base, scale(pipe.out, -overhang + PIPE_RADIUS + 0.02))
+    const yTop = y0 + top - r + 0.01
+    const yBend = yTop - 0.12
+    const yWall = yBend - Math.max(0.12, Math.abs(r + overhang) * 0.6)
+    const pts = [
+      new THREE.Vector3(outlet.x, yTop, outlet.y),
+      new THREE.Vector3(outlet.x, yBend, outlet.y),
+      new THREE.Vector3(wall.x, yWall, wall.y),
+      new THREE.Vector3(wall.x, floor + 0.03, wall.y),
+    ]
+    for (let i = 0; i < pts.length - 1; i++) prism(metal, pts[i]!, pts[i + 1]!, PIPE_RADIUS, 8)
+    // Shoe kicking out at the foot.
+    const foot = pts[3]!
+    prism(metal, foot.clone().setY(floor + 0.12), foot.clone().add(new THREE.Vector3(pipe.out.x * 0.1, 0, pipe.out.y * 0.1)).setY(floor + 0.04), PIPE_RADIUS, 8, true)
+  }
 }
 
 function faceMesh(
@@ -270,4 +526,13 @@ function heightOr(model: RoofModel, p: Vec2): number {
     if (pointInPolygon(p, face.ring)) return planeHeight(face.ring, p.x, p.y)
   }
   return 0
+}
+
+/** The roof plane's own UV frame (see metricUv), so trim lying on a slope continues its tiles. */
+function planeBasis(origin: THREE.Vector3, normal: THREE.Vector3): UvBasis {
+  const up = Math.abs(normal.y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0)
+  const u = new THREE.Vector3().crossVectors(up, normal).normalize()
+  if (u.lengthSq() < 1e-8) u.set(1, 0, 0)
+  const v = new THREE.Vector3().crossVectors(normal, u).normalize()
+  return { origin, u, v }
 }
