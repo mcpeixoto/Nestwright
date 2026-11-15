@@ -8,7 +8,8 @@ import { Viewport3D } from '../../view3d/Viewport3D'
 import { openProject } from '../actions'
 import { T } from '../../i18n/T'
 import { useTranslate } from '../../i18n'
-import { beginProject, canContinueProject, enterEditor, showGallery, showStart, useScreen } from '../session'
+import { beginProject, canContinueProject, enterEditor, showBriefs, showGallery, showStart, useScreen } from '../session'
+import { BriefsGallery } from './BriefsGallery'
 import { loadTemplate } from './loadTemplate'
 import { setSettingsOpen } from '../settingsDialogState'
 import { coopJoinAvailable, openCoopJoin } from './coop'
@@ -90,7 +91,9 @@ export function StartScreen() {
         <Orbit />
       </div>
       <div className="start-shade">
-        {screen === 'gallery' ? (
+        {screen === 'briefs' ? (
+          <BriefsGallery />
+        ) : screen === 'gallery' ? (
           <div className="glass gallery" role="dialog" aria-label={tr('Template gallery')}>
             <div className="gallery-head">
               <h1>
@@ -120,9 +123,14 @@ export function StartScreen() {
             <button type="button" className="start-primary" disabled={!canContinueProject()} onClick={() => enterEditor()}>
               <T k="Continue" />
             </button>
-            <button type="button" onClick={() => showGallery()}>
-              <T k="New project" />
-            </button>
+            <div className="start-pair">
+              <button type="button" onClick={() => showGallery()}>
+                <T k="New project" />
+              </button>
+              <button type="button" onClick={() => showBriefs()}>
+                <T k="House Briefs" />
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => {

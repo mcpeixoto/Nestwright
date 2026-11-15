@@ -12,6 +12,7 @@ import { HelpDialog } from './HelpDialog'
 import { PerfHud } from './PerfHud'
 import { PhotoMode } from './PhotoMode'
 import { usePhotoSession } from './photoSession'
+import './panels/BriefPanel'
 import './panels/EnvironmentPanel'
 import './together/install'
 import './topbar/exportMenu'
@@ -46,12 +47,13 @@ function EditorShell() {
   const photo = usePhotoSession().photo
   const compareId = useCompareVariant()
   const apartment = useStore((s) => s.project.kind === 'apartment')
+  const hasBrief = useStore((s) => s.project.brief != null)
   const panels = usePanelList()
   const openIds = useOpenPanelIds()
   const open = new Set(openIds)
   const showPlan = !photo && !compareId && (view === '2d' || view === 'split')
   const show3d = photo || !!compareId || view === '3d' || view === 'split' || view === 'walk'
-  const visible = (id: string) => open.has(id) && !(apartment && OUTSIDE_PANELS.has(id))
+  const visible = (id: string) => open.has(id) && !(apartment && OUTSIDE_PANELS.has(id)) && (id !== 'brief' || hasBrief)
   const left = panels.filter((panel) => panel.placement === 'left' && visible(panel.id))
   const right = panels.filter((panel) => panel.placement === 'right' && visible(panel.id))
   const bottom = panels.filter((panel) => panel.placement === 'bottom' && visible(panel.id))

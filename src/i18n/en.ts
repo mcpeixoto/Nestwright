@@ -1020,6 +1020,19 @@ export const en = {
   Models: 'Models',
   Textures: 'Textures',
   'by {author}': 'by {author}',
+  'House Briefs': 'House Briefs',
+  'House brief': 'House brief',
+  Submit: 'Submit',
+  'Next brief': 'Next brief',
+  'Brief result': 'Brief result',
+  Passed: 'Passed',
+  Failed: 'Failed',
+  'Up to {area}': 'Up to {area}',
+  'At least {area}': 'At least {area}',
+  'From {min} to {max}': 'From {min} to {max}',
+  '{used} of {limit}': '{used} of {limit}',
+  '{n} stars': '{n} stars',
+  '{n} stars of {max}': '{n} stars of {max}',
 } as const
 
 export type MessageKey = keyof typeof en

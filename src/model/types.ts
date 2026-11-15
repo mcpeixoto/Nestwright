@@ -413,4 +413,6 @@ export interface Project {
   budget: Budget;
   requirements: RoomRequirement[];
   units: 'metric' | 'imperial';
+  /** Set when the house was started from a brief. Older files omit it. */
+  brief?: { id: string };
 }
