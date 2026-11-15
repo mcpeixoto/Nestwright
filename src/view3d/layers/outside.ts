@@ -16,7 +16,10 @@ import { waterPointer, waterPreview } from '../../tools/water'
 import { replaceSceneLayer, type SceneLayer, type SceneLayerContext, type SceneViewState } from '../layers'
 import { distantGroundMode } from './ground'
 import { OutsideFeatures } from '../terrain/features'
+import { GrassField } from '../terrain/grass'
 import { PlantField } from '../terrain/plants'
+import { qualityProfile } from '../render/quality'
+import { useSettings } from '../../settings'
 import { createSurround, type Surround } from '../terrain/surround'
 import { createSplatMaterial, disposeSplatMaterial } from '../terrain/textures'
 
@@ -162,6 +165,8 @@ function createOutsideGround(ctx: SceneLayerContext): SceneLayer {
 
   const plants = new PlantField()
   ctx.scene.add(plants.group)
+  const grass = new GrassField()
+  ctx.scene.add(grass.mesh)
   const features = new OutsideFeatures()
   ctx.scene.add(features.group)
 
@@ -367,7 +372,13 @@ function createOutsideGround(ctx: SceneLayerContext): SceneLayer {
       dirty = true
     },
     update(_dt, elapsed) {
-      plants.update(elapsed)
+      plants.update(elapsed, ctx.camera, ctx.renderer)
+      if (project) {
+        const tier = qualityProfile(useSettings.getState().graphicsQuality).grass
+        grass.sync(project, distantGroundMode(project.kind), tier)
+      }
+      grass.update(ctx.camera)
+      surround.update(ctx.camera)
       features.update(elapsed)
       if (!dirty || !project || !view) return
       if (applied && elapsed - lastApply < 0.032) return
@@ -397,6 +408,8 @@ function createOutsideGround(ctx: SceneLayerContext): SceneLayer {
       disposeSplatMaterial(material)
       plants.dispose()
       ctx.scene.remove(plants.group)
+      ctx.scene.remove(grass.mesh)
+      grass.dispose()
       features.dispose()
       ctx.scene.remove(features.group)
       ctx.scene.remove(cursor)

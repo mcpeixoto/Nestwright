@@ -13,6 +13,19 @@ scripts regenerate only the content-pack table below.
 | --- | --- | --- | --- | --- | --- | --- |
 | Noto Sans Regular/Bold (Latin subset) | npm @expo-google-fonts/noto-sans@0.4.2 (notofonts/latin-greek-cyrillic) | The Noto Project Authors | OFL-1.1 | 2026-11-14 | Regular `f969d66bd9a730394fbd10bfb1dbf6fb7c0c8944f8e1c16c4b44f799e9240079`, Bold `da3bbabddcf69ceb84bab23425753796b2aa5b341a0d59d0f206a318d47e5fcb` | src/io/export/fonts/*.ttf (pyftsubset Latin) |
 
+## npm dependencies that carry art
+
+| asset | source | author | licence | date fetched | sha256 | used for |
+| --- | --- | --- | --- | --- | --- | --- |
+| ez-tree tree generator 1.1.0 (code and presets) | npm @dgreenheck/ez-tree@1.1.0 (github.com/dgreenheck/ez-tree) | Daniel Greenheck | MIT | 2026-11-15 | build/ez-tree.es.js `a08c515049ef2f2606e57523a75dac70f1eebde57d5e972101d7dcf0f42d63ac` | Tree, bush geometry (src/view3d/terrain/treeLibrary.ts); loaded lazily as its own chunk |
+| ez-tree leaf cards (ash, aspen, oak, pine) | same package, src/lib/assets/leaves/*.png, inlined in the build | Daniel Greenheck | MIT (package licence; no separate credit in the repo) | 2026-11-15 | in the build file above | Tree, bush, hedge leaves |
+| Oak bark (bark_brown_02) | https://polyhaven.com/a/bark_brown_02, 1k copy shipped in ez-tree | Poly Haven | CC0 | 2026-11-15 | in the build file above | oak bark |
+| Willow bark (bark_willow_02) | https://polyhaven.com/a/bark_willow_02, 1k copy shipped in ez-tree | Poly Haven | CC0 | 2026-11-15 | in the build file above | olive, fruit tree, bush and palm bark |
+| Birch bark | https://www.texturecan.com/details/221/, 1k copy shipped in ez-tree | TextureCan | CC0 (texturecan.com/terms, checked 2026-11-15) | 2026-11-15 | in the build file above | birch bark |
+| Pine bark | https://www.texturecan.com/details/588/, 1k copy shipped in ez-tree | TextureCan | CC0 (texturecan.com/terms, checked 2026-11-15) | 2026-11-15 | in the build file above | pine and cypress bark |
+
+The palm, grass blades and hedge volumes are procedural (this repo); hedges reuse the oak leaf card.
+
 ## Content packs
 
 | asset | source URL | author | licence | date fetched | sha256 | processed files |

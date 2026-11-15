@@ -4,6 +4,8 @@ import { sampleHeight } from '../../model/terrain'
 import type { Terrain } from '../../model/types'
 import { srgbByteToLinear } from '../colorLinear'
 import { groundLayerTextures } from './textures'
+import { TreeField } from './treeField'
+import { foliageLibrary } from './treeLibrary'
 
 /** Meadow / asphalt disc radius. Fog still leaves the ridge line readable. */
 const REACH = 420
@@ -17,8 +19,12 @@ export type SurroundMode = 'meadow' | 'asphalt'
 export interface Surround {
   group: THREE.Group
   sync(terrain: Terrain, mode: SurroundMode): void
+  /** Swaps the simple treeline for generated trees once they exist, and picks their LODs. */
+  update(camera: THREE.Camera): void
   dispose(): void
 }
+
+const TREELINE_SPECIES = ['oak', 'birch', 'pine'] as const
 
 function hash(index: number): number {
   const value = Math.sin(index * 127.1 + 311.7) * 43758.5453
@@ -390,11 +396,23 @@ export function createSurround(): Surround {
   let fieldKey = ''
   let heightRef: Terrain['heights'] | null = null
 
+  // The same spots as generated trees once the foliage library has them (impostors this far out).
+  const generated = new TreeField()
+  generated.group.visible = false
+  trees.group.add(generated.group)
+  let line: Terrain['plants'] = []
+  let lineTerrain: Terrain | null = null
+  let lineVersion = -1
+  for (const species of TREELINE_SPECIES) foliageLibrary.request(species)
+
   const place = (terrain: Terrain) => {
     const reach = Math.hypot(terrain.width, terrain.depth) * 0.5
     const key = `${reach.toFixed(1)}`
+    lineTerrain = terrain
     if (key === placed) return
     placed = key
+    lineVersion = -1
+    line = []
     let broadN = 0
     let coneN = 0
     for (let i = 0; i < TREE_COUNT; i++) {
@@ -411,6 +429,13 @@ export function createSurround(): Surround {
       dummy.rotation.set(0, hash(i + 11) * Math.PI * 2, 0)
       dummy.scale.setScalar(scale)
       dummy.updateMatrix()
+      line.push({
+        id: `treeline-${i}`,
+        species: conifer ? 'pine' : hash(i + 13) > 0.5 ? 'oak' : 'birch',
+        position: { x: dummy.position.x, y: dummy.position.z },
+        scale: scale * 1.1,
+        rotation: -dummy.rotation.y,
+      })
       trees.trunks.setMatrixAt(i, dummy.matrix)
       if (conifer) {
         trees.conifer.setMatrixAt(coneN, dummy.matrix)
@@ -475,7 +500,25 @@ export function createSurround(): Surround {
       }
       if (!paved) place(terrain)
     },
+    update(camera) {
+      if (!trees.group.visible) return
+      const ready = TREELINE_SPECIES.every((species) => foliageLibrary.get(species))
+      if (ready && lineTerrain && lineVersion !== foliageLibrary.version) {
+        lineVersion = foliageLibrary.version
+        const at = (x: number, z: number) => GROUND_Y + roll(x, z)
+        generated.sync(lineTerrain, line, (species) => foliageLibrary.get(species), at)
+      }
+      const swap = ready && lineVersion >= 0
+      trees.broad.visible = !swap
+      trees.conifer.visible = !swap
+      trees.trunks.visible = !swap
+      generated.group.visible = swap
+      if (swap) generated.update(camera)
+    },
     dispose() {
+      // Before the traverse below: the generated trees share the library's materials.
+      generated.dispose()
+      trees.group.remove(generated.group)
       meadow.geometry.dispose()
       asphalt.geometry.dispose()
       dropMat(meadow)

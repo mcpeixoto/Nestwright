@@ -3,7 +3,7 @@ import type { Environment, Project } from '../../model/types'
 import { sunDirection, sunLook, TWILIGHT_RAD } from '../../model/sunLook'
 import { exteriorWindowSpills } from '../../model/windowSpill'
 import { useSettings, type ToneMapSetting } from '../../settings'
-import { castFoliageShadows } from '../lighting/foliage'
+import { castFoliageShadows, setFoliageSun } from '../lighting/foliage'
 import { shadowFocus } from '../lighting/focus'
 import { createOutdoorLights } from '../lighting/outdoorLights'
 import { pickSpills, SPILL_SLOTS } from '../lighting/spillPool'
@@ -342,6 +342,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     const keyDir = sunKey ? unit : moonDir
     sun.target.position.copy(center)
     sun.position.copy(center).addScaledVector(keyDir, 60)
+    setFoliageSun(keyDir, sun.color, sun.intensity)
     const fillDir = sunKey ? moonDir : unit
     moon.target.position.copy(center)
     moon.position.copy(center).addScaledVector(fillDir, 60)
@@ -409,7 +410,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
         if (!project || !view) return
         if (!envReady) envReady = refreshEnv()
         const tick = foliageFrame++
-        if (tick % 30 === 0) castFoliageShadows(scene)
+        if (tick % 30 === 0) castFoliageShadows(scene, useSettings.getState().graphicsQuality)
         if (tick % 15 === 0 && spills.length > spillLights.length) placeSpills()
         outdoorLights.update()
         // A full pass every second picks up meshes other layers built after the last sync.

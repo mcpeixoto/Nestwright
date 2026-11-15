@@ -16,6 +16,8 @@ export interface QualityProfile {
   lampShadowSlots: number
   /** Multiplier on scatter budgets (plants, precipitation). Placed furniture is unaffected. */
   plantDensity: number
+  /** Grass blades around the camera: radius (m) and grid step (m); null is texture only. */
+  grass: { radius: number; cell: number } | null
   effects: QualityEffects
 }
 
@@ -36,6 +38,7 @@ const PROFILES: Record<GraphicsQuality, QualityProfile> = {
     shadowMapSize: 512,
     lampShadowSlots: 2,
     plantDensity: 0.35,
+    grass: null,
     effects: { bloom: false, gtao: false, ssr: false, ssgi: false, traa: false, fxaa: true },
   },
   medium: {
@@ -45,6 +48,7 @@ const PROFILES: Record<GraphicsQuality, QualityProfile> = {
     shadowMapSize: 1024,
     lampShadowSlots: 4,
     plantDensity: 0.65,
+    grass: { radius: 24, cell: 0.34 },
     effects: { bloom: true, gtao: true, ssr: false, ssgi: false, traa: true, fxaa: false },
   },
   high: {
@@ -54,6 +58,7 @@ const PROFILES: Record<GraphicsQuality, QualityProfile> = {
     shadowMapSize: 2048,
     lampShadowSlots: 4,
     plantDensity: 1,
+    grass: { radius: 30, cell: 0.24 },
     effects: { bloom: true, gtao: true, ssr: true, ssgi: false, traa: true, fxaa: false },
   },
   ultra: {
@@ -63,6 +68,7 @@ const PROFILES: Record<GraphicsQuality, QualityProfile> = {
     shadowMapSize: 2048,
     lampShadowSlots: 4,
     plantDensity: 1.35,
+    grass: { radius: 36, cell: 0.22 },
     effects: { bloom: true, gtao: true, ssr: true, ssgi: true, traa: true, fxaa: false },
   },
 }
