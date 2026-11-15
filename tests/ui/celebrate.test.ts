@@ -18,23 +18,24 @@ describe('celebration', () => {
   it('drops the particles when reduced motion is on and keeps a full burst otherwise', () => {
     expect(celebrationPlan('unlock', true).particles).toEqual([])
     expect(celebrationPlan('room-complete', true, mulberry32(1)).particles).toEqual([])
-    expect(celebrationPlan('unlock', true).anchor).toBe('top-right')
-    expect(celebrationPlan('room-complete', true).anchor).toBe('bottom-center')
 
     for (let seed = 1; seed <= 24; seed++) {
       const unlock = celebrationPlan('unlock', false, mulberry32(seed))
       const room = celebrationPlan('room-complete', false, mulberry32(seed + 100))
-      expect(unlock.anchor).toBe('top-right')
-      expect(room.anchor).toBe('bottom-center')
       for (const plan of [unlock, room]) {
+        expect(plan.anchor).toBe('toast')
         expect(plan.particles.length).toBeGreaterThanOrEqual(12)
         expect(plan.particles.length).toBeLessThanOrEqual(20)
         for (const bit of plan.particles) {
           expect(bit.dur).toBeGreaterThan(0)
           expect(bit.dur).toBeLessThanOrEqual(1.2)
           expect(BRAND).toContain(bit.color)
+          // Falls out of the toast at the top of the screen, never up off it.
+          expect(bit.dy).toBeGreaterThan(0)
         }
       }
+      for (const bit of unlock.particles) expect(Math.abs(bit.dx)).toBeLessThanOrEqual(150)
+      for (const bit of room.particles) expect(Math.abs(bit.dx)).toBeLessThanOrEqual(220)
     }
   })
 })

@@ -14,8 +14,8 @@ export interface Confetti {
 }
 
 export interface CelebrationPlan {
-  /** Unlocks leave the top-right toast. A finished room leaves the bottom centre. */
-  anchor: 'top-right' | 'bottom-center'
+  /** Both bursts leave the toast stack at the top centre, where their toast appears. */
+  anchor: 'toast'
   particles: Confetti[]
 }
 
@@ -28,16 +28,16 @@ function unit(rng: Rng): number {
 }
 
 /**
- * 12–20 bits, each gone within 1.2 s. Reduced motion keeps the anchor (for the toast)
- * and draws nothing.
+ * 12–20 bits, each gone within 1.2 s, falling out of the toast. A finished room spreads
+ * wider than an unlock. Reduced motion draws nothing; the toast still shows.
  */
 export function celebrationPlan(
   kind: 'unlock' | 'room-complete',
   reducedMotion: boolean,
   rng: Rng = Math.random,
 ): CelebrationPlan {
-  const anchor = kind === 'unlock' ? 'top-right' : 'bottom-center'
-  if (reducedMotion) return { anchor, particles: [] }
+  if (reducedMotion) return { anchor: 'toast', particles: [] }
+  const spread = kind === 'room-complete' ? 220 : 150
   const count = 12 + Math.floor(unit(rng) * 9)
   const particles: Confetti[] = []
   for (let i = 0; i < count; i++) {
@@ -45,11 +45,7 @@ export function celebrationPlan(
     const color = BRAND[Math.min(BRAND.length - 1, Math.floor(unit(rng) * BRAND.length))] ?? BRAND[0]
     const leaf = unit(rng) < 0.55
     const rot = unit(rng) * 540 - 180
-    if (anchor === 'top-right') {
-      particles.push({ dx: -(16 + unit(rng) * 150), dy: 24 + unit(rng) * 150, rot, dur, color, leaf })
-    } else {
-      particles.push({ dx: (unit(rng) * 2 - 1) * 170, dy: -(28 + unit(rng) * 150), rot, dur, color, leaf })
-    }
+    particles.push({ dx: (unit(rng) * 2 - 1) * spread, dy: 30 + unit(rng) * 140, rot, dur, color, leaf })
   }
-  return { anchor, particles }
+  return { anchor: 'toast', particles }
 }

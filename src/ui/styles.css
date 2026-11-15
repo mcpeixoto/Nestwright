@@ -763,7 +763,8 @@ input, select {
 }
 @keyframes celebrate-burst {
   0% { opacity: 0; transform: translate(0, 0) rotate(0deg); }
-  12% { opacity: 1; }
+  10% { opacity: 1; }
+  65% { opacity: 1; }
   100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
 }
 @media (prefers-reduced-motion: reduce) {

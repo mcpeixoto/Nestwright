@@ -53,10 +53,10 @@ export function Celebrate() {
     <div className="celebrate" aria-hidden="true">
       {bursts.map((burst) =>
         burst.plan.particles.map((bit, index) => {
+          // The toast stack sits at top: 56px, centred; the burst leaves the toast's middle.
           const style = {
-            left: burst.plan.anchor === 'top-right' ? 'calc(100% - 28px)' : '50%',
-            top: burst.plan.anchor === 'top-right' ? '64px' : undefined,
-            bottom: burst.plan.anchor === 'bottom-center' ? '88px' : undefined,
+            left: '50%',
+            top: '74px',
             background: bit.color,
             animationDuration: `${bit.dur}s`,
             '--dx': `${bit.dx}px`,
