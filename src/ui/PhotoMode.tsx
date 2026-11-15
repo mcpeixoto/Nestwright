@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { exportViewImage } from '../io/export/images'
-import { icon } from '../tools/icons'
 import { useStore } from '../store'
 import { getController } from '../view3d/SceneController'
 import {
@@ -24,6 +23,8 @@ import {
   type PhotoResolution,
 } from './photoSession'
 import { registerTopBarAction } from './topbar/registry'
+import { photoIcon } from './topbar/icons'
+import { Tooltip } from './Tooltip'
 import { T } from '../i18n/T'
 import { useTranslate } from '../i18n'
 
@@ -32,18 +33,22 @@ const RESOLUTIONS: PhotoResolution[] = ['1080p', '1440p', '4k']
 
 function PhotoButton() {
   const tr = useTranslate()
+  const name = tr('Photo')
   return (
-    <button
-      type="button"
-      className="icon-btn"
-      aria-label={tr('Photo')}
-      title={tr('Photo')}
-      onClick={() => {
-        const camera = getController()?.camera
-        enterPhoto(camera?.fov ?? null)
-      }}
-      dangerouslySetInnerHTML={{ __html: icon('<path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/>') }}
-    />
+    <Tooltip label={name}>
+      <button
+        type="button"
+        className="tb-btn"
+        aria-label={name}
+        onClick={() => {
+          const camera = getController()?.camera
+          enterPhoto(camera?.fov ?? null)
+        }}
+      >
+        <span className="tb-glyph" dangerouslySetInnerHTML={{ __html: photoIcon }} />
+        <span className="tb-label">{name}</span>
+      </button>
+    </Tooltip>
   )
 }
 

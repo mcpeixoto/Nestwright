@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { exportHouseGlb } from '../../io/export/glb'
 import { exportPlanPng, exportViewImage } from '../../io/export/images'
-import { registerTopBarAction } from './registry'
+import { useTranslate } from '../../i18n'
 import { PlanPdfDialog } from './PlanPdfDialog'
 import { T } from '../../i18n/T'
+import { Tooltip } from '../Tooltip'
+import { exportIcon } from './icons'
+import { registerTopBarAction } from './registry'
 
 function ExportMenu() {
+  const tr = useTranslate()
   const [open, setOpen] = useState(false)
   const [pdfOpen, setPdfOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const name = tr('Export')
 
   useEffect(() => {
     if (!open) return
@@ -26,9 +31,12 @@ function ExportMenu() {
 
   return (
     <div className="menu" ref={ref}>
-      <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-        <T k="Export" />
-      </button>
+      <Tooltip label={name}>
+        <button type="button" className="tb-btn" aria-label={name} aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+          <span className="tb-glyph" dangerouslySetInnerHTML={{ __html: exportIcon }} />
+          <span className="tb-label">{name}</span>
+        </button>
+      </Tooltip>
       {open && (
         <div className="menu-pop" role="menu">
           <button type="button" role="menuitem" onClick={() => run(() => exportViewImage(1920, 1080))}>

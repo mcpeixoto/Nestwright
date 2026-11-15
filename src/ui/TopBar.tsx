@@ -5,12 +5,20 @@ import { noteReturnView } from '../view3d/rigs/walk'
 import { useOpenPanelIds, usePanelList, togglePanel } from './panels/registry'
 import { listTopBarActions, type TopBarAction } from './topbar/registry'
 import './topbar/builtins'
-import { T } from '../i18n/T'
+import './builtinShortcuts'
+import { listShortcuts } from './shortcuts'
 import { useTranslate } from '../i18n'
 import type { PanelDef } from './panels/registry'
+import { Tooltip } from './Tooltip'
+import { useMediaQuery } from './useMediaQuery'
+import { redoIcon, saveIcon, undoIcon, variantsIcon, wishesIcon } from './topbar/icons'
 
-const IN_MENU = new Set(['export-json', 'export', 'together', 'settings', 'photo'])
-const MENU_PANELS = new Set(['budget', 'wishes', 'variants'])
+/** Variants, Together, and Photo leave the bar below this width. */
+const NARROW_BAR = '(max-width: 1099px)'
+
+const FILE_MENU = ['new', 'open', 'export-json', 'settings', 'shortcuts']
+const NARROW_ACTIONS = ['together', 'photo']
+const CLAIMED = new Set([...FILE_MENU, ...NARROW_ACTIONS, 'home', 'save', 'export'])
 
 const VIEWS = [
   { id: '2d', label: '2D' },
@@ -18,6 +26,40 @@ const VIEWS = [
   { id: 'split', label: 'Split' },
   { id: 'walk', label: 'Walk' },
 ] as const
+
+function macSymbols(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /Mac|iPhone|iPad|iPod/.test(navigator.platform) || /Mac OS/.test(navigator.userAgent)
+}
+
+function chordText(keys: string): string {
+  const mac = macSymbols()
+  const parts = keys
+    .split('+')
+    .map((part) => part.trim().toLowerCase())
+    .filter(Boolean)
+  const key = parts[parts.length - 1] ?? ''
+  const mods = new Set(parts.slice(0, -1))
+  const glyphs: string[] = []
+  if (mods.has('shift')) glyphs.push(mac ? '⇧' : 'Shift')
+  if (mods.has('alt')) glyphs.push(mac ? '⌥' : 'Alt')
+  if (mods.has('mod') || mods.has('meta') || mods.has('ctrl')) glyphs.push(mac ? '⌘' : 'Ctrl')
+  if (key) glyphs.push(key.length === 1 ? key.toUpperCase() : key)
+  return mac ? glyphs.join('') : glyphs.join('+')
+}
+
+function historyTip(id: string, fallback: string, name: string): string {
+  const keys = listShortcuts().find((item) => item.id === id)?.keys ?? fallback
+  return `${name} (${chordText(keys)})`
+}
+
+function pickActions(actions: TopBarAction[], ids: readonly string[]): TopBarAction[] {
+  const byId = new Map(actions.map((action) => [action.id, action]))
+  return ids.flatMap((id) => {
+    const action = byId.get(id)
+    return action ? [action] : []
+  })
+}
 
 function OverflowMenu({ actions, panels }: { actions: TopBarAction[]; panels: PanelDef[] }) {
   const tr = useTranslate()
@@ -57,12 +99,98 @@ function OverflowMenu({ actions, panels }: { actions: TopBarAction[]; panels: Pa
           ),
         )}
         {panels.map((panel) => (
-          <button type="button" key={panel.id} role="menuitem" className={openIds.includes(panel.id) ? 'on' : ''} onClick={() => togglePanel(panel.id)}>
+          <button
+            type="button"
+            key={panel.id}
+            role="menuitem"
+            className={openIds.includes(panel.id) ? 'on' : ''}
+            onClick={() => {
+              togglePanel(panel.id)
+              setOpen(false)
+            }}
+          >
             {tr(panel.title)}
           </button>
         ))}
       </div>
     </div>
+  )
+}
+
+function HistoryButton({
+  id,
+  fallback,
+  label,
+  icon,
+  enabled,
+  onClick,
+}: {
+  id: string
+  fallback: string
+  label: string
+  icon: string
+  enabled: boolean
+  onClick: () => void
+}) {
+  const tr = useTranslate()
+  const name = tr(label)
+  return (
+    <Tooltip label={historyTip(id, fallback, name)}>
+      <button
+        type="button"
+        className="icon-btn"
+        aria-label={name}
+        aria-disabled={!enabled}
+        onClick={() => {
+          if (enabled) onClick()
+        }}
+        dangerouslySetInnerHTML={{ __html: icon }}
+      />
+    </Tooltip>
+  )
+}
+
+function LabeledButton({
+  label,
+  icon,
+  pressed,
+  onClick,
+}: {
+  label: string
+  icon: string
+  pressed?: boolean
+  onClick: () => void
+}) {
+  const tr = useTranslate()
+  const name = tr(label)
+  return (
+    <Tooltip label={name}>
+      <button type="button" className={pressed ? 'tb-btn on' : 'tb-btn'} aria-label={name} aria-pressed={pressed} onClick={onClick}>
+        <span className="tb-glyph" dangerouslySetInnerHTML={{ __html: icon }} />
+        <span className="tb-label">{name}</span>
+      </button>
+    </Tooltip>
+  )
+}
+
+function LoosePanelButton({ panel, open }: { panel: PanelDef; open: boolean }) {
+  const tr = useTranslate()
+  if (panel.icon) {
+    return (
+      <button
+        type="button"
+        className={open ? 'icon-btn on' : 'icon-btn'}
+        aria-label={tr(panel.title)}
+        title={tr(panel.title)}
+        onClick={() => togglePanel(panel.id)}
+        dangerouslySetInnerHTML={{ __html: panel.icon }}
+      />
+    )
+  }
+  return (
+    <button type="button" className={open ? 'on' : ''} onClick={() => togglePanel(panel.id)}>
+      {tr(panel.title)}
+    </button>
   )
 }
 
@@ -73,13 +201,21 @@ export function TopBar() {
   const view = useStore((s) => s.view)
   const canUndo = useStore((s) => s.canUndo)
   const canRedo = useStore((s) => s.canRedo)
+  const narrow = useMediaQuery(NARROW_BAR)
   const panels = usePanelList().filter((panel) => panel.placement === 'bottom' || panel.placement === 'floating')
   const open = useOpenPanelIds()
   const actions = listTopBarActions()
-  const inline = actions.filter((action) => !IN_MENU.has(action.id))
-  const menuActions = actions.filter((action) => IN_MENU.has(action.id))
-  const iconPanels = panels.filter((panel) => !MENU_PANELS.has(panel.id))
-  const menuPanels = panels.filter((panel) => MENU_PANELS.has(panel.id))
+  const wishes = panels.find((panel) => panel.id === 'wishes')
+  const variants = panels.find((panel) => panel.id === 'variants')
+  const loose = panels.filter((panel) => panel.id !== 'wishes' && panel.id !== 'variants')
+  const home = actions.find((action) => action.id === 'home')
+  const save = actions.find((action) => action.id === 'save')
+  const together = actions.find((action) => action.id === 'together')
+  const photo = actions.find((action) => action.id === 'photo')
+  const exportAction = actions.find((action) => action.id === 'export')
+  const menuIds = narrow ? [...FILE_MENU, ...NARROW_ACTIONS] : FILE_MENU
+  const menuActions = [...pickActions(actions, menuIds), ...actions.filter((action) => !CLAIMED.has(action.id))]
+  const menuPanels = narrow && variants ? [variants] : []
 
   return (
     <header className="topbar">
@@ -114,44 +250,29 @@ export function TopBar() {
         ))}
       </div>
       <div className="top-actions">
-        <button type="button" disabled={!canUndo} onClick={() => useStore.getState().undo()}>
-          <T k="Undo" />
-        </button>
-        <button type="button" disabled={!canRedo} onClick={() => useStore.getState().redo()}>
-          <T k="Redo" />
-        </button>
-        {inline.map((action) =>
-          action.Component ? (
-            <action.Component key={action.id} />
-          ) : (
-            <button type="button" key={action.id} onClick={() => action.run?.()}>
-              {tr(action.label)}
-            </button>
-          ),
-        )}
-        {iconPanels.map((panel) =>
-          panel.icon ? (
-            <button
-              type="button"
-              key={panel.id}
-              className={open.includes(panel.id) ? 'icon-btn on' : 'icon-btn'}
-              aria-label={tr(panel.title)}
-              title={tr(panel.title)}
-              onClick={() => togglePanel(panel.id)}
-              dangerouslySetInnerHTML={{ __html: panel.icon }}
-            />
-          ) : (
-            <button
-              type="button"
-              key={panel.id}
-              className={open.includes(panel.id) ? 'on' : ''}
-              onClick={() => togglePanel(panel.id)}
-            >
-              {tr(panel.title)}
-            </button>
-          ),
-        )}
-        <OverflowMenu actions={menuActions} panels={menuPanels} />
+        <div className="top-cluster history">
+          <HistoryButton id="undo" fallback="mod+z" label="Undo" icon={undoIcon} enabled={canUndo} onClick={() => useStore.getState().undo()} />
+          <HistoryButton id="redo" fallback="mod+shift+z" label="Redo" icon={redoIcon} enabled={canRedo} onClick={() => useStore.getState().redo()} />
+        </div>
+        <span className="top-divider" aria-hidden="true" />
+        <div className="top-cluster design">
+          {wishes && <LabeledButton label={wishes.title} icon={wishesIcon} pressed={open.includes(wishes.id)} onClick={() => togglePanel(wishes.id)} />}
+          {!narrow && variants && (
+            <LabeledButton label={variants.title} icon={variantsIcon} pressed={open.includes(variants.id)} onClick={() => togglePanel(variants.id)} />
+          )}
+          {!narrow && together?.Component && <together.Component />}
+          {!narrow && photo?.Component && <photo.Component />}
+          {exportAction?.Component && <exportAction.Component />}
+          {loose.map((panel) => (
+            <LoosePanelButton key={panel.id} panel={panel} open={open.includes(panel.id)} />
+          ))}
+        </div>
+        <span className="top-divider" aria-hidden="true" />
+        <div className="top-cluster file">
+          {save && <LabeledButton label={save.label} icon={saveIcon} onClick={() => save.run?.()} />}
+          {home?.Component && <home.Component />}
+          <OverflowMenu actions={menuActions} panels={menuPanels} />
+        </div>
       </div>
     </header>
   )
