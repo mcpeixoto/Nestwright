@@ -1,0 +1,55 @@
+{
+  "key": "bar-chair-round-01-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "bar_chair_round_01",
+  "sourceUrl": "https://polyhaven.com/a/bar_chair_round_01",
+  "author": "Dairon Sanchez",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:10.275Z",
+  "sha256Source": "1912e6c88238982fb0422b095aa6fb86e5290ad68f4ccf426426f1b535cfea76",
+  "targets": {
+    "catalogId": "bar-stool"
+  },
+  "files": [
+    {
+      "path": "models/bar-chair-round-01-model/bar-chair-round-01-model.glb",
+      "bytes": 1621772,
+      "sha256": "6c4fb2fb3a2a2213b1d7f077bc3fe7e3ea5d818db1a1ea63785ae7439d979f5b"
+    },
+    {
+      "path": "models/bar-chair-round-01-model/bar-chair-round-01-model.lod1.glb",
+      "bytes": 403772,
+      "sha256": "2e36e58fdb57c38662f1195ee2c4657fa281e9b7cfd6845bd1a5eb5f62f979a6"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.48315,
+      "d": 0.485996,
+      "h": 0.750548
+    },
+    "originalBounds": {
+      "w": 0.48315,
+      "d": 0.485996,
+      "h": 0.750548
+    },
+    "triangles": 14373,
+    "lods": [
+      {
+        "file": "bar-chair-round-01-model.glb",
+        "triangles": 14373
+      },
+      {
+        "file": "bar-chair-round-01-model.lod1.glb",
+        "triangles": 14372,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "bar-chair-round-01-model.glb"
+      }
+    ],
+    "materials": [
+      "Bar Chair"
+    ]
+  }
+}

@@ -3,6 +3,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { buildFloors } from '../builders/floors'
 import { stairHoleOutline } from '../model/stairs'
 import { buildItem } from '../builders/items'
+import { isSharedGeometry, modelFor, modelsLoading, releaseModelGeometry, subscribeModels } from '../catalog/models'
+import { ModelInstancer } from './modelInstances'
 import { buildOpening } from '../builders/openings'
 import { buildWall } from '../builders/walls'
 import type { Item, Level, Project } from '../model/types'
@@ -13,7 +15,7 @@ import { roomsFor, useStore } from '../store'
 import { isPhotoMode } from '../ui/photoSession'
 import { getRig, type CameraRig } from './rigs'
 import { bindWalkScene } from './rigs/walk'
-import { recordFrame, type PerfRenderer } from './perfMonitor'
+import { recordFrame, setPerfExtra, type PerfRenderer } from './perfMonitor'
 import { setPbrRenderer } from '../materials/pbrTextures'
 import { activeTone, toneMappingFor } from './atmosphere/toneMap'
 import { PostPipeline } from './post/pipeline'
@@ -54,8 +56,12 @@ interface Bucket {
   elevation: number
   height: number
   slab: number
-  itemMap: Map<string, { source: Item; object: THREE.Object3D }>
+  itemMap: Map<string, { source: Item; object: THREE.Object3D; scanned: boolean }>
+  instancer: ModelInstancer
 }
+
+/** Longest a batch of model loads waits for the rest before swapping in what has arrived. */
+const MODEL_SWAP_WAIT_MS = 1500
 
 let current: SceneController | null = null
 
@@ -122,6 +128,11 @@ export class SceneController {
   private compiledChain = ''
   private framesRendered = 0
   private compileDone: Promise<void> | null = null
+  /** A model finished loading at this time and its placeholders are not swapped yet. */
+  private modelsWaitingSince: number | null = null
+  /** Set while `swapModels` re-syncs, so unchanged items with a new model rebuild. */
+  private modelsArrived = false
+  private unsubscribeModels: (() => void) | null = null
 
   constructor(canvas: HTMLCanvasElement, options?: { primary?: boolean }) {
     this.primary = options?.primary !== false
@@ -146,7 +157,11 @@ export class SceneController {
     if (this.primary) {
       canvas.addEventListener('pointerdown', this.onDown, true)
       canvas.addEventListener('pointerup', this.onUp)
+      setPerfExtra('instancing', () => this.instancingStats())
     }
+    this.unsubscribeModels = subscribeModels(() => {
+      this.modelsWaitingSince ??= performance.now()
+    })
     this.ready = this.start()
   }
 
@@ -197,6 +212,17 @@ export class SceneController {
     return this.disposed
   }
 
+  private instancingStats(): { batches: number; instanced: number; singles: number } {
+    const total = { batches: 0, instanced: 0, singles: 0 }
+    for (const bucket of this.levels.values()) {
+      const s = bucket.instancer.stats()
+      total.batches += s.batches
+      total.instanced += s.instanced
+      total.singles += s.singles
+    }
+    return total
+  }
+
   setBenchmarking(on: boolean): void {
     this.benchmarking = on
   }
@@ -243,6 +269,8 @@ export class SceneController {
 
   dispose(): void {
     this.disposed = true
+    this.unsubscribeModels?.()
+    this.unsubscribeModels = null
     this.unbindHost?.()
     this.unbindHost = null
     cancelAnimationFrame(this.raf)
@@ -414,6 +442,7 @@ export class SceneController {
     for (const [id, bucket] of this.levels) {
       if (live.has(id)) continue
       this.root.remove(bucket.group)
+      bucket.instancer.dispose()
       disposeTree(bucket.group)
       this.levels.delete(id)
     }
@@ -467,10 +496,14 @@ export class SceneController {
 
   private syncItems(bucket: Bucket, level: Level): void {
     const seen = new Set<string>()
+    let changed = false
     for (const item of level.items) {
       seen.add(item.id)
       const prev = bucket.itemMap.get(item.id)
-      if (prev?.source === item) continue
+      // A procedural placeholder is rebuilt once its scanned model has loaded.
+      const upgrade = !!prev && !prev.scanned && prev.source === item && this.modelsArrived && modelFor(item.catalogId) !== null
+      if (prev?.source === item && !upgrade) continue
+      changed = true
       if (prev) {
         bucket.items.remove(prev.object)
         disposeTree(prev.object)
@@ -478,14 +511,39 @@ export class SceneController {
       const object = buildItem(item)
       object.position.y = level.elevation + item.elevation
       bucket.items.add(object)
-      bucket.itemMap.set(item.id, { source: item, object })
+      bucket.itemMap.set(item.id, { source: item, object, scanned: typeof object.userData.scanned === 'string' })
     }
     for (const [id, prev] of bucket.itemMap) {
       if (seen.has(id)) continue
+      changed = true
       bucket.items.remove(prev.object)
       disposeTree(prev.object)
       bucket.itemMap.delete(id)
     }
+    if (changed || bucket.instancer.dirty) {
+      bucket.instancer.rebuild([...bucket.itemMap].map(([id, entry]) => ({ id, object: entry.object })))
+      bucket.instancer.update(this.camera, true)
+    }
+  }
+
+  /**
+   * Swap loaded models in for their placeholders, once the batch in flight has landed (or
+   * has taken too long), then compile the new pipelines with frames held instead of inside
+   * a frame.
+   */
+  private swapModels(): void {
+    if (this.modelsWaitingSince === null || !this.seenProject) return
+    const waited = performance.now() - this.modelsWaitingSince
+    if (modelsLoading() > 0 && waited < MODEL_SWAP_WAIT_MS) return
+    this.modelsWaitingSince = null
+    this.modelsArrived = true
+    for (const level of this.seenProject.levels) {
+      const bucket = this.levels.get(level.id)
+      if (bucket) this.syncItems(bucket, level)
+    }
+    this.modelsArrived = false
+    this.updateHelpers(this.signature?.selection ?? [])
+    this.compileWanted = true
   }
 
   private applyVisibility(project: Project, state: SceneViewState): void {
@@ -600,6 +658,8 @@ export class SceneController {
           this.controls?.update()
         }
       }
+      this.swapModels()
+      for (const bucket of this.levels.values()) bucket.instancer.update(this.camera)
       for (const layer of this.eachLayer()) layer.update?.(dt, this.elapsed)
       for (const child of this.helpers.children) {
         const helper = child as THREE.BoxHelper
@@ -783,7 +843,10 @@ export class SceneController {
   }
 
   private clearLevels(): void {
-    for (const bucket of this.levels.values()) disposeTree(bucket.group)
+    for (const bucket of this.levels.values()) {
+      bucket.instancer.dispose()
+      disposeTree(bucket.group)
+    }
     this.levels.clear()
   }
 }
@@ -807,6 +870,7 @@ function emptyBucket(): Bucket {
     height: Number.NaN,
     slab: Number.NaN,
     itemMap: new Map(),
+    instancer: new ModelInstancer(items),
   }
 }
 
@@ -871,7 +935,9 @@ function visibleWallBounds(project: Project, state: SceneViewState | null): THRE
 function disposeTree(obj: THREE.Object3D): void {
   obj.traverse((child) => {
     const mesh = child as THREE.Mesh
-    mesh.geometry?.dispose()
+    // Scanned models share geometry between items; a sliced copy is freed with its last user.
+    if (isSharedGeometry(mesh.geometry)) releaseModelGeometry(mesh.geometry)
+    else mesh.geometry?.dispose()
     const listed = mesh.material
     const materials = Array.isArray(listed) ? listed : listed ? [listed] : []
     for (const material of materials) {

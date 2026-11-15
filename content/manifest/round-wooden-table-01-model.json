@@ -1,0 +1,55 @@
+{
+  "key": "round-wooden-table-01-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "round_wooden_table_01",
+  "sourceUrl": "https://polyhaven.com/a/round_wooden_table_01",
+  "author": "Ulan Cabanilla",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:09.855Z",
+  "sha256Source": "eeb7d6cfa87b1e8595a058ed030ae4543cf0a8cf4a0f220f56356ce33b027916",
+  "targets": {
+    "catalogId": "round-table"
+  },
+  "files": [
+    {
+      "path": "models/round-wooden-table-01-model/round-wooden-table-01-model.glb",
+      "bytes": 744752,
+      "sha256": "05ed866925bc2857dfc3f6dd115b2450cabfc54e91ea75e38b38327cb613f8a1"
+    },
+    {
+      "path": "models/round-wooden-table-01-model/round-wooden-table-01-model.lod1.glb",
+      "bytes": 40888,
+      "sha256": "5dc0d86c076a2dd1851375c438732b2987f527a313928f8c315acaaf49ccbdb0"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 1.399349,
+      "d": 1.399349,
+      "h": 1.005021
+    },
+    "originalBounds": {
+      "w": 1.399349,
+      "d": 1.399349,
+      "h": 1.005021
+    },
+    "triangles": 8640,
+    "lods": [
+      {
+        "file": "round-wooden-table-01-model.glb",
+        "triangles": 8640
+      },
+      {
+        "file": "round-wooden-table-01-model.lod1.glb",
+        "triangles": 3022,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "round-wooden-table-01-model.glb"
+      }
+    ],
+    "materials": [
+      "round_wooden_table_01"
+    ]
+  }
+}

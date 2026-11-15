@@ -110,7 +110,12 @@ const sphere = new THREE.Sphere()
 function seenByProbes(obj: THREE.Object3D): boolean {
   if ((obj as THREE.Light).isLight) return true
   const mesh = obj as THREE.Mesh
-  if (!mesh.isMesh || (mesh as THREE.InstancedMesh).isInstancedMesh) return false
+  if (!mesh.isMesh) return false
+  if ((mesh as THREE.InstancedMesh).isInstancedMesh) {
+    // Instanced scanned furniture (see modelInstances) counts like the items it draws.
+    const radius = mesh.userData.modelInstances ? mesh.userData.probeRadius : undefined
+    return typeof radius === 'number' && radius >= 0.35
+  }
   if (SKIPPED_NAMES.has(mesh.name)) return false
   if (mesh.name === 'sky' || mesh.name === 'ground') return true
   const kind = mesh.userData.kind

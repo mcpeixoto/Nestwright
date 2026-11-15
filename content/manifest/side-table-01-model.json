@@ -1,0 +1,55 @@
+{
+  "key": "side-table-01-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "side_table_01",
+  "sourceUrl": "https://polyhaven.com/a/side_table_01",
+  "author": "James Ray Cock",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:07.934Z",
+  "sha256Source": "6cee2d49e873815c29285f373be60442df26507c7759421857f73dc5aae9b3f3",
+  "targets": {
+    "catalogId": "side-table"
+  },
+  "files": [
+    {
+      "path": "models/side-table-01-model/side-table-01-model.glb",
+      "bytes": 752356,
+      "sha256": "ad9f5a960d7cff918f9154701a18a49ccedfe489cae9a7bc50222ca87e5a4f36"
+    },
+    {
+      "path": "models/side-table-01-model/side-table-01-model.lod1.glb",
+      "bytes": 20444,
+      "sha256": "b71ba79eaa3036b9a2dc089094e7d7096cc3701878e4ed46186f5edf796595c6"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.55,
+      "d": 0.45,
+      "h": 0.550662
+    },
+    "originalBounds": {
+      "w": 0.55,
+      "d": 0.45,
+      "h": 0.550662
+    },
+    "triangles": 2756,
+    "lods": [
+      {
+        "file": "side-table-01-model.glb",
+        "triangles": 2756
+      },
+      {
+        "file": "side-table-01-model.lod1.glb",
+        "triangles": 963,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "side-table-01-model.glb"
+      }
+    ],
+    "materials": [
+      "side_table_01"
+    ]
+  }
+}

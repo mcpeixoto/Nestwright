@@ -1128,6 +1128,278 @@
         "materialId": "lawn-fine"
       },
       "notes": "new material (R2)"
+    },
+    {
+      "key": "sofa-02-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "sofa_02",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "sofa-3"
+      },
+      "notes": "tufted leather sofa; classic, not modern"
+    },
+    {
+      "key": "modern-arm-chair-01-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "modern_arm_chair_01",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "armchair"
+      }
+    },
+    {
+      "key": "arm-chair-01-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "ArmChair_01",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "armchair-wingback"
+      },
+      "notes": "Victorian bergere; classic style suits a wingback"
+    },
+    {
+      "key": "ottoman-01-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "Ottoman_01",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "ottoman"
+      }
+    },
+    {
+      "key": "modern-coffee-table-01-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "modern_coffee_table_01",
+      "resolution": "1k",
+      "licence": "CC0",
+      "rotateY": 90,
+      "targets": {
+        "catalogId": "coffee-table"
+      },
+      "notes": "the glTF runs its long side along Z"
+    },
+    {
+      "key": "side-table-01-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "side_table_01",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "side-table"
+      }
+    },
+    {
+      "key": "painted-wooden-nightstand-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "painted_wooden_nightstand",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "nightstand"
+      },
+      "notes": "rustic painted farmhouse style"
+    },
+    {
+      "key": "modern-wooden-cabinet-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "modern_wooden_cabinet",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "tv-unit"
+      }
+    },
+    {
+      "key": "steel-frame-shelves-01-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "steel_frame_shelves_01",
+      "resolution": "1k",
+      "licence": "CC0",
+      "units": "dm",
+      "targets": {
+        "catalogId": "shelving-unit"
+      },
+      "notes": "the glTF is authored in decimetres (21.4 units tall)"
+    },
+    {
+      "key": "wall-clock-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "wall_clock",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "clock"
+      }
+    },
+    {
+      "key": "ceramic-vase-02-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "ceramic_vase_02",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "vase"
+      }
+    },
+    {
+      "key": "round-wooden-table-01-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "round_wooden_table_01",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "round-table"
+      },
+      "notes": "dark pedestal table, traditional"
+    },
+    {
+      "key": "dining-chair-02-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "dining_chair_02",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "dining-chair"
+      }
+    },
+    {
+      "key": "bar-chair-round-01-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "bar_chair_round_01",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "bar-stool"
+      },
+      "notes": "traditional turned-wood pub stool"
+    },
+    {
+      "key": "painted-wooden-stool-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "painted_wooden_stool",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "dining-island-stool"
+      },
+      "notes": "rustic painted stool"
+    },
+    {
+      "key": "modern-ceiling-lamp-01-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "modern_ceiling_lamp_01",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "pendant-lamp"
+      }
+    },
+    {
+      "key": "chandelier-01-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "Chandelier_01",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "chandelier"
+      },
+      "notes": "ornate brass chandelier with shades"
+    },
+    {
+      "key": "industrial-wall-sconce-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "industrial_wall_sconce",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "wall-sconce"
+      },
+      "notes": "brass farmhouse sconce"
+    },
+    {
+      "key": "painted-wooden-bench-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "painted_wooden_bench",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "bench-garden"
+      },
+      "notes": "painted wooden settle bench"
+    },
+    {
+      "key": "potted-plant-01-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "potted_plant_01",
+      "resolution": "1k",
+      "licence": "CC0",
+      "maxTriangles": 30000,
+      "targets": {
+        "catalogId": "plant-pot"
+      }
+    },
+    {
+      "key": "potted-plant-02-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "potted_plant_02",
+      "resolution": "1k",
+      "licence": "CC0",
+      "maxTriangles": 30000,
+      "targets": {
+        "catalogId": "monstera"
+      },
+      "notes": "broad-leaf plant in a round pot; 42% wider than the catalog box (flagged)"
+    },
+    {
+      "key": "potted-plant-04-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "potted_plant_04",
+      "resolution": "1k",
+      "licence": "CC0",
+      "targets": {
+        "catalogId": "cactus"
+      },
+      "notes": "aloe in a white pot; aspect 36% off (flagged)"
+    },
+    {
+      "key": "flower-gazania-model",
+      "kind": "model",
+      "provider": "polyhaven",
+      "sourceId": "flower_gazania",
+      "resolution": "1k",
+      "licence": "CC0",
+      "node": "flower_gazania_h_LOD0",
+      "targets": {
+        "species": "flowers-mixed"
+      },
+      "notes": "variant h of eight"
     }
   ]
 }

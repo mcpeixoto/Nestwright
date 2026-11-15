@@ -1,0 +1,55 @@
+{
+  "key": "modern-wooden-cabinet-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "modern_wooden_cabinet",
+  "sourceUrl": "https://polyhaven.com/a/modern_wooden_cabinet",
+  "author": "Patrik Pangerl",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:08.484Z",
+  "sha256Source": "026eb9778ae97105410ed24275d92ab292ceeaf7622272b05c469ca6ea5ed9fe",
+  "targets": {
+    "catalogId": "tv-unit"
+  },
+  "files": [
+    {
+      "path": "models/modern-wooden-cabinet-model/modern-wooden-cabinet-model.glb",
+      "bytes": 1557912,
+      "sha256": "7930009ee333041be0ae16b722a201c65e2d6a3b68f2c98d070149f7ba02f27f"
+    },
+    {
+      "path": "models/modern-wooden-cabinet-model/modern-wooden-cabinet-model.lod1.glb",
+      "bytes": 244572,
+      "sha256": "9d39593e4a8cc54e9166e9203e60b9efa4ab12b97ffc0c80fe93480a44c4a99b"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 2.44,
+      "d": 0.52,
+      "h": 0.680143
+    },
+    "originalBounds": {
+      "w": 2.44,
+      "d": 0.52,
+      "h": 0.680143
+    },
+    "triangles": 24976,
+    "lods": [
+      {
+        "file": "modern-wooden-cabinet-model.glb",
+        "triangles": 24976
+      },
+      {
+        "file": "modern-wooden-cabinet-model.lod1.glb",
+        "triangles": 12928,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "modern-wooden-cabinet-model.glb"
+      }
+    ],
+    "materials": [
+      "modern_wooden_cabinet"
+    ]
+  }
+}

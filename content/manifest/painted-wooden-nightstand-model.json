@@ -1,0 +1,55 @@
+{
+  "key": "painted-wooden-nightstand-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "painted_wooden_nightstand",
+  "sourceUrl": "https://polyhaven.com/a/painted_wooden_nightstand",
+  "author": "Kirill Sannikov",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:08.137Z",
+  "sha256Source": "cdc9e222a712d5a68d5d661d096a6d0cce86d14ce5c45e6854ceb7537b94d9d1",
+  "targets": {
+    "catalogId": "nightstand"
+  },
+  "files": [
+    {
+      "path": "models/painted-wooden-nightstand-model/painted-wooden-nightstand-model.glb",
+      "bytes": 1568856,
+      "sha256": "fe6d82b6b4da3a7981e5d67417b217c90edd873981a99fd1d441ceb1425e7e2d"
+    },
+    {
+      "path": "models/painted-wooden-nightstand-model/painted-wooden-nightstand-model.lod1.glb",
+      "bytes": 7660,
+      "sha256": "550f3bf2a8e0b3fe27f9355e0b9375c70fb831d5ceb6935fdb4843369ab264dc"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.504565,
+      "d": 0.508716,
+      "h": 0.615521
+    },
+    "originalBounds": {
+      "w": 0.504565,
+      "d": 0.508716,
+      "h": 0.615521
+    },
+    "triangles": 470,
+    "lods": [
+      {
+        "file": "painted-wooden-nightstand-model.glb",
+        "triangles": 470
+      },
+      {
+        "file": "painted-wooden-nightstand-model.lod1.glb",
+        "triangles": 192,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "painted-wooden-nightstand-model.glb"
+      }
+    ],
+    "materials": [
+      "painted_wooden_nightstand"
+    ]
+  }
+}

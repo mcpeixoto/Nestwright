@@ -1007,4 +1007,12 @@ export const pt: { [K in MessageKey]: string } = {
   'Not a valid Nestwright file: invalid JSON.': 'Não é um ficheiro Nestwright válido: JSON inválido.',
   'level.Ground': 'Rés do chão',
   'Level {n}': 'Piso {n}',
+  'Scanned model — material fixed': 'Modelo digitalizado — material fixo',
+  Credits: 'Créditos',
+  'Third-party textures and models in the content pack. Thank you to their authors.':
+    'Texturas e modelos de terceiros no pacote de conteúdos. Obrigado aos seus autores.',
+  'No content pack installed: everything you see is built in code.': 'Sem pacote de conteúdos instalado: tudo o que vê é gerado em código.',
+  Models: 'Modelos',
+  Textures: 'Texturas',
+  'by {author}': 'de {author}',
 }

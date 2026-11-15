@@ -3,7 +3,7 @@
  *
  *   node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181]
  *     [--views a,b] [--serve] [--ref <dir>] [--backend webgpu|webgl]
- *     [--quality low|medium|high|ultra] [--novsync]
+ *     [--quality low|medium|high|ultra] [--novsync] [--no-models]
  *
  * --backend webgl loads the page with ?renderer=webgl (forced WebGL2 fallback).
  * --serve starts vite on a free port and stops it when the run ends.
@@ -28,7 +28,7 @@ const root = fileURLToPath(new globalThis.URL('../..', import.meta.url))
 const here = dirname(fileURLToPath(import.meta.url))
 
 function help() {
-  return `node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181] [--views a,b] [--serve] [--ref <dir>] [--backend webgpu|webgl] [--quality low|medium|high|ultra] [--novsync]
+  return `node scripts/visual/shoot.mjs --out <dir> [--url http://localhost:5181] [--views a,b] [--serve] [--ref <dir>] [--backend webgpu|webgl] [--quality low|medium|high|ultra] [--novsync] [--no-models]
 Default reference folder: ${join(homedir(), 'Documents', 'Coding', '_assets', 'architecture-design-steam-screenshots')}`
 }
 
@@ -306,6 +306,7 @@ async function main() {
     })
     const target = new globalThis.URL(url)
     if (opts.backend === 'webgl') target.searchParams.set('renderer', 'webgl')
+    if (opts.noModels) target.searchParams.set('models', 'off')
     await page.goto(target.toString(), { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => typeof globalThis.__nestwright?.loadTemplate === 'function')
     await mkdir(opts.out, { recursive: true })

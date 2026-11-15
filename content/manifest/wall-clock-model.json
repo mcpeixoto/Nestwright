@@ -1,0 +1,56 @@
+{
+  "key": "wall-clock-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "wall_clock",
+  "sourceUrl": "https://polyhaven.com/a/wall_clock",
+  "author": "PierreB3D",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:09.198Z",
+  "sha256Source": "d35b6bdd8f4ccbd481f940597ee4a9eff6e0434e81661176cf825488091ce33d",
+  "targets": {
+    "catalogId": "clock"
+  },
+  "files": [
+    {
+      "path": "models/wall-clock-model/wall-clock-model.glb",
+      "bytes": 948136,
+      "sha256": "826d22ad926fcd87a51ca2096adf5855116c01272d6dd10b70b35dfb655f88f2"
+    },
+    {
+      "path": "models/wall-clock-model/wall-clock-model.lod1.glb",
+      "bytes": 28448,
+      "sha256": "d251818150df4abcd915b35608ea4afa601a66bc20056de74d766c7e6529b599"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.320491,
+      "d": 0.047223,
+      "h": 0.320491
+    },
+    "originalBounds": {
+      "w": 0.320491,
+      "d": 0.047223,
+      "h": 0.320491
+    },
+    "triangles": 3658,
+    "lods": [
+      {
+        "file": "wall-clock-model.glb",
+        "triangles": 3658
+      },
+      {
+        "file": "wall-clock-model.lod1.glb",
+        "triangles": 1291,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "wall-clock-model.glb"
+      }
+    ],
+    "materials": [
+      "wall_clock",
+      "wall_clock_glass"
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "key": "modern-arm-chair-01-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "modern_arm_chair_01",
+  "sourceUrl": "https://polyhaven.com/a/modern_arm_chair_01",
+  "author": "Vibrant Nordic",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:07.019Z",
+  "sha256Source": "8559977e7bd43923a7eed450032b1c061654eac98a6969eebb0a9b66c4d67b01",
+  "targets": {
+    "catalogId": "armchair"
+  },
+  "files": [
+    {
+      "path": "models/modern-arm-chair-01-model/modern-arm-chair-01-model.glb",
+      "bytes": 2252724,
+      "sha256": "cf96a49b88eace9fab45ad632a2ca346772948cc26bb4759e0cabdec65655a31"
+    },
+    {
+      "path": "models/modern-arm-chair-01-model/modern-arm-chair-01-model.lod1.glb",
+      "bytes": 42460,
+      "sha256": "d57eac599e2cc563a0acc53faa485162b608f54b9cb8724d3847b5bbf7931ebf"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.820344,
+      "d": 0.986562,
+      "h": 1.022852
+    },
+    "originalBounds": {
+      "w": 0.820344,
+      "d": 0.986562,
+      "h": 1.022852
+    },
+    "triangles": 8916,
+    "lods": [
+      {
+        "file": "modern-arm-chair-01-model.glb",
+        "triangles": 8916
+      },
+      {
+        "file": "modern-arm-chair-01-model.lod1.glb",
+        "triangles": 3118,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "modern-arm-chair-01-model.glb"
+      }
+    ],
+    "materials": [
+      "modern_arm_chair_01_legs",
+      "modern_arm_chair_01_pillow"
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "key": "modern-ceiling-lamp-01-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "modern_ceiling_lamp_01",
+  "sourceUrl": "https://polyhaven.com/a/modern_ceiling_lamp_01",
+  "author": "James Ray Cock",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:10.907Z",
+  "sha256Source": "e050d9eaa7021685a64ade8b25d66262517f94f914ea7fe1b3530ad506cbfba6",
+  "targets": {
+    "catalogId": "pendant-lamp"
+  },
+  "files": [
+    {
+      "path": "models/modern-ceiling-lamp-01-model/modern-ceiling-lamp-01-model.glb",
+      "bytes": 699836,
+      "sha256": "782cdb796ce4a6bf7d836f7b4be017f1f0cd9528c9697e05f910dabb3cfa980f"
+    },
+    {
+      "path": "models/modern-ceiling-lamp-01-model/modern-ceiling-lamp-01-model.lod1.glb",
+      "bytes": 28416,
+      "sha256": "0afd173b952bbddc362545d5e3cbdaddffa9e7a19c88be0c64749a3606ce97be"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.431649,
+      "d": 0.431661,
+      "h": 0.951551
+    },
+    "originalBounds": {
+      "w": 0.431649,
+      "d": 0.431661,
+      "h": 0.951551
+    },
+    "triangles": 5602,
+    "lods": [
+      {
+        "file": "modern-ceiling-lamp-01-model.glb",
+        "triangles": 5602
+      },
+      {
+        "file": "modern-ceiling-lamp-01-model.lod1.glb",
+        "triangles": 2136,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "modern-ceiling-lamp-01-model.glb"
+      }
+    ],
+    "materials": [
+      "modern_ceiling_lamp_01_glass",
+      "modern_ceiling_globe"
+    ]
+  }
+}

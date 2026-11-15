@@ -1,0 +1,55 @@
+{
+  "key": "painted-wooden-bench-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "painted_wooden_bench",
+  "sourceUrl": "https://polyhaven.com/a/painted_wooden_bench",
+  "author": "Kirill Sannikov",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:11.628Z",
+  "sha256Source": "8b89ec061d6c26e31459c6e23829522293213fd235eaf184152be5ba94e827d4",
+  "targets": {
+    "catalogId": "bench-garden"
+  },
+  "files": [
+    {
+      "path": "models/painted-wooden-bench-model/painted-wooden-bench-model.glb",
+      "bytes": 1523668,
+      "sha256": "15650103665b06d259feb01295408b88ee384f7bee16b624218c195839597d00"
+    },
+    {
+      "path": "models/painted-wooden-bench-model/painted-wooden-bench-model.lod1.glb",
+      "bytes": 6208,
+      "sha256": "5079953a5f3dca77ce3db255710e6b2cc6c7a36e1b4178028f6992a1971f4bb0"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 1.164944,
+      "d": 0.496543,
+      "h": 0.889291
+    },
+    "originalBounds": {
+      "w": 1.164944,
+      "d": 0.496543,
+      "h": 0.889291
+    },
+    "triangles": 630,
+    "lods": [
+      {
+        "file": "painted-wooden-bench-model.glb",
+        "triangles": 630
+      },
+      {
+        "file": "painted-wooden-bench-model.lod1.glb",
+        "triangles": 220,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "painted-wooden-bench-model.glb"
+      }
+    ],
+    "materials": [
+      "painted_wooden_bench"
+    ]
+  }
+}

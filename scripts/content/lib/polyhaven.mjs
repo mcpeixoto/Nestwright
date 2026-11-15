@@ -52,6 +52,17 @@ export function pickPolyhaven(files, { kind, resolution }) {
       if (path.includes('..') || path.startsWith('/')) throw new Error(`unsafe gltf include path ${path}`)
       return { path, url: info.url, size: info.size ?? null }
     })
+    // The glTF release ships leaf and petal colour as JPEG with alphaMode MASK, so the cut-out
+    // lives only in a separate `<part>_alpha` map. Fetch it next to the textures; processing
+    // packs it into the albedo's alpha.
+    for (const [mapKey, sizes] of Object.entries(files)) {
+      if (!mapKey.endsWith('_alpha')) continue
+      const file = sizes?.[resolution]?.png ?? sizes?.[resolution]?.jpg
+      const name = typeof file?.url === 'string' ? file.url.split('/').pop() : ''
+      if (!name || name.includes('..')) continue
+      const path = `textures/${name}`
+      if (!include.some((entry) => entry.path === path)) include.push({ path, url: file.url, size: file.size ?? null })
+    }
     return { kind, gltf: { url: slot.url, size: slot.size ?? null }, include }
   }
   if (kind === 'hdri') {

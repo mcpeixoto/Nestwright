@@ -1,0 +1,56 @@
+{
+  "key": "chandelier-01-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "Chandelier_01",
+  "sourceUrl": "https://polyhaven.com/a/Chandelier_01",
+  "author": "Kirill Sannikov",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:11.142Z",
+  "sha256Source": "1738ff34ec320f6329b08d3043151d26ab0cf2569960960293d41974ca926233",
+  "targets": {
+    "catalogId": "chandelier"
+  },
+  "files": [
+    {
+      "path": "models/chandelier-01-model/chandelier-01-model.glb",
+      "bytes": 1592068,
+      "sha256": "cce1ec98484abcaf39dfec5b13afd13c4e0cc6ba7ffe22d2e61c786c7b5264bb"
+    },
+    {
+      "path": "models/chandelier-01-model/chandelier-01-model.lod1.glb",
+      "bytes": 143940,
+      "sha256": "28533a8f25b6e0cfb3a429b215233002308ab597a1c26e22d34ce049839398ff"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.746456,
+      "d": 0.81555,
+      "h": 0.798271
+    },
+    "originalBounds": {
+      "w": 0.746456,
+      "d": 0.81555,
+      "h": 0.798271
+    },
+    "triangles": 26860,
+    "lods": [
+      {
+        "file": "chandelier-01-model.glb",
+        "triangles": 26860
+      },
+      {
+        "file": "chandelier-01-model.lod1.glb",
+        "triangles": 9376,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "chandelier-01-model.glb"
+      }
+    ],
+    "materials": [
+      "basecolor_classic_chandelier_1",
+      "lamps_classic_chandelier_1"
+    ]
+  }
+}

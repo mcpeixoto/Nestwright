@@ -1,0 +1,55 @@
+{
+  "key": "dining-chair-02-model",
+  "kind": "model",
+  "provider": "polyhaven",
+  "sourceId": "dining_chair_02",
+  "sourceUrl": "https://polyhaven.com/a/dining_chair_02",
+  "author": "James Ray Cock",
+  "licence": "CC0",
+  "fetchedAt": "2026-11-15T03:34:10.085Z",
+  "sha256Source": "bbcb342032c522744da8f371cdb09345eba4a322ff537ab93a16a5c4fc94dcb1",
+  "targets": {
+    "catalogId": "dining-chair"
+  },
+  "files": [
+    {
+      "path": "models/dining-chair-02-model/dining-chair-02-model.glb",
+      "bytes": 1449700,
+      "sha256": "3d4099eab7f24a4a408c3dc00beb817e3161165c6812067000ac2758dec22796"
+    },
+    {
+      "path": "models/dining-chair-02-model/dining-chair-02-model.lod1.glb",
+      "bytes": 76392,
+      "sha256": "ea3e04cd7449e5155f858c514e21ff01d09815b2d4b6bd277baa6f271b1a6659"
+    }
+  ],
+  "model": {
+    "bounds": {
+      "w": 0.433571,
+      "d": 0.57642,
+      "h": 0.973378
+    },
+    "originalBounds": {
+      "w": 0.433571,
+      "d": 0.57642,
+      "h": 0.973378
+    },
+    "triangles": 22013,
+    "lods": [
+      {
+        "file": "dining-chair-02-model.glb",
+        "triangles": 22013
+      },
+      {
+        "file": "dining-chair-02-model.lod1.glb",
+        "triangles": 7704,
+        "ratio": 0.35,
+        "error": 0.01,
+        "texturesFrom": "dining-chair-02-model.glb"
+      }
+    ],
+    "materials": [
+      "dining_chair_02"
+    ]
+  }
+}
