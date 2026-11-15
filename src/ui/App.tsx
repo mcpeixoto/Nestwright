@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { installAudio } from '../audio/install'
 import { saveAutosave } from '../io/autosave'
 import { PlanCanvas } from '../plan2d/PlanCanvas'
 import { useSettings } from '../settings'
@@ -110,6 +111,7 @@ export function App() {
 
   useEffect(() => installShortcuts(), [])
   useEffect(() => installDocumentSession(), [])
+  useEffect(() => installAudio(), [])
 
   useEffect(() => {
     const apply = () => {
