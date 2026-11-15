@@ -1,5 +1,7 @@
 import { bulgeDelta, clampBulge, curveHandle } from '../model/curve'
+import { snapItemPose, type SnapGuide } from '../model/furnitureSnap'
 import { add, dist, len, sub } from '../model/geometry'
+import { traceContains } from '../model/trace'
 import { moveItems, moveRoom, moveWall, moveWallEndpoint } from '../model/ops'
 import { slideOpening } from '../model/ops/sizes'
 import { roomAt } from '../model/rooms'
@@ -13,15 +15,22 @@ import { icon } from './icons'
 import { registerTool } from './registry'
 
 type Drag =
-  | { kind: 'items'; ids: string[]; origins: { id: string; position: Vec2 }[]; start: Vec2 }
+  | { kind: 'items'; ids: string[]; origins: { id: string; position: Vec2; rotation: number }[]; start: Vec2 }
   | { kind: 'end'; wallId: string; end: 'a' | 'b'; origin: Vec2; start: Vec2 }
   | { kind: 'wall'; wallId: string; originA: Vec2; start: Vec2 }
   | { kind: 'bulge'; wallId: string; origin: number; start: Vec2 }
   | { kind: 'room'; roomKey: string; start: Vec2 }
   | { kind: 'opening'; openingId: string; wallId: string; grab: number }
+  | { kind: 'trace'; origin: Vec2; start: Vec2; screenX: number; screenY: number; active: boolean }
   | { kind: 'marquee'; x0: number; y0: number; x1: number; y1: number; additive: boolean }
 
 let drag: Drag | null = null
+let guides: SnapGuide[] = []
+
+/** Snap guides of the item drag in progress, in plan coordinates. */
+export function itemSnapGuides(): readonly SnapGuide[] {
+  return guides
+}
 
 function levelOf(): Level | undefined {
   return selectActiveLevel(useStore.getState())
@@ -113,6 +122,7 @@ registerTool({
   icon: icon('<path d="M5 3l5 16 2.2-6.2L19 11z"/>'),
   deactivate() {
     drag = null
+    guides = []
     useStore.getState().endStroke()
   },
   onPointerDown(ctx) {
@@ -138,10 +148,11 @@ registerTool({
         ids,
         origins: ids.map((id) => {
           const found = level.items.find((it) => it.id === id)
-          return { id, position: found ? { ...found.position } : { x: 0, y: 0 } }
+          return { id, position: found ? { ...found.position } : { x: 0, y: 0 }, rotation: found?.rotation ?? 0 }
         }),
         start: { ...ctx.point },
       }
+      useStore.getState().beginStroke('Move items')
       return
     }
     const opening = hitOpening(level, ctx.point)
@@ -191,6 +202,18 @@ registerTool({
       } else state.select([room.key], ctx.shift)
       return
     }
+    const trace = state.project.traces.find((item) => item.levelId === level.id)
+    if (trace && trace.visible !== false && trace.locked !== true && traceContains(trace, ctx.point)) {
+      drag = {
+        kind: 'trace',
+        origin: { ...trace.origin },
+        start: { ...ctx.point },
+        screenX: ctx.screen.x,
+        screenY: ctx.screen.y,
+        active: false,
+      }
+      return
+    }
     if (!ctx.shift) state.select([])
     drag = { kind: 'marquee', x0: ctx.screen.x, y0: ctx.screen.y, x1: ctx.screen.x, y1: ctx.screen.y, additive: ctx.shift }
   },
@@ -204,15 +227,24 @@ registerTool({
     }
     if (drag.kind === 'items') {
       const ids = drag.ids
-      const delta = sub(ctx.point, drag.start)
+      const delta = sub(ctx.alt ? ctx.raw : ctx.point, drag.start)
       const origin = drag.origins[0]
       if (!origin) return
+      const firstNow = level.items.find((item) => item.id === origin.id)
+      if (!firstNow) return
+      const single = ids.length === 1 && !firstNow.locked
+      const snapped = snapItemPose(
+        level,
+        { position: add(origin.position, delta), rotation: single ? origin.rotation : firstNow.rotation, size: firstNow.size },
+        { snap: !ctx.alt, ignore: ids, rotate: single },
+      )
+      guides = snapped.guides
       applyMove('Move items', (draft) => {
         const first = draft.items.find((item) => item.id === origin.id)
         if (!first) return
-        const step = sub(add(origin.position, delta), first.position)
-        if (len(step) < 1e-6) return
-        moveItems(draft, ids, step)
+        const step = sub(snapped.position, first.position)
+        if (len(step) >= 1e-6) moveItems(draft, ids, step)
+        if (single && Math.abs(first.rotation - snapped.rotation) > 1e-9) first.rotation = snapped.rotation
       })
       return
     }
@@ -255,6 +287,22 @@ registerTool({
       applyMove('Move room', (draft) => moveRoom(draft, roomKey, delta))
       return
     }
+    if (drag.kind === 'trace') {
+      if (!drag.active) {
+        if (Math.hypot(ctx.screen.x - drag.screenX, ctx.screen.y - drag.screenY) < 4) return
+        drag.active = true
+        useStore.getState().select([])
+        useStore.getState().beginStroke('Move trace')
+      }
+      const levelId = useStore.getState().activeLevelId
+      const origin = add(drag.origin, sub(ctx.point, drag.start))
+      useStore.getState().apply('Move trace', (draft) => {
+        const found = draft.traces.find((item) => item.levelId === levelId)
+        if (!found || found.locked) return
+        found.origin = { x: origin.x, y: origin.y }
+      })
+      return
+    }
     if (drag.kind === 'wall') {
       const wallId = drag.wallId
       const originA = drag.originA
@@ -272,7 +320,13 @@ registerTool({
   onPointerUp(ctx) {
     const current = drag
     drag = null
-    if (current?.kind === 'room' || current?.kind === 'opening') {
+    guides = []
+    if (current?.kind === 'trace') {
+      if (!current.active && !ctx.shift) useStore.getState().select([])
+      useStore.getState().endStroke()
+      return
+    }
+    if (current?.kind === 'room' || current?.kind === 'opening' || current?.kind === 'items') {
       useStore.getState().endStroke()
       return
     }
@@ -286,7 +340,22 @@ registerTool({
     if (current.additive) useStore.getState().select([...useStore.getState().selection, ...ids])
     else useStore.getState().select(ids)
   },
-  drawOverlay(ctx2d) {
+  drawOverlay(ctx2d, ctx) {
+    if (guides.length > 0) {
+      ctx2d.save()
+      ctx2d.strokeStyle = '#e0568a'
+      ctx2d.lineWidth = 1
+      ctx2d.setLineDash([5, 4])
+      for (const guide of guides) {
+        const a = ctx.transform.worldToScreen(guide.a)
+        const b = ctx.transform.worldToScreen(guide.b)
+        ctx2d.beginPath()
+        ctx2d.moveTo(a.x, a.y)
+        ctx2d.lineTo(b.x, b.y)
+        ctx2d.stroke()
+      }
+      ctx2d.restore()
+    }
     const rect = marqueeRect()
     if (!rect) return
     const x = Math.min(rect.x0, rect.x1)

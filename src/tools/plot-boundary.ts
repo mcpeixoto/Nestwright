@@ -3,6 +3,8 @@ import type { Vec2 } from '../model/types'
 import { formatArea } from '../model/units'
 import { useStore } from '../store'
 import { registerShortcut } from '../ui/shortcuts'
+import { fill } from '../i18n'
+import { useSettings } from '../settings'
 import { createChain, strokeChain, type ChainSnapshot } from './chain'
 import { icon } from './icons'
 import { registerTool } from './registry'
@@ -88,7 +90,7 @@ registerTool({
     drag = -1
     const state = useStore.getState()
     const area = Math.abs(polygonArea(state.project.terrain.boundary))
-    state.setMessage(`Plot ${formatArea(area, state.project.units)}`)
+    state.setMessage(fill(useSettings.getState().language, 'Plot {area}', { area: formatArea(area, state.project.units) }))
   },
   deactivate() {
     chain.reset()

@@ -1,18 +1,21 @@
-import { diffVariants, summariseDiff, variantFrom } from '../../model/variants'
+import { diffVariants, variantFrom } from '../../model/variants'
 import { useStore } from '../../store'
 import { T } from '../../i18n/T'
 import { useTranslate } from '../../i18n'
+import { useSettings } from '../../settings'
+import { describeDiff } from '../variantSummary'
 import { setCompareVariant, useCompareVariant } from './compare'
 
 export function CompareBanner() {
   const tr = useTranslate()
+  const language = useSettings((s) => s.language)
   const variantId = useCompareVariant()
   const project = useStore((s) => s.project)
   const variant = project.variants?.find((item) => item.id === variantId) ?? null
   if (!variantId || !variant) return null
   let summary: string
   try {
-    summary = summariseDiff(diffVariants(variantFrom(project, 'Current', 'current', 0), variant, project.budget))
+    summary = describeDiff(language, diffVariants(variantFrom(project, 'Current', 'current', 0), variant, project.budget))
   } catch {
     summary = ''
   }

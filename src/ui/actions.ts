@@ -1,10 +1,12 @@
-import { translate } from '../i18n'
+import { fill, translate } from '../i18n'
 import { currentFilePath, setFilePath } from '../io/documentPath'
 import { markSaved } from '../io/dirty'
 import { deserialize, serialize } from '../io/project'
 import { createProject } from '../model/defaults'
 import { insertLevel } from '../model/levels'
+import { copyItems, groupCentre, pasteItems, rotateItemGroup, type ItemClip } from '../model/itemClipboard'
 import { deleteEntities, duplicateItems, rotateItems } from '../model/ops'
+import { getPlanRenderer } from '../plan2d/PlanRenderer'
 import type { Project } from '../model/types'
 import { selectActiveLevel, useStore } from '../store'
 import { confirmIfNeeded } from './confirm'
@@ -95,7 +97,7 @@ export function openReceivedFile(file: { name: string; data: string; path?: stri
     useStore.getState().setMessage(`${translate(useSettings.getState().language, 'Open')} ${file.name}`)
     return true
   } catch (err) {
-    useStore.getState().setMessage(err instanceof Error ? err.message : translate(useSettings.getState().language, 'Could not open that file.'))
+    useStore.getState().setMessage(translate(useSettings.getState().language, err instanceof Error ? err.message : 'Could not open that file.'))
     return false
   }
 }
@@ -109,7 +111,7 @@ export async function openProject(): Promise<boolean> {
 export function newProject(): void {
   const language = useSettings.getState().language
   confirmIfNeeded(translate(language, 'Start a new empty project?'), () => {
-    const project = createProject('Untitled', 'house')
+    const project = createProject(translate(language, 'Untitled'), 'house')
     project.units = useSettings.getState().units
     setFilePath(null)
     presentProject(project)
@@ -183,4 +185,85 @@ export function addLevelAbove(): void {
     next.setLevelDisplay('current-below')
     fitVisible()
   }
+}
+
+/** Select every item on the active level. */
+export function selectAllItems(): void {
+  const state = useStore.getState()
+  const level = selectActiveLevel(state)
+  if (!level) return
+  state.select(level.items.map((item) => item.id))
+}
+
+/** Turn the selected items 90° about their common centre, as one undo step. */
+export function rotateSelectionQuarter(): void {
+  const state = useStore.getState()
+  const level = selectActiveLevel(state)
+  if (!level) return
+  const ids = state.selection.filter((id) => level.items.some((item) => item.id === id))
+  if (ids.length === 0) return
+  const levelId = level.id
+  state.apply('Rotate', (draft) => {
+    const target = draft.levels.find((l) => l.id === levelId)
+    if (target) rotateItemGroup(target, ids, Math.PI / 2)
+  })
+}
+
+let clipboard: ItemClip | null = null
+/** Centre of the last copied group, so a paste without a cursor on the plan lands next to it. */
+let copiedCentre = { x: 0, y: 0 }
+
+export function hasItemClipboard(): boolean {
+  return clipboard !== null
+}
+
+function sayCount(key: string, count: number): void {
+  useStore.getState().setMessage(fill(useSettings.getState().language, key, { count }))
+}
+
+/** Copy the selected items to the in-memory clipboard (and the system clipboard as JSON when allowed). */
+export function copySelection(): boolean {
+  const state = useStore.getState()
+  const level = selectActiveLevel(state)
+  if (!level) return false
+  const clip = copyItems(level, state.selection)
+  if (!clip) return false
+  clipboard = clip
+  copiedCentre = groupCentre(level.items.filter((item) => state.selection.includes(item.id)))
+  try {
+    void navigator.clipboard?.writeText(JSON.stringify(clip)).catch(() => {})
+  } catch {
+    /* the in-memory copy is enough */
+  }
+  sayCount('{count} items copied', clip.items.length)
+  return true
+}
+
+/** The cursor, when it is over the plan. */
+function planCursor(): { x: number; y: number } | null {
+  const renderer = getPlanRenderer()
+  if (!renderer || !renderer.canvas.isConnected) return null
+  const { x, y } = renderer.pointer.screen
+  const inside = x > 0 && y > 0 && x < renderer.canvas.clientWidth && y < renderer.canvas.clientHeight
+  return inside ? { ...renderer.pointer.raw } : null
+}
+
+/** Paste the clipboard onto the active level as one undo step, and select the copies. */
+export function pasteClipboard(at?: { x: number; y: number }): boolean {
+  const clip = clipboard
+  const state = useStore.getState()
+  const level = selectActiveLevel(state)
+  if (!clip || !level) return false
+  const target = at ?? planCursor() ?? { x: copiedCentre.x + 0.2, y: copiedCentre.y + 0.2 }
+  const levelId = level.id
+  let created: string[] = []
+  state.apply('Paste', (draft) => {
+    const found = draft.levels.find((l) => l.id === levelId)
+    if (found) created = pasteItems(found, clip, target)
+  })
+  if (created.length === 0) return false
+  copiedCentre = target
+  useStore.getState().select(created)
+  sayCount('{count} items pasted', created.length)
+  return true
 }

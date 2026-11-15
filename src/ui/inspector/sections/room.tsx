@@ -8,6 +8,8 @@ import { labelOf, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
 import { T } from '../../../i18n/T'
 import { useTranslate } from '../../../i18n'
+import { roomDisplayName } from '../../../i18n/rooms'
+import { useSettings } from '../../../settings'
 
 const ROOM_TYPES: RoomType[] = [
   'living',
@@ -29,6 +31,7 @@ const ROOM_TYPES: RoomType[] = [
 
 function RoomSection() {
   const tr = useTranslate()
+  const language = useSettings((s) => s.language)
   const roomKey = useStore((s) => s.selection[0] ?? '')
   const level = useStore(selectActiveLevel)
   const units = useStore((s) => s.project.units)
@@ -50,7 +53,7 @@ function RoomSection() {
       <label className="field">
         <T k="Name" />
         <input
-          value={room.name}
+          value={roomDisplayName(language, room.name)}
           onChange={(event) => {
             const next = event.target.value
             edit('Room name', (props) => {

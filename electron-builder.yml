@@ -17,6 +17,10 @@ files:
   - package.json
   # The native Steam addon ships prebuilt binaries for every OS; keep only the target's.
   - "!node_modules/steamworks.js/dist/**/*.lib"
+  # Renderer-only libraries are bundled into dist/ by Vite. pdfjs-dist's optional Node canvas
+  # (@napi-rs/canvas) is a single-arch native binary that breaks the universal mac merge.
+  - "!node_modules/pdfjs-dist/**"
+  - "!node_modules/@napi-rs/**"
 asarUnpack:
   - node_modules/steamworks.js/**
 extraResources:

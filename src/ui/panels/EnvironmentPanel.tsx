@@ -6,7 +6,7 @@ import { clearLiveTime, clockTime, getClockSnapshot, isTimePlaying, playTime, st
 import { icon } from '../../tools/icons'
 import { registerPanel } from './registry'
 import { T } from '../../i18n/T'
-import { useTranslate } from '../../i18n'
+import { translate, useTranslate } from '../../i18n'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -31,14 +31,14 @@ const WEATHER: { id: Weather; label: string }[] = [
 
 const QUALITIES: GraphicsQuality[] = ['low', 'medium', 'high', 'ultra']
 
-export function formatDayOfYear(day: number): string {
+export function formatDayOfYear(day: number, language = 'en'): string {
   let left = Math.min(365, Math.max(1, Math.round(day)))
   for (let i = 0; i < MONTH_DAYS.length; i++) {
     const span = MONTH_DAYS[i] ?? 30
-    if (left <= span) return `${left} ${MONTHS[i] ?? ''}`
+    if (left <= span) return `${left} ${translate(language, MONTHS[i] ?? '')}`
     left -= span
   }
-  return '31 Dec'
+  return `31 ${translate(language, 'Dec')}`
 }
 
 function formatClock(hours: number): string {
@@ -92,6 +92,7 @@ export function EnvironmentPanel() {
   const tr = useTranslate()
   const env = useStore((s) => s.project.environment)
   const clock = useSyncExternalStore(subscribeClock, getClockSnapshot, getClockSnapshot)
+  const language = useSettings((s) => s.language)
   const quality = useSettings((s) => s.graphicsQuality)
   const playerName = useSettings((s) => s.playerName)
   const playerColor = useSettings((s) => s.playerColor)
@@ -126,7 +127,7 @@ export function EnvironmentPanel() {
             })
           }}
         />
-        <span className="readout">{formatDayOfYear(env?.dayOfYear ?? 1)}</span>
+        <span className="readout">{formatDayOfYear(env?.dayOfYear ?? 1, language)}</span>
       </label>
       <label className="field">
         <T k="Time" />

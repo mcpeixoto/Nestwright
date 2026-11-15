@@ -46,7 +46,7 @@ export function ToolRail() {
   const tr = useTranslate()
   const select = listTools().find((item) => item.id === 'select')
   const tools = listTools().filter((item) => {
-    if (item.id === 'place-item' || item.id === 'select' || item.id === 'pan') return false
+    if (item.hidden || item.id === 'place-item' || item.id === 'select' || item.id === 'pan') return false
     if (apartment && item.group === 'outside') return false
     if (!apartment && item.id === 'balcony') return false
     return true

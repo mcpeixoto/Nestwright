@@ -58,7 +58,7 @@ function ModuleList({
   }
   return (
     <div className="props">
-      <h2>{title}</h2>
+      <h2>{tr(title)}</h2>
       {modules.map((module, index) => (
         <div className="mod-row" key={`${module.type}-${index}`}>
           <select

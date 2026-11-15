@@ -1,3 +1,5 @@
+import { translate } from '../../i18n'
+import { useSettings } from '../../settings'
 import { getPlanRenderer } from '../../plan2d/PlanRenderer'
 import { roomsFor, useStore } from '../../store'
 import { getController } from '../../view3d/SceneController'
@@ -7,7 +9,7 @@ export function focusWish(wish: Wish): void {
   const state = useStore.getState()
   const target = wish.target
   if (!target) {
-    state.setMessage('That pin has nowhere to land.')
+    state.setMessage(translate(useSettings.getState().language, 'That pin has nowhere to land.'))
     return
   }
   if (target.kind === 'item') {
@@ -37,5 +39,5 @@ export function focusWish(wish: Wish): void {
     getController()?.frameAt({ x: target.at.x, y: (level?.elevation ?? 0) + 1.2, z: target.at.y })
     return
   }
-  state.setMessage('That pin is not on the plan anymore.')
+  state.setMessage(translate(useSettings.getState().language, 'That pin is not on the plan anymore.'))
 }

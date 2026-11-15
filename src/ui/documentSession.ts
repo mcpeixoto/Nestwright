@@ -18,7 +18,7 @@ function syncChrome(): void {
   api.setEditorState({
     dirty,
     prompt: {
-      message: fill(language, 'Save changes to "{name}" before closing?', { name: name || 'Untitled' }),
+      message: fill(language, 'Save changes to "{name}" before closing?', { name: name || translate(language, 'Untitled') }),
       save: translate(language, 'Save'),
       dontSave: translate(language, "Don't save"),
       cancel: translate(language, 'Cancel'),

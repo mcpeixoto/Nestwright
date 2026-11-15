@@ -6,17 +6,19 @@ import {
   duplicateVariant,
   optionLabel,
   planSwitch,
-  summariseDiff,
   variantFrom,
 } from '../../model/variants'
 import { T } from '../../i18n/T'
 import { useTranslate } from '../../i18n'
+import { useSettings } from '../../settings'
+import { describeDiff } from '../variantSummary'
 import { useStore } from '../../store'
 import { registerPanel } from './registry'
 import { setCompareVariant, useCompareVariant } from '../together/compare'
 
 export function VariantsPanel() {
   const tr = useTranslate()
+  const language = useSettings((s) => s.language)
   const project = useStore((s) => s.project)
   const compareId = useCompareVariant()
   const [name, setName] = useState('')
@@ -26,7 +28,7 @@ export function VariantsPanel() {
   let summary = ''
   if (compared) {
     try {
-      summary = summariseDiff(diffVariants(variantFrom(project, 'Current', 'current', 0), compared, project.budget))
+      summary = describeDiff(language, diffVariants(variantFrom(project, 'Current', 'current', 0), compared, project.budget))
     } catch {
       summary = ''
     }

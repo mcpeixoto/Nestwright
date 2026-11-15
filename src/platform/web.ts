@@ -16,10 +16,15 @@ export function webPlatform(): Platform {
             return
           }
           const reader = new FileReader()
-          const binary = /glb|gltf|obj/i.test(accept)
+          const model = /glb|gltf|\bobj\b/i.test(accept)
+          const trace = /png|jpe?g|webp|pdf|image\/|application\/pdf/i.test(accept)
           reader.onload = () => {
             const raw = String(reader.result ?? '')
-            if (!binary) {
+            if (trace) {
+              resolve({ name: file.name, data: raw })
+              return
+            }
+            if (!model) {
               resolve({ name: file.name, data: raw })
               return
             }
@@ -27,7 +32,7 @@ export function webPlatform(): Platform {
             resolve({ name: file.name, data: comma >= 0 ? raw.slice(comma + 1) : raw })
           }
           reader.onerror = () => resolve(null)
-          if (binary) reader.readAsDataURL(file)
+          if (model || trace) reader.readAsDataURL(file)
           else reader.readAsText(file)
         }
         input.click()

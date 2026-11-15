@@ -1,4 +1,10 @@
+import { fill } from '../i18n'
 import { PROJECT_VERSION } from '../model/types'
+import { useSettings } from '../settings'
+
+function invalid(key: string, vars: Record<string, string | number> = {}): Error {
+  return new Error(fill(useSettings.getState().language, key, vars))
+}
 
 /**
  * Bring a parsed file up to PROJECT_VERSION.
@@ -9,20 +15,21 @@ import { PROJECT_VERSION } from '../model/types'
  */
 export function migrate(data: unknown): unknown {
   if (!data || typeof data !== 'object') {
-    throw new Error('Not a valid Nestwright file.')
+    throw invalid('Not a valid Nestwright file.')
   }
   const record = data as Record<string, unknown>
   const version = record.version
   if (typeof version !== 'number' || !Number.isFinite(version)) {
-    throw new Error('Not a valid Nestwright file: missing version.')
+    throw invalid('Not a valid Nestwright file: missing version.')
   }
   if (version > PROJECT_VERSION) {
-    throw new Error(
-      `Not a valid Nestwright file: version ${version} is newer than this app (version ${PROJECT_VERSION}).`,
-    )
+    throw invalid('Not a valid Nestwright file: version {version} is newer than this app (version {current}).', {
+      version,
+      current: PROJECT_VERSION,
+    })
   }
   if (version < 1) {
-    throw new Error(`Not a valid Nestwright file: unknown version ${version}.`)
+    throw invalid('Not a valid Nestwright file: unknown version {version}.', { version })
   }
   return record
 }
