@@ -151,7 +151,7 @@ export function StartScreen() {
                     <button type="button" onClick={() => openRecent(item.id)} disabled={!item.data}>
                       {thumbRev >= 0 && recentThumb ? <img src={recentThumb} alt="" /> : <span className="thumb-fallback" />}
                       <span className="recent-meta">
-                        <span>{item.name}</span>
+                        <span>{item.name === 'Untitled' ? tr('Untitled') : item.name}</span>
                         <span className="hint">{tr(when.key, when.n != null ? { n: when.n } : undefined)}</span>
                       </span>
                     </button>

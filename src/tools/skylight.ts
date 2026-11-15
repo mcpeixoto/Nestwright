@@ -1,6 +1,8 @@
 import { pointInPolygon } from '../model/geometry'
 import { buildRoofModel, skylightRect } from '../model/roofs'
 import { selectActiveLevel, useStore } from '../store'
+import { translate } from '../i18n'
+import { useSettings } from '../settings'
 import { icon } from './icons'
 import { registerTool } from './registry'
 
@@ -20,7 +22,7 @@ registerTool({
       return footprint.length >= 3 && pointInPolygon(ctx.point, footprint)
     })
     if (!roof) {
-      state.setMessage('Click a roof to add a skylight')
+      state.setMessage(translate(useSettings.getState().language, 'Click a roof to add a skylight'))
       return
     }
     const roofId = roof.id

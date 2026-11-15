@@ -1,8 +1,11 @@
 import { migrate } from './migrate'
+import { fill } from '../i18n'
 import type { Project } from '../model/types'
+import { useSettings } from '../settings'
 
-function fail(detail: string): never {
-  throw new Error(`Not a valid Nestwright file: ${detail}`)
+/** `detail` completes "Not a valid Nestwright file: …"; the whole sentence is the translation key. */
+function fail(detail: string, vars: Record<string, string | number> = {}): never {
+  throw new Error(fill(useSettings.getState().language, `Not a valid Nestwright file: ${detail}`, vars))
 }
 
 function assertProject(data: unknown): Project {
@@ -17,7 +20,7 @@ function assertProject(data: unknown): Project {
     const record = level as Record<string, unknown>
     if (typeof record.id !== 'string' || typeof record.name !== 'string') fail('a level has no name.')
     for (const key of ['walls', 'openings', 'rooms', 'items', 'dimensions'] as const) {
-      if (!Array.isArray(record[key])) fail(`a level is missing ${key}.`)
+      if (!Array.isArray(record[key])) fail('a level is missing {key}.', { key })
     }
   }
   if (!project.terrain || typeof project.terrain !== 'object') fail('missing terrain.')
@@ -36,7 +39,7 @@ export function deserialize(json: string): Project {
   try {
     parsed = JSON.parse(json)
   } catch {
-    throw new Error('Not a valid Nestwright file: invalid JSON.')
+    fail('invalid JSON.')
   }
   return assertProject(migrate(parsed))
 }

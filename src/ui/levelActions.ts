@@ -6,7 +6,8 @@ import { getPlatform } from '../platform'
 import { selectActiveLevel, useStore } from '../store'
 import { startTraceCalibration } from '../tools/traceCalibrate'
 import { confirmIfNeeded } from './confirm'
-import { translate } from '../i18n'
+import { fill, translate } from '../i18n'
+import { levelDisplayName } from '../i18n/rooms'
 import { useSettings } from '../settings'
 import { fitVisible } from './fit'
 
@@ -88,9 +89,10 @@ export function deleteActiveLevel(): void {
   if (state.project.levels.length <= 1) return
   const active = selectActiveLevel(state)
   if (!active) return
-  const name = active.name || 'this level'
+  const language = useSettings.getState().language
+  const name = active.name ? levelDisplayName(language, active.name) : translate(language, 'this level')
   const fallback = state.project.levels.find((level) => level.id !== active.id)
-  const message = translate(useSettings.getState().language, 'Delete {name}? Walls on it are removed.').replace('{name}', name)
+  const message = fill(language, 'Delete {name}? Walls on it are removed.', { name })
   confirmIfNeeded(message, () => {
     state.apply('Delete level', (draft) => {
       removeLevel(draft.levels, active.id)

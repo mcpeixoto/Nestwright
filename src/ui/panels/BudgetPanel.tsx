@@ -21,6 +21,7 @@ import type { BudgetExtra } from '../../model/types'
 import { getPlatform } from '../../platform'
 import { useSettings } from '../../settings'
 import { useStore } from '../../store'
+import { roomDisplayName } from '../../i18n/rooms'
 import { icon } from '../../tools/icons'
 import { registerPanel, setPanelOpen } from './registry'
 
@@ -101,7 +102,7 @@ export function BudgetPanel() {
             : tr('Over by {amount}', { amount: money(-estimate.delta) })}
         </p>
       )}
-      <svg viewBox={`0 0 100 ${BUDGET_CATEGORIES.length * 10}`} width="100%" role="img" aria-label="Budget by category">
+      <svg viewBox={`0 0 100 ${BUDGET_CATEGORIES.length * 10}`} width="100%" role="img" aria-label={tr('Budget by category')}>
         {BUDGET_CATEGORIES.map((id, index) => {
           const amount = estimate.byCategory[id]
           const width = max > 0 ? (amount / max) * 100 : 0
@@ -183,7 +184,7 @@ export function BudgetPanel() {
           )}
           {estimate.byRoom.map((room) => (
             <tr key={room.key || 'outside'}>
-              <td>{room.name}</td>
+              <td>{roomDisplayName(locale, room.name)}</td>
               <td>{money(room.total)}</td>
             </tr>
           ))}

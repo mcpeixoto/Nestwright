@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useTranslate } from '../i18n'
+import { useSettings } from '../settings'
 import { useStore } from '../store'
 import { getTool } from '../tools/registry'
 import { T } from '../i18n/T'
@@ -29,11 +30,15 @@ export function PlanCanvas() {
       if (immediate) renderer.draw()
       else renderer.requestDraw()
     })
+    const stopLanguage = useSettings.subscribe((state, prev) => {
+      if (state.language !== prev.language) renderer.requestDraw()
+    })
     const observer = new ResizeObserver(() => renderer.requestDraw())
     observer.observe(canvas)
     renderer.draw()
     return () => {
       stop()
+      stopLanguage()
       observer.disconnect()
       input.dispose()
       renderer.dispose()

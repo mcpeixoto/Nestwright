@@ -2,6 +2,8 @@ import { pointInPolygon } from '../model/geometry'
 import { newId } from '../model/ids'
 import { outerOutline, roofOnOutline } from '../model/roofs'
 import { selectActiveLevel, useStore } from '../store'
+import { translate } from '../i18n'
+import { useSettings } from '../settings'
 import { icon } from './icons'
 import { registerTool } from './registry'
 
@@ -18,7 +20,7 @@ registerTool({
     if (!level) return
     const outline = outerOutline(level)
     if (outline.length < 3 || !pointInPolygon(ctx.point, outline)) {
-      state.setMessage('Click inside the walls to roof this level')
+      state.setMessage(translate(useSettings.getState().language, 'Click inside the walls to roof this level'))
       return
     }
     const existing = roofOnOutline(level, outline)

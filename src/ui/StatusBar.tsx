@@ -58,7 +58,7 @@ export function StatusBar() {
         </span>
       ) : null}
       <span>{plotArea}</span>
-      <span className="status-msg">{message}</span>
+      <span className="status-msg">{message ? tr(message) : message}</span>
     </footer>
   )
 }

@@ -13,7 +13,8 @@ import { intersectionArea } from './polygon'
 import type { Level, Project, Room, RoomProps, RoomType, Vec2, Wall } from './types'
 import { JOIN_EPS, locateOnWall, wallFrame } from './walls'
 
-const ROOM_LABEL: Record<RoomType, string> = {
+/** English default-name stems. New rooms are named `<stem> <n>`; the UI translates names still in that form. */
+export const ROOM_LABEL: Record<RoomType, string> = {
   living: 'Living',
   kitchen: 'Kitchen',
   dining: 'Dining',

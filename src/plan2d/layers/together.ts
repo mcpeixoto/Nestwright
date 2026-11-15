@@ -6,6 +6,8 @@ import type { Level, Wish } from '../../model/types'
 import { REACTION_GLYPH } from '../../model/wishes'
 import { wallPolygon } from '../../model/walls'
 import { getPresencePeers, getSelfId } from '../../net/presence'
+import { translate } from '../../i18n'
+import { useSettings } from '../../settings'
 import { roomsFor } from '../../store'
 import { showWishPins } from '../../ui/together/wishView'
 
@@ -133,7 +135,7 @@ registerPlanLayer({
         ctx2d.fill()
         ctx2d.restore()
         paperLabel(ctx2d, at.x, at.y - 16, [
-          { text: peer.name || 'Partner', font: '12px ui-sans-serif, system-ui, sans-serif', color: colour },
+          { text: peer.name || translate(useSettings.getState().language, 'Partner'), font: '12px ui-sans-serif, system-ui, sans-serif', color: colour },
         ])
       }
       if (peer.camera) {

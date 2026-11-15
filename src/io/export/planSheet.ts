@@ -8,6 +8,7 @@ import type { Item, Level, Opening, Project, Vec2, Wall } from '../../model/type
 import { formatArea, formatLength } from '../../model/units'
 import { openingInterval, pointAlongWall, wallDirection, wallPolygon } from '../../model/walls'
 import { fill, translate } from '../../i18n'
+import { levelDisplayName, roomDisplayName } from '../../i18n/rooms'
 
 export type PaperSize = 'A4' | 'A3'
 export type PlanScale = 50 | 100
@@ -510,14 +511,14 @@ export function roomClearSpans(net: readonly Vec2[]): { u: Vec2; v: Vec2; minU: 
   return { u, v, minU, maxU, minV, maxV }
 }
 
-function drawRooms(ink: Ink, level: Level, project: Project): void {
+function drawRooms(ink: Ink, level: Level, project: Project, language: string): void {
   const k = ink.frame.k
   for (const room of detectRooms(level)) {
     if (room.polygon.length < 3) continue
     const net = roomNetPolygon(level, room)
     const at = ink.p(polylabel(room.polygon, 0.08))
     const nameSize = k >= 20 ? 9 : 7.5
-    ink.out.push({ kind: 'text', at: { x: at.x, y: at.y - 0.6 }, text: room.name, size: nameSize, bold: true, anchor: 'middle', color: INK, tag: 'room-name' })
+    ink.out.push({ kind: 'text', at: { x: at.x, y: at.y - 0.6 }, text: roomDisplayName(language, room.name), size: nameSize, bold: true, anchor: 'middle', color: INK, tag: 'room-name' })
     const area = formatArea(roomNetArea(level, room), project.units)
     ink.out.push({ kind: 'text', at: { x: at.x, y: at.y + nameSize * 0.3528 + 0.6 }, text: area, size: nameSize - 1.5, anchor: 'middle', color: MUTED, tag: 'room-area' })
 
@@ -633,7 +634,7 @@ function drawStrip(out: Primitive[], width: number, height: number, input: Strip
   const text = (at: Vec2, value: string, size: number, opts: Partial<TextPrim> = {}) =>
     out.push({ kind: 'text', at, text: value, size, anchor: 'start', color: INK, tag: 'title', ...opts })
   text({ x: tx, y: y0 + 6.5 }, clip(project.name || tr('Untitled'), 12, tw, true), 12, { bold: true })
-  text({ x: tx, y: y0 + 11.8 }, clip(`${tr('Level')}: ${level.name}`, 8.5, tw), 8.5)
+  text({ x: tx, y: y0 + 11.8 }, clip(`${tr('Level')}: ${levelDisplayName(language, level.name)}`, 8.5, tw), 8.5)
   const totals = levelAreas(level)
   const rows = [
     `${tr('Scale')}: 1:${input.scale}   ${tr('Paper')}: ${input.paper} ${tr(input.orientation === 'landscape' ? 'Landscape' : 'Portrait')}`,
@@ -764,7 +765,7 @@ export function layoutPlanSheet(project: Project, level: Level, options: PlanShe
   }
   drawColumns(ink, level)
   drawItems(ink, level)
-  drawRooms(ink, level, project)
+  drawRooms(ink, level, project, language)
   drawOuterDimensions(ink, level, project)
   drawUserDimensions(ink, level, project)
   drawStrip(ink.out, size.width, size.height, { project, level, scale: options.scale, paper: options.paper, orientation, language, date, k })

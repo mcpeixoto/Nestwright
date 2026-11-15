@@ -1,5 +1,7 @@
 import { bindCrashGuard, type CrashReport, type ErrorHost } from '../../electron/crashLog'
 import { showToast } from '../achievements/toast'
+import { translate } from '../i18n'
+import { useSettings } from '../settings'
 
 export function installCrashGuard(): void {
   if (typeof window === 'undefined') return
@@ -10,6 +12,6 @@ export function installCrashGuard(): void {
       if (!report) return
       void report(entry).catch(() => {})
     },
-    showToast,
+    (text: string) => showToast(translate(useSettings.getState().language, text)),
   )
 }

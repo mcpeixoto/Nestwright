@@ -1,12 +1,14 @@
 import { enablePatches, produceWithPatches, applyPatches, type Patch } from 'immer'
 import { create } from 'zustand'
 import '../catalog'
+import { translate } from '../i18n'
 import { loadAutosave } from '../io/autosave'
 import { getTool } from '../tools/registry'
 import { levelToOpen } from '../model/openLevel'
 import { detectRooms, reconcileProjectRooms } from '../model/rooms'
 import type { Level, OpeningType, Project, Room } from '../model/types'
 import { createSampleProject } from '../sample'
+import { useSettings } from '../settings'
 
 enablePatches()
 
@@ -218,7 +220,7 @@ export const useStore = create<StoreState>((set, get) => ({
       set({
         past: nextPast,
         canUndo: nextPast.length > 0,
-        message: UNDO_BLOCKED,
+        message: translate(useSettings.getState().language, UNDO_BLOCKED),
       })
       return
     }
@@ -245,7 +247,7 @@ export const useStore = create<StoreState>((set, get) => ({
       set({
         future: nextFuture,
         canRedo: nextFuture.length > 0,
-        message: REDO_BLOCKED,
+        message: translate(useSettings.getState().language, REDO_BLOCKED),
       })
       return
     }

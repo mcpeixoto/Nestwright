@@ -3,6 +3,7 @@ import { Modal } from '../Modal'
 import { T } from '../../i18n/T'
 import { useTranslate } from '../../i18n'
 import { useSettings } from '../../settings'
+import { levelDisplayName } from '../../i18n/rooms'
 import { useStore } from '../../store'
 import { exportPlanPdf } from '../../io/export/images'
 import { layoutPlanSheets, sheetLevels, type PaperSize, type PlanScale } from '../../io/export/planSheet'
@@ -64,7 +65,7 @@ export function PlanPdfDialog({ onClose }: { onClose: () => void }) {
         {project.levels.map((level) => (
           <label key={level.id} className="check">
             <input type="checkbox" checked={picked.includes(level.id)} onChange={() => toggle(level.id)} />
-            {level.name}
+            {levelDisplayName(language, level.name)}
           </label>
         ))}
       </fieldset>
