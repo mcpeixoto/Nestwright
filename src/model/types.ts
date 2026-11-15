@@ -184,6 +184,10 @@ export interface Item {
   params: Record<string, number | string | boolean>;
   /** For lamps: on/off. */
   lightOn?: boolean;
+  /** For lamps: luminous flux. Absent means the catalog default. */
+  lumens?: number;
+  /** For lamps: colour temperature in kelvin. Absent means the catalog default. */
+  kelvin?: number;
   /** Price in the project's currency; defaults from catalog. */
   price?: number;
   locked?: boolean;

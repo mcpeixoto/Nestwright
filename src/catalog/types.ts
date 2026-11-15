@@ -27,7 +27,20 @@ export interface CatalogEntry {
   price: number
   materialSlots: Record<string, MaterialRef>
   params?: ParamDef[]
-  light?: { color: string; intensity: number; distance: number; offsetY: number; spot?: boolean; angle?: number }
+  light?: {
+    /** Shade tint before 0.7; lamps now take their colour from `kelvin`. */
+    color: string
+    /** Pre-0.7 relative intensity; old saves' `params.intensity` is read against it. */
+    intensity: number
+    /** Default luminous flux. */
+    lumens: number
+    /** Default colour temperature. */
+    kelvin: number
+    distance: number
+    offsetY: number
+    spot?: boolean
+    angle?: number
+  }
   /** Ceiling-hung, wall-mounted, or sitting on the floor. */
   mount?: 'floor' | 'wall' | 'ceiling'
   /** Preferred base height for wall-mounted items. */

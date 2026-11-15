@@ -117,7 +117,7 @@ const entries: CatalogEntry[] = [
     price: 320,
     materialSlots: { shade: ref('plaster-warm'), cord: ref('metal-black') },
     mount: 'ceiling',
-    light: { color: '#fff1d6', intensity: 36, distance: 7, offsetY: 0.4 },
+    light: { color: '#fff1d6', intensity: 36, lumens: 1200, kelvin: 2700, distance: 7, offsetY: 0.4 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()

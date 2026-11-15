@@ -1,5 +1,5 @@
 import { getEntry } from '../../../catalog/registry'
-import { clampKelvin, kelvinToHex } from '../../../model/light'
+import { clampKelvin, clampLumens, kelvinToHex, lampOutput, LUMENS_MAX, LUMENS_MIN } from '../../../model/light'
 import type { Item } from '../../../model/types'
 import { selectActiveLevel, useStore } from '../../../store'
 import { selectionFacts } from '../facts'
@@ -15,8 +15,7 @@ function LightSection() {
   const item = level?.items.find((entry) => entry.id === id)
   const entry = item ? getEntry(item.catalogId) : undefined
   if (!item || !entry?.light) return null
-  const kelvin = typeof item.params.kelvin === 'number' ? item.params.kelvin : 2700
-  const intensity = typeof item.params.intensity === 'number' ? item.params.intensity : entry.light.intensity
+  const { lumens, kelvin } = lampOutput(item, entry.light)
   const on = item.lightOn !== false
   const set = (label: string, recipe: (found: Item) => void) => {
     patchLevel(label, (draft) => {
@@ -46,7 +45,8 @@ function LightSection() {
           onChange={(event) => {
             const next = clampKelvin(Number(event.target.value))
             set('Light', (found) => {
-              found.params.kelvin = next
+              found.kelvin = next
+              delete found.params.kelvin
             })
           }}
         />
@@ -55,21 +55,23 @@ function LightSection() {
         </span>
       </label>
       <label className="field">
-        <T k="Intensity" />
+        <T k="Light output" />
         <input
           type="range"
-          min={0}
-          max={80}
-          step={1}
-          value={intensity}
-          aria-label={tr('Light intensity')}
+          min={LUMENS_MIN}
+          max={LUMENS_MAX}
+          step={10}
+          value={lumens}
+          aria-label={tr('Light output in lumens')}
           onChange={(event) => {
-            const next = Number(event.target.value)
+            const next = clampLumens(Number(event.target.value))
             set('Light', (found) => {
-              found.params.intensity = next
+              found.lumens = next
+              delete found.params.intensity
             })
           }}
         />
+        <span className="readout">{Math.round(lumens)} lm</span>
       </label>
     </div>
   )

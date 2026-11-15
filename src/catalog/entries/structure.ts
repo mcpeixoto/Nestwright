@@ -53,7 +53,7 @@ const entries: CatalogEntry[] = [
     defaultSize: { w: 0.5, d: 0.48, h: 0.8 },
     price: 890,
     materialSlots: { body: ref('metal-black'), glass: ref('glass') },
-    light: { color: '#ff9340', intensity: 10, distance: 3.5, offsetY: 0.35 },
+    light: { color: '#ff9340', intensity: 10, lumens: 350, kelvin: 1800, distance: 3.5, offsetY: 0.35 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()
@@ -72,7 +72,7 @@ const entries: CatalogEntry[] = [
     defaultSize: { w: 0.8, d: 0.45, h: 0.6 },
     price: 720,
     materialSlots: { frame: ref('metal-black'), fire: ref('paint-terracotta') },
-    light: { color: '#ff8c3a', intensity: 12, distance: 4, offsetY: 0.22 },
+    light: { color: '#ff8c3a', intensity: 12, lumens: 400, kelvin: 1800, distance: 4, offsetY: 0.22 },
     build: (ctx) => {
       const { w, d, h } = ctx.size
       const g = group()
