@@ -30,10 +30,15 @@ function byName(name: string): OrbitView {
 }
 
 describe('visual views', () => {
-  it('accepts the ten baseline views and rejects a bad one', () => {
+  it('accepts the ten baseline views plus the two lamp views and rejects a bad one', () => {
     expect(TEMPLATE_IDS).toEqual(TEMPLATES.map((item) => item.id))
     expect(validateViews(views)).toEqual([])
-    expect(shots).toHaveLength(10)
+    expect(shots).toHaveLength(12)
+    expect(shots.slice(10).map((view) => view.name)).toEqual(['night-lamps', 'day-lamps'])
+    const lampView = { name: 'lamp', template: 'family', time: 22, quality: 'high', camera: { kind: 'orbit', position: [0, 0, 0], target: [0, 1, 0] } }
+    expect(validateViews([{ ...lampView, lamps: [{ catalog: 'pendant-lamp', t: 0.5 }] }])).toEqual([])
+    expect(validateViews([{ ...lampView, lamps: [{ catalog: '', t: 'x' }] }])).toHaveLength(2)
+    expect(validateViews([{ ...lampView, lamps: [{ catalog: 'pendant-lamp', glow: 1 }] }])).not.toEqual([])
     expect(validateViews([{ name: 'nope', template: 'missing', time: 10, quality: 'high', camera: { kind: 'orbit', position: [0, 0, 0], target: [0, 1, 0] } }])).not.toEqual([])
   })
 

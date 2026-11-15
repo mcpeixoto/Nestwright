@@ -109,6 +109,9 @@ export class PostPipeline {
    */
   async precompile(tier: GraphicsQuality): Promise<void> {
     try {
+      // Start clean, like a frame (see render).
+      this.renderer.setRenderTarget(null)
+      this.renderer.setMRT(null)
       if (this.ensure(tier) && this.pipeline && this.scenePass) {
         // A pass that has never rendered is not set up yet (target type, sizes), and three's
         // compileAsync then builds pipelines for the wrong formats (invalid ones, logged as
@@ -154,6 +157,13 @@ export class PostPipeline {
     if (isCameraCut(this.lastCamera, now)) this.resetHistory()
     this.lastCamera = Array.from(now)
     this.motion?.update(this.camera)
+    // A frame always starts from the canvas with no MRT. PassNode.compileAsync sets its own
+    // target and MRT across awaits and puts back whatever it found, so overlapping compiles
+    // (a tier change during a precompile) could leave the scene pass's G-buffer bound: the
+    // output pass was then built against it ("Color target has no corresponding fragment
+    // stage output") and every frame after was invalid, the exposure meter included.
+    this.renderer.setRenderTarget(null)
+    this.renderer.setMRT(null)
     try {
       this.pipeline.render()
       this.framesSinceReset += 1

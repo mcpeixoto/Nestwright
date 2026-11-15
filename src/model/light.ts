@@ -68,13 +68,98 @@ export function spotCandela(lumens: number, angle: number): number {
   return Math.max(0, Number.isFinite(lumens) ? lumens : 0) / solid
 }
 
-/**
- * Scene units per candela. The sun and sky are not in lux (noon sun is ~2.5 irradiance
- * units, not 100 000 lx), so a physically sized lamp would vanish next to them. One factor
- * keeps lamps in proportion to each other and close to the hand-tuned R2 look: an 800 lm
- * pendant lands near the old pendant. Auto-exposure does the rest.
+/*
+ * Lamps in proportion to the sky.
+ *
+ * Sun, sky and moon are not in lux: the game tone-compresses the world, and night renders
+ * only ~1.3 stops below day (sun look exposure 0.42 vs 1.05) where a real night interior
+ * sits ~8 stops below a daylit one. A lamp is a fixed physical source, so its scene value
+ * has to follow the compression of whatever ambient it is seen against.
+ *
+ * Calibration, from the harness living room with no lamps (metered log2 luminance before
+ * exposure, R3 meter):
+ *   day   15:30   −4.44  → L = 0.046 scene units
+ *   night 22:30   −3.81  → L = 0.071 (moon, night sky and window spill, auto lights on)
+ * and the real rooms those stand for, at a mean reflectance ρ ≈ 0.5 (white walls, oak floor):
+ *   day   ~1000 lx   (500–2000 lx indoors near a window)
+ *   night ~3 lx      (a room lit only by moonlight and light from outside)
+ * Scene irradiance per lux is then π·L / (ρ·E):
+ *   day   π·0.046 / (0.5·1000) ≈ 2.9e-4
+ *   night π·0.071 / (0.5·3)    ≈ 0.149
+ * and in between it runs geometrically with the sun look's daylight (0 night … 1 day).
+ *
+ * Check: an 800 lm pendant is 64 cd; 2 m below it a table gets 16 lx from the bare bulb (a
+ * shaded pendant aims most of it down, ~50–100 lx). By day that is ~1.6 % of the room's
+ * daylight, invisible but for the glowing shade. At night it is ~5× the room's ambient: a
+ * clear pool with dimmer surroundings, and the meter rises 1–2 stops, inside the exposure range.
+ *
+ * The old fixed factor (8 scene units per candela) put that table at ~130 units, ~50 times
+ * the noon sun, which drove the meter to +4.5..+6 and bottomed the exposure out.
  */
-export const LAMP_SCENE_GAIN = 8
+/** Daylight illuminance of the reference room, lux. */
+export const REF_DAY_LUX = 1000
+/** Night illuminance of the reference room without lamps, lux. */
+export const REF_NIGHT_LUX = 3
+/** Metered log2 scene luminance of the reference room by day and by night, no lamps. */
+export const REF_DAY_LOG2 = -4.44
+export const REF_NIGHT_LOG2 = -3.81
+/** Mean reflectance assumed for the reference room. */
+export const REF_REFLECTANCE = 0.5
+
+function sceneUnitsPerLux(log2: number, lux: number): number {
+  return (Math.PI * Math.pow(2, log2)) / (REF_REFLECTANCE * lux)
+}
+
+export const SCENE_PER_LUX_DAY = sceneUnitsPerLux(REF_DAY_LOG2, REF_DAY_LUX)
+export const SCENE_PER_LUX_NIGHT = sceneUnitsPerLux(REF_NIGHT_LOG2, REF_NIGHT_LUX)
+
+/**
+ * Scene units per candela (= per lux at 1 m) for a lamp seen at `daylight` (0 night … 1
+ * day, the sun look's value): geometric between the night and day calibrations.
+ */
+export function lampSceneGain(daylight: number): number {
+  const d = Number.isFinite(daylight) ? Math.min(1, Math.max(0, daylight)) : 1
+  return Math.exp(Math.log(SCENE_PER_LUX_NIGHT) * (1 - d) + Math.log(SCENE_PER_LUX_DAY) * d)
+}
+
+/** Share of a lamp's flux a fabric or paper shade lets through, and the shade's glowing area. */
+export const SHADE_TRANSMISSION = 0.25
+export const SHADE_AREA_M2 = 0.25
+
+/**
+ * Luminance (cd/m², nits) of a lit shade: the flux it transmits spread over its area,
+ * Lambertian (L = τΦ / (π A)). An 800 lm lamp gives ~255 nits: a little brighter than a
+ * daylit white wall (~160), and far above everything else in a lamp-lit room at night.
+ */
+export function shadeLuminance(lumens: number): number {
+  const flux = Math.max(0, Number.isFinite(lumens) ? lumens : 0)
+  return (SHADE_TRANSMISSION * flux) / (Math.PI * SHADE_AREA_M2)
+}
+
+/**
+ * Rough mean illuminance (lux) lamps add to a room's surfaces: their flux spread over the
+ * room's inner area, raised by inter-reflection (1 / (1 − ρ)). For budgets and tests, not
+ * rendering.
+ */
+export function roomLampLux(lumens: readonly number[], area: { w: number; d: number; h: number }, reflectance = REF_REFLECTANCE): number {
+  const surface = 2 * (area.w * area.d) + 2 * area.h * (area.w + area.d)
+  if (!(surface > 0)) return 0
+  const flux = lumens.reduce((sum, lm) => sum + Math.max(0, Number.isFinite(lm) ? lm : 0), 0)
+  const rho = Math.min(0.9, Math.max(0, reflectance))
+  return flux / surface / (1 - rho)
+}
+
+/**
+ * Metered log2 scene luminance of the reference room at `daylight` with `lampLux` added by
+ * lamps (see roomLampLux): its ambient, interpolated like the gain, plus the lamps' share
+ * at the scene's lux scale.
+ */
+export function roomMeterLog2(daylight: number, lampLux: number): number {
+  const d = Number.isFinite(daylight) ? Math.min(1, Math.max(0, daylight)) : 1
+  const ambient = Math.pow(2, REF_NIGHT_LOG2 * (1 - d) + REF_DAY_LOG2 * d)
+  const lamps = (REF_REFLECTANCE / Math.PI) * Math.max(0, lampLux) * lampSceneGain(d)
+  return Math.log2(ambient + lamps)
+}
 
 export const LUMENS_MIN = 0
 export const LUMENS_MAX = 4000

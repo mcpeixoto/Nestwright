@@ -4,7 +4,18 @@ import { occupy } from '../catalog/parts'
 import { getEntry } from '../catalog/registry'
 import type { CatalogEntry } from '../catalog/types'
 import { getMaterial } from '../materials/materialCache'
-import { kelvinToLinear, LAMP_SCENE_GAIN, lampOutput, pointCandela, spotCandela } from '../model/light'
+import { kelvinToLinear, lampOutput, lampSceneGain, pointCandela, shadeLuminance, spotCandela } from '../model/light'
+
+/**
+ * Lamps carry their physical intensity in candela (userData.lampCandela); the lamp layer
+ * scales it to the scene every frame with lampSceneGain(daylight). Until it first does,
+ * they start at the daylight scale, where a lamp adds next to nothing.
+ */
+function lampLightData(light: THREE.Light, candela: number): void {
+  light.userData.lampLight = true
+  light.userData.lampCandela = candela
+  light.intensity = candela * lampSceneGain(1)
+}
 import type { Item, MaterialRef } from '../model/types'
 import { metricUVs } from './uv'
 
@@ -71,12 +82,11 @@ function tuneLamp(built: THREE.Object3D, item: Item, entry: CatalogEntry): void 
   const on = item.lightOn !== false
   const output = lampOutput(item, spec)
   const [r, g, b] = kelvinToLinear(output.kelvin)
-  // Luminance-1 light colour; the shade glows in the same colour, normalised to its brightest channel.
+  // Luminance-1 light colour, for the light and the shade's glow alike.
   const color = new THREE.Color().setRGB(r, g, b, THREE.LinearSRGBColorSpace)
-  const peak = Math.max(r, g, b, 1e-6)
-  const glow = new THREE.Color().setRGB(r / peak, g / peak, b / peak, THREE.LinearSRGBColorSpace)
-  // A dimmed lamp's shade glows less too; full glow from ~800 lm.
-  const glowScale = Math.min(1, Math.sqrt(output.lumens / 800))
+  // The shade glows at its physical luminance (shadeLuminance, nits), scaled to the scene
+  // like the light itself (the lamp layer redoes this every frame for the time of day).
+  const nits = shadeLuminance(output.lumens)
   built.traverse((child) => {
     if (!child.userData.shade) return
     const mesh = child as THREE.Mesh
@@ -85,11 +95,13 @@ function tuneLamp(built: THREE.Object3D, item: Item, entry: CatalogEntry): void 
     const next = source.clone()
     next.userData.owned = true
     if (on) {
-      next.emissive = glow.clone()
-      next.emissiveIntensity = 0.65 * glowScale
+      next.emissive = color.clone()
+      next.emissiveIntensity = nits * lampSceneGain(1)
+      mesh.userData.shadeNits = nits
     } else {
       next.emissive = new THREE.Color('#000000')
       next.emissiveIntensity = 0
+      delete mesh.userData.shadeNits
     }
     mesh.material = next
     if (source.userData?.owned) source.dispose()
@@ -98,11 +110,10 @@ function tuneLamp(built: THREE.Object3D, item: Item, entry: CatalogEntry): void 
   const scaleY = entry.defaultSize.h > 1e-4 ? item.size.h / entry.defaultSize.h : 1
   if (spec.spot) {
     const angle = spec.angle ?? Math.PI / 5
-    const intensity = spotCandela(output.lumens, angle) * LAMP_SCENE_GAIN
-    const spot = new THREE.SpotLight(color, intensity, spec.distance, angle, 0.45, 2)
+    const spot = new THREE.SpotLight(color, 0, spec.distance, angle, 0.45, 2)
     spot.position.y = spec.offsetY * scaleY
     spot.castShadow = false
-    spot.userData.lampLight = true
+    lampLightData(spot, spotCandela(output.lumens, angle))
     const target = new THREE.Object3D()
     target.position.set(0, 0, 0)
     built.add(spot)
@@ -110,9 +121,9 @@ function tuneLamp(built: THREE.Object3D, item: Item, entry: CatalogEntry): void 
     spot.target = target
     return
   }
-  const light = new THREE.PointLight(color, pointCandela(output.lumens) * LAMP_SCENE_GAIN, spec.distance, 2)
+  const light = new THREE.PointLight(color, 0, spec.distance, 2)
   light.position.y = spec.offsetY * scaleY
   light.castShadow = false
-  light.userData.lampLight = true
+  lampLightData(light, pointCandela(output.lumens))
   built.add(light)
 }

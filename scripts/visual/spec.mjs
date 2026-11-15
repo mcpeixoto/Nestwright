@@ -19,7 +19,10 @@ const VIEW_KEYS = new Set([
   'showRoofs',
   'levelDisplay',
   'autoLights',
+  'lamps',
 ])
+
+const LAMP_KEYS = new Set(['catalog', 't', 'side', 'elevation'])
 
 const ROOM_KEYS = new Set(['kind', 'room', 'eye', 'look'])
 const ORBIT_KEYS = new Set(['kind', 'position', 'target'])
@@ -80,6 +83,21 @@ export function validateViews(views) {
     }
     if (view.showRoofs != null && typeof view.showRoofs !== 'boolean') errors.push(`${label} showRoofs must be boolean`)
     if (view.autoLights != null && typeof view.autoLights !== 'boolean') errors.push(`${label} autoLights must be boolean`)
+    if (view.lamps != null) {
+      if (!Array.isArray(view.lamps)) errors.push(`${label} lamps must be an array`)
+      else {
+        view.lamps.forEach((lamp, i) => {
+          const odd = unknownKeys(lamp, LAMP_KEYS)
+          if (odd.length) errors.push(`${label} lamp ${i} has unknown fields: ${odd.join(', ')}`)
+          if (!lamp || typeof lamp.catalog !== 'string' || !lamp.catalog.trim()) errors.push(`${label} lamp ${i} needs a catalog id`)
+          for (const key of ['t', 'side', 'elevation']) {
+            if (lamp && lamp[key] != null && (typeof lamp[key] !== 'number' || !Number.isFinite(lamp[key]))) {
+              errors.push(`${label} lamp ${i} ${key} must be a number`)
+            }
+          }
+        })
+      }
+    }
     if (view.levelDisplay != null && !LEVEL_DISPLAYS.includes(view.levelDisplay)) {
       errors.push(`${label} levelDisplay is not a known mode`)
     }

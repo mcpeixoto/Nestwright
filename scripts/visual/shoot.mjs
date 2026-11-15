@@ -164,6 +164,34 @@ async function prepare(page, view) {
       store.apply('Visual harness', (draft) => {
         draft.environment.time = spec.time
         if (typeof spec.autoLights === 'boolean') draft.environment.autoLights = spec.autoLights
+        // Lamps, placed along the camera's line of sight on the plan: `t` 0 (eye) … 1 (look
+        // point), `side` metres to the right of that line. Ceiling lamps hang from the ceiling.
+        const level = draft.levels.find((l) => l.id === spec.levelId) ?? draft.levels[0]
+        if (level && spec.lamps?.length) {
+          const [ex, , ez] = spec.eye
+          const [tx, , tz] = spec.look
+          const len = Math.hypot(tx - ex, tz - ez) || 1
+          const ux = (tx - ex) / len
+          const uz = (tz - ez) / len
+          spec.lamps.forEach((lamp, i) => {
+            const entry = nw.getEntry?.(lamp.catalog)
+            if (!entry) throw new Error(`no catalog entry ${lamp.catalog}`)
+            const t = lamp.t ?? 0.5
+            const side = lamp.side ?? 0
+            const hang = entry.mount === 'ceiling' || lamp.catalog === 'pendant-lamp'
+            level.items.push({
+              id: `harness-lamp-${i}`,
+              catalogId: lamp.catalog,
+              position: { x: ex + (tx - ex) * t - uz * side, y: ez + (tz - ez) * t + ux * side },
+              elevation: hang ? Math.max(0, level.height - entry.defaultSize.h) : (lamp.elevation ?? 0),
+              rotation: 0,
+              size: { ...entry.defaultSize },
+              materials: Object.fromEntries(Object.entries(entry.materialSlots).map(([key, value]) => [key, { ...value }])),
+              params: {},
+              lightOn: true,
+            })
+          })
+        }
       })
       nw.useSettings.getState().setSettings({ graphicsQuality: spec.quality })
     },
@@ -174,6 +202,9 @@ async function prepare(page, view) {
       time: view.time,
       autoLights: view.autoLights,
       quality: view.quality,
+      lamps: view.lamps ?? null,
+      eye: raw.position,
+      look: raw.target,
     },
   )
   await page.waitForFunction(() => {
