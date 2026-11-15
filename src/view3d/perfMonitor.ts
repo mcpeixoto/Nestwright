@@ -85,6 +85,28 @@ interface PendingReport {
 }
 let pending: PendingReport | null = null
 
+const busyChecks = new Map<string, () => boolean>()
+
+/**
+ * Work that should finish before a settled report starts capturing (a probe bake, the
+ * exposure still adapting), so the window measures the steady view and a still taken after
+ * it shows the converged frame. `settle: 0` reports ignore it and measure that work instead.
+ */
+export function setSettleBusy(name: string, busy: () => boolean): void {
+  busyChecks.set(name, busy)
+}
+
+function settleBusy(): boolean {
+  for (const busy of busyChecks.values()) {
+    try {
+      if (busy()) return true
+    } catch {
+      /* a broken check does not hold the report */
+    }
+  }
+  return false
+}
+
 const extras = new Map<string, () => unknown>()
 
 /** Adds a named diagnostic (exposure, probe bake state) to every perf report. */
@@ -181,7 +203,7 @@ export function recordFrame(renderer: PerfRenderer, scene: GpuScene, dtMs: numbe
   latest.height = renderer.domElement.height
   latest.pixelRatio = renderer.getPixelRatio()
   let finishing = false
-  if (pending && !pending.capturing && pending.settle.push(latest.programs, renderingHeld())) {
+  if (pending && !pending.capturing && pending.settle.push(latest.programs, renderingHeld() || settleBusy())) {
     pending.capturing = true
     pending.programsAtStart = latest.programs
     capture.start(pending.frames)

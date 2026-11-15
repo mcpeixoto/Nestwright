@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { float, Fn, log2, luminance, max, texture, uv, vec2, vec4 } from 'three/tsl'
 import { adaptEv, evGain, meterAverage, targetEv } from '../../model/exposure'
-import { setPerfExtra } from '../perfMonitor'
+import { setPerfExtra, setSettleBusy } from '../perfMonitor'
 
 /** Meter target size: ~2300 samples, a 37 KB readback. */
 const METER_W = 64
@@ -115,6 +115,7 @@ export interface AutoExposureState {
 }
 
 const state: AutoExposureState = { ev: 0, target: 0, indoor: 0, meter: null }
+setSettleBusy('exposure', () => state.meter != null && Math.abs(state.ev - state.target) > 0.02)
 setPerfExtra('exposure', () => ({
   ev: Math.round(state.ev * 100) / 100,
   target: Math.round(state.target * 100) / 100,

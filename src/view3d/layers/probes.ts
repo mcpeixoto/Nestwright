@@ -15,7 +15,7 @@ import type { Level, Project } from '../../model/types'
 import { useSettings } from '../../settings'
 import { registerSceneLayer, type SceneViewState } from '../layers'
 import { PROBE_LAYER, PROBES_PER_BATCH, ProbeBaker, ProbeVolume, type BakeJob } from '../lighting/probeVolume'
-import { setPerfExtra } from '../perfMonitor'
+import { setPerfExtra, setSettleBusy } from '../perfMonitor'
 import { rendererBackend } from '../render/createRenderer'
 import { renderingHeld } from '../render/hold'
 
@@ -128,6 +128,8 @@ export interface ProbeStats {
   tier: string
   volumes: number
   baking: boolean
+  /** A bake is running or waiting for its debounce. */
+  pending: boolean
   bakes: number
   lastBakeMs: number
   lastBakeFrames: number
@@ -145,6 +147,7 @@ const stats: ProbeStats = {
   tier: 'off',
   volumes: 0,
   baking: false,
+  pending: false,
   bakes: 0,
   lastBakeMs: 0,
   lastBakeFrames: 0,
@@ -154,7 +157,8 @@ const stats: ProbeStats = {
   slow: [],
   precompiles: [],
 }
-setPerfExtra('probes', () => ({ ...stats, maxStepMs: Math.round(stats.maxStepMs * 10) / 10, lastBakeMs: Math.round(stats.lastBakeMs) }))
+setSettleBusy('probes', () => stats.pending)
+setPerfExtra('probes',() => ({ ...stats, maxStepMs: Math.round(stats.maxStepMs * 10) / 10, lastBakeMs: Math.round(stats.lastBakeMs) }))
 
 registerSceneLayer({
   id: 'probes',
@@ -198,6 +202,8 @@ registerSceneLayer({
       }
       slots = []
       job = null
+      stats.pending = false
+      stats.baking = false
     }
 
     const ensureTier = () => {
@@ -480,6 +486,7 @@ registerSceneLayer({
           const now = performance.now()
           reconcile(now)
           step(now)
+          stats.pending = job != null || slots.some((slot) => slot.due != null && slot.levelId != null)
         } catch (err) {
           console.error('[nestwright] probe bake failed', err)
           job = null
