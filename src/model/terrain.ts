@@ -924,33 +924,48 @@ function groundLevel(project: Project): Level | null {
 }
 
 const DOORISH = new Set(['door', 'double-door', 'sliding-door'])
+const BED_OPENINGS = new Set(['door', 'double-door', 'sliding-door', 'garage-door'])
+const BED_SPECIES = ['flowers-mixed', 'lavender', 'bush-flowering'] as const
 
-function frontDoor(level: Level): { point: Vec2; out: Vec2 } | null {
-  let cx = 0
-  let cy = 0
+function planCentroid(level: Level): Vec2 {
+  let x = 0
+  let y = 0
   let n = 0
   for (const wall of level.walls) {
-    cx += wall.a.x + wall.b.x
-    cy += wall.a.y + wall.b.y
+    x += wall.a.x + wall.b.x
+    y += wall.a.y + wall.b.y
     n += 2
   }
-  const centroid = n > 0 ? { x: cx / n, y: cy / n } : { x: 0, y: 0 }
+  return n > 0 ? { x: x / n, y: y / n } : { x: 0, y: 0 }
+}
+
+/** Left of `tangent`, flipped so it points away from the plan centroid. */
+function awayNormal(tangent: Vec2, point: Vec2, centroid: Vec2): Vec2 {
+  const out = perp(tangent)
+  return dot(out, sub(point, centroid)) < 0 ? { x: -out.x, y: -out.y } : out
+}
+
+function placedOpening(level: Level, wallId: string, offset: number, centroid: Vec2): { point: Vec2; out: Vec2 } | null {
+  const wall = level.walls.find((item) => item.id === wallId)
+  if (!wall) return null
+  const tangent = normalize(sub(wall.b, wall.a))
+  if (len(tangent) < 1e-6) return null
+  const point = pointAlongWall(wall, offset)
+  return { point, out: awayNormal(tangent, point, centroid) }
+}
+
+function frontDoor(level: Level): { point: Vec2; out: Vec2 } | null {
+  const centroid = planCentroid(level)
   let best: { point: Vec2; out: Vec2; score: number } | null = null
   for (const opening of level.openings) {
     if (!DOORISH.has(opening.type)) continue
-    const wall = level.walls.find((item) => item.id === opening.wallId)
-    if (!wall) continue
-    const point = pointAlongWall(wall, opening.offset)
-    const tangent = normalize(sub(wall.b, wall.a))
-    if (len(tangent) < 1e-6) continue
+    const placed = placedOpening(level, opening.wallId, opening.offset, centroid)
+    if (!placed) continue
     // Leave through the wall, away from the middle of the plan. Scoring by
     // distance alone picks an interior door and shoots the path sideways
     // across the garden (through the family-house pool).
-    let out = perp(tangent)
-    const away = sub(point, centroid)
-    if (dot(out, away) < 0) out = { x: -out.x, y: -out.y }
-    const score = dot(out, away)
-    if (!best || score > best.score) best = { point, out, score }
+    const score = dot(placed.out, sub(placed.point, centroid))
+    if (!best || score > best.score) best = { point: placed.point, out: placed.out, score }
   }
   return best ? { point: best.point, out: best.out } : null
 }
@@ -995,9 +1010,137 @@ function nearStructure(level: Level, point: Vec2, clearance: number): boolean {
   return false
 }
 
+/** Distance outside the room union. Null when the point is inside a room or there is no footprint. */
+function outsideFootprint(rooms: readonly { polygon: readonly Vec2[] }[], point: Vec2): number | null {
+  let best = Infinity
+  for (const room of rooms) {
+    if (room.polygon.length < 3) continue
+    const sd = signedDistanceToPolygon(point, room.polygon)
+    if (sd >= 0) return null
+    if (-sd < best) best = -sd
+  }
+  return Number.isFinite(best) ? best : null
+}
+
+function openingBlocks(level: Level, wall: Wall, along: number): boolean {
+  for (const opening of level.openings) {
+    if (opening.wallId !== wall.id || !BED_OPENINGS.has(opening.type)) continue
+    if (Math.abs(along - opening.offset) < opening.width * 0.5 + 1.2) return true
+  }
+  return false
+}
+
+function frontWalls(level: Level, centroid: Vec2, front: Vec2): { wall: Wall; out: Vec2 }[] {
+  const found: { wall: Wall; out: Vec2 }[] = []
+  for (const wall of level.walls) {
+    const tangent = normalize(sub(wall.b, wall.a))
+    if (len(tangent) < 1e-6) continue
+    const mid = { x: (wall.a.x + wall.b.x) / 2, y: (wall.a.y + wall.b.y) / 2 }
+    const out = awayNormal(tangent, mid, centroid)
+    if (dot(out, front) > 0) found.push({ wall, out })
+  }
+  return found
+}
+
+function onPatio(rooms: readonly { polygon: readonly Vec2[] }[], centroid: Vec2, back: Vec2, point: Vec2): boolean {
+  const outside = outsideFootprint(rooms, point)
+  if (outside === null || outside > 2.2) return false
+  return dot(sub(point, centroid), back) >= 0
+}
+
+function onPoolDeck(terrain: Terrain, point: Vec2): boolean {
+  for (const body of terrain.water) {
+    if (body.kind !== 'pool' || body.polygon.length < 3) continue
+    const sd = signedDistanceToPolygon(point, body.polygon)
+    if (sd < 0 && -sd <= 1.5) return true
+  }
+  return false
+}
+
+function onFlowerbed(
+  level: Level,
+  walls: readonly { wall: Wall; out: Vec2 }[],
+  rooms: readonly { polygon: readonly Vec2[] }[],
+  path: readonly Vec2[] | null,
+  point: Vec2,
+): boolean {
+  if (outsideFootprint(rooms, point) === null) return false
+  if (path && distanceToPolyline(point, path, false) < 0.7) return false
+  for (const { wall, out } of walls) {
+    const hit = closestPointOnSegment(point, wall.a, wall.b)
+    const delta = sub(point, hit.point)
+    const distance = len(delta)
+    if (!(distance > 0) || distance > 0.9 || dot(delta, out) <= 0) continue
+    if (openingBlocks(level, wall, hit.t * dist(wall.a, wall.b))) continue
+    return true
+  }
+  return false
+}
+
+function shootToRing(terrain: Terrain, ring: readonly Vec2[], origin: Vec2, dir: Vec2, standOff: number): Vec2[] {
+  const start = add(origin, scale(dir, standOff))
+  const end = rayToRing(start, dir, ring) ?? add(start, scale(dir, Math.min(terrain.width, terrain.depth) * 0.35))
+  return [start, end]
+}
+
+function paintYard(terrain: Terrain, paving: (world: Vec2) => boolean, soil: (world: Vec2) => boolean): void {
+  const weights = decodeSplat(terrain.splat, splatLength(terrain))
+  const pave = layerIndex('paving')
+  const earth = layerIndex('soil')
+  const n = terrain.resolution
+  let changed = false
+  for (let iy = 0; iy <= n; iy++) {
+    for (let ix = 0; ix <= n; ix++) {
+      const world = gridToWorld(terrain, ix, iy)
+      const index = gridIndex(ix, iy, n)
+      if (paving(world)) {
+        blendSample(weights, index, pave, 1)
+        changed = true
+      } else if (soil(world)) {
+        blendSample(weights, index, earth, 1)
+        changed = true
+      }
+    }
+  }
+  if (changed) terrain.splat = encodeSplat(weights)
+}
+
+function flowerbedPlants(
+  level: Level,
+  walls: readonly { wall: Wall; out: Vec2 }[],
+  rooms: readonly { polygon: readonly Vec2[] }[],
+  path: readonly Vec2[] | null,
+  seed: number,
+): Terrain['plants'] {
+  const rng = mulberry32(seed ^ 0xb3d)
+  const plants: Terrain['plants'] = []
+  for (const { wall, out } of walls) {
+    const span = dist(wall.a, wall.b)
+    if (span < 0.35) continue
+    const steps = Math.max(1, Math.round(span / 0.7))
+    const dir = normalize(sub(wall.b, wall.a))
+    for (let s = 0; s < steps; s++) {
+      const along = ((s + 0.5) / steps) * span
+      if (openingBlocks(level, wall, along)) continue
+      const position = add(add(wall.a, scale(dir, along)), scale(out, 0.45))
+      if (rooms.some((room) => pointInPolygon(position, room.polygon))) continue
+      if (path && distanceToPolyline(position, path, false) < 0.7) continue
+      plants.push({
+        id: `bed_${seed}_${plants.length}`,
+        species: BED_SPECIES[Math.floor(rng() * BED_SPECIES.length)] ?? 'flowers-mixed',
+        position,
+        scale: 0.8 + rng() * 0.3,
+        rotation: rng() * Math.PI * 2,
+      })
+    }
+  }
+  return plants
+}
+
 /**
- * Lawn around the house, a gravel path to the front door when one exists,
- * trees inside the plot and a hedge on the boundary. Same seed, same garden.
+ * Lawn around the house, patio, driveway, pool deck and front beds, a gravel
+ * path to the front door, trees inside the plot and a hedge on the boundary.
+ * Same seed, same garden.
  */
 export function generateGarden(project: Project, seed: number): void {
   const terrain = project.terrain
@@ -1020,12 +1163,30 @@ export function generateGarden(project: Project, seed: number): void {
     terrain.splat = encodeSplat(weights)
   }
   const level = groundLevel(project)
+  const centroid = level ? planCentroid(level) : { x: 0, y: 0 }
   const door = level ? frontDoor(level) : null
-  if (door && ring.length >= 2) {
-    const start = add(door.point, scale(door.out, 0.75))
-    const end = rayToRing(start, door.out, ring) ?? add(start, scale(door.out, Math.min(terrain.width, terrain.depth) * 0.35))
-    paintPath(terrain, [start, end], 1.4, 'gravel')
+  const front = door ? door.out : { x: 0, y: -1 }
+  const back = { x: -front.x, y: -front.y }
+  const rooms = level ? detectRooms(level) : []
+  const fronts = level ? frontWalls(level, centroid, front) : []
+  const path = door && ring.length >= 2 ? shootToRing(terrain, ring, door.point, door.out, 0.75) : null
+  const drives: Vec2[][] = []
+  if (level && ring.length >= 2) {
+    for (const opening of level.openings) {
+      if (opening.type !== 'garage-door') continue
+      const placed = placedOpening(level, opening.wallId, opening.offset, centroid)
+      if (!placed) continue
+      drives.push(shootToRing(terrain, ring, placed.point, placed.out, 0.5))
+    }
   }
+  paintYard(
+    terrain,
+    (world) => onPatio(rooms, centroid, back, world) || onPoolDeck(terrain, world),
+    (world) => (level && fronts.length > 0 ? onFlowerbed(level, fronts, rooms, path, world) : false),
+  )
+  for (const drive of drives) paintPath(terrain, drive, 3, 'paving')
+  // After the bed and patio, so the front path stays gravel where they meet.
+  if (path) paintPath(terrain, path, 1.4, 'gravel')
   const plants: Terrain['plants'] = []
   if (ring.length >= 2) {
     const closed = ring.length >= 3
@@ -1050,9 +1211,9 @@ export function generateGarden(project: Project, seed: number): void {
       }
     }
   }
+  if (level) plants.push(...flowerbedPlants(level, fronts, rooms, path, numericSeed))
   const area = Math.abs(polygonArea(ring))
   const treeCount = clamp(Math.round(area / 90), 3, 12)
-  const rooms = level ? detectRooms(level) : []
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity
@@ -1064,10 +1225,16 @@ export function generateGarden(project: Project, seed: number): void {
     maxY = Math.max(maxY, p.y)
   }
   const species = ['oak', 'birch', 'pine', 'olive', 'fruit-tree', 'cypress']
+  const laid = decodeSplat(terrain.splat, splatLength(terrain))
+  const hard = new Set([layerIndex('paving'), layerIndex('soil')])
   const trees = scatterFiltered(minX + 2, minY + 2, maxX - 2, maxY - 2, treeCount, 4.5, numericSeed ^ 0x9e3779b9, (point) => {
     if (ring.length >= 3 && !pointInPolygon(point, ring)) return false
     if (level && nearStructure(level, point, 2.4)) return false
     for (const room of rooms) if (pointInPolygon(point, room.polygon)) return false
+    const g = worldToGrid(terrain, point.x, point.y)
+    const ix = clamp(Math.round(g.x), 0, terrain.resolution)
+    const iy = clamp(Math.round(g.y), 0, terrain.resolution)
+    if (hard.has(dominantLayer(laid, gridIndex(ix, iy, terrain.resolution)))) return false
     return true
   })
   const rng = mulberry32(numericSeed ^ 0x51f1e)
