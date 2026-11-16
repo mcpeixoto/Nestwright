@@ -4,6 +4,7 @@ import { getMaterialDef, type MaterialDef } from './library'
 import { albedoTint, loadPbrMaps, pbrScalars, type PbrMaps } from './pbrTextures'
 import { getPatternTextures } from './textures'
 import { reflectRoom } from '../view3d/lighting/reflectionProbe'
+import { attachFacadeWeathering } from './facadeWeathering'
 
 const cache = new Map<string, THREE.MeshStandardMaterial>()
 /** Cache key of every material this module handed out, so an outdoor twin can be found from a mesh. */
@@ -15,15 +16,29 @@ export interface MaterialOptions {
    * nodes go on this twin only, so the same library material indoors stays dry.
    */
   outdoor?: boolean
+  /**
+   * An outdoor twin that also weathers (grime, rain streaks, colour drift) for the exterior
+   * faces of walls. Needs the `weather` vertex attribute (see facadeWeathering).
+   */
+  facade?: boolean
 }
 
 const OUTDOOR_SUFFIX = '|outdoor'
+// Ends in OUTDOOR_SUFFIX: a facade twin is an outdoor twin, so weather and outdoor lights take it.
+const FACADE_SUFFIX = '|facade' + OUTDOOR_SUFFIX
 
 export function materialCacheKey(ref: MaterialRef | undefined, options?: MaterialOptions): string {
   const id = ref?.id || 'plaster-white'
   const tint = ref?.tint ?? ''
   const scale = ref?.scale && ref.scale > 0 ? ref.scale : 1
-  return `${id}|${tint}|${scale}${options?.outdoor ? OUTDOOR_SUFFIX : ''}`
+  const suffix = options?.facade ? FACADE_SUFFIX : options?.outdoor ? OUTDOOR_SUFFIX : ''
+  return `${id}|${tint}|${scale}${suffix}`
+}
+
+function baseKey(key: string): string {
+  if (key.endsWith(FACADE_SUFFIX)) return key.slice(0, -FACADE_SUFFIX.length)
+  if (key.endsWith(OUTDOOR_SUFFIX)) return key.slice(0, -OUTDOOR_SUFFIX.length)
+  return key
 }
 
 /** True for a material from this cache (shared; callers must not dispose or patch it in place). */
@@ -43,17 +58,33 @@ export function isOutdoorMaterial(material: THREE.Material | null | undefined): 
 export function outdoorVariant<T extends THREE.Material>(material: T): T | THREE.MeshStandardMaterial {
   const key = keys.get(material)
   if (key === undefined || key.endsWith(OUTDOOR_SUFFIX)) return material
-  const outdoorKey = key + OUTDOOR_SUFFIX
-  const hit = cache.get(outdoorKey)
+  return twinOf(material, key + OUTDOOR_SUFFIX)
+}
+
+/**
+ * The weathered outdoor twin of a cached library material, for exterior wall faces. A material
+ * this cache did not create is returned as it is.
+ */
+export function facadeVariant<T extends THREE.Material>(material: T): T | THREE.MeshStandardMaterial {
+  const key = keys.get(material)
+  if (key === undefined || key.endsWith(FACADE_SUFFIX)) return material
+  const twin = twinOf(material, baseKey(key) + FACADE_SUFFIX)
+  attachFacadeWeathering(twin)
+  return twin
+}
+
+function twinOf(material: THREE.Material, twinKey: string): THREE.MeshStandardMaterial {
+  const hit = cache.get(twinKey)
   if (hit) return hit
-  const twin = (material as unknown as THREE.MeshStandardMaterial).clone()
-  twin.userData = { ...material.userData, outdoor: true }
+  const original = cache.get(baseKey(twinKey)) ?? (material as unknown as THREE.MeshStandardMaterial)
+  const twin = original.clone()
+  twin.userData = { ...original.userData, outdoor: true }
   // Outdoors reflects the sky, never the camera's room (clone() does not copy envNode anyway).
   ;(twin as THREE.MeshStandardMaterial & { envNode?: unknown }).envNode = null
-  cache.set(outdoorKey, twin)
-  keys.set(twin, outdoorKey)
+  cache.set(twinKey, twin)
+  keys.set(twin, twinKey)
   // A twin cloned before the scan arrived still has the procedural maps; give it its own swap.
-  const source = pbrSources.get(material)
+  const source = pbrSources.get(original)
   if (source) requestPbr(twin, source)
   return twin
 }
@@ -124,6 +155,7 @@ function requestPbr(mat: THREE.MeshStandardMaterial, source: PbrSource): void {
  * at scale 1. Tint multiplies the colour (or the texture, when one exists).
  */
 export function getMaterial(ref: MaterialRef | undefined, options?: MaterialOptions): THREE.MeshStandardMaterial {
+  if (options?.facade) return facadeVariant(getMaterial(ref)) as THREE.MeshStandardMaterial
   if (options?.outdoor) return outdoorVariant(getMaterial(ref)) as THREE.MeshStandardMaterial
   const id = ref?.id || 'plaster-white'
   const tint = ref?.tint ?? ''
