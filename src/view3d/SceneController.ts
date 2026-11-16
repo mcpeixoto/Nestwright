@@ -59,6 +59,8 @@ interface Bucket {
   /** The storey above sets the ceiling line the wall trim follows. */
   aboveWalls: Level['walls'] | undefined
   aboveSlab: number | undefined
+  /** Lowest storey (ties included). Flipping it rebuilds the walls so the plinth comes and goes. */
+  ground: boolean
   elevation: number
   height: number
   slab: number
@@ -452,6 +454,8 @@ export class SceneController {
       disposeTree(bucket.group)
       this.levels.delete(id)
     }
+    let lowest = Infinity
+    for (const level of project.levels) lowest = Math.min(lowest, level.elevation)
     for (const level of project.levels) {
       let bucket = this.levels.get(level.id)
       if (!bucket) {
@@ -462,11 +466,13 @@ export class SceneController {
       const below = levelBelow(project, level)
       const above = levelAbove(project, level)
       const belowStairs = below?.stairs
+      const ground = level.elevation <= lowest + 1e-6
       const same =
         bucket.walls === level.walls &&
         bucket.openings === level.openings &&
         bucket.rooms === level.rooms &&
         bucket.elevation === level.elevation &&
+        bucket.ground === ground &&
         bucket.height === level.height &&
         bucket.slab === level.slabThickness &&
         bucket.belowStairs === belowStairs &&
@@ -481,7 +487,7 @@ export class SceneController {
         const trim = resolveTrim(level.trim)
         const ceiling = above ? { rooms: roomsFor(above), slab: above.slabThickness } : undefined
         for (const wall of level.walls) {
-          bucket.structural.add(buildWall(wall, level, level.walls, { rooms, trim, above: ceiling }))
+          bucket.structural.add(buildWall(wall, level, level.walls, { rooms, trim, above: ceiling, ground }))
           if (wall.kind === 'railing') continue
           for (const opening of level.openings) {
             if (opening.wallId === wall.id) bucket.structural.add(buildOpening(opening, wall, level.elevation, { rooms }))
@@ -503,6 +509,7 @@ export class SceneController {
         bucket.openings = level.openings
         bucket.rooms = level.rooms
         bucket.elevation = level.elevation
+        bucket.ground = ground
         bucket.height = level.height
         bucket.slab = level.slabThickness
       }
@@ -885,6 +892,7 @@ function emptyBucket(): Bucket {
     trim: undefined,
     aboveWalls: undefined,
     aboveSlab: undefined,
+    ground: false,
     elevation: Number.NaN,
     height: Number.NaN,
     slab: Number.NaN,
