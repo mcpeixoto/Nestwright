@@ -12,6 +12,7 @@ scripts regenerate only the content-pack table below.
 | asset | source | author | licence | date fetched | sha256 | processed files |
 | --- | --- | --- | --- | --- | --- | --- |
 | Noto Sans Regular/Bold (Latin subset) | npm @expo-google-fonts/noto-sans@0.4.2 (notofonts/latin-greek-cyrillic) | The Noto Project Authors | OFL-1.1 | 2026-11-14 | Regular `f969d66bd9a730394fbd10bfb1dbf6fb7c0c8944f8e1c16c4b44f799e9240079`, Bold `da3bbabddcf69ceb84bab23425753796b2aa5b341a0d59d0f206a318d47e5fcb` | src/io/export/fonts/*.ttf (pyftsubset Latin) |
+| BiRefNet model code (birefnet.py, BiRefNet_config.py, config.json) | huggingface.co/ZhengPeng7/BiRefNet at e2bf8e4 | Peng Zheng et al. | MIT | 2026-11-15 | birefnet.py `208771ae626f653d64128fbf2d6ac9f8e645c5cc5e286258a73ec3322bbfe5ef` | scripts/photo3d/vendor/birefnet_code (photo-to-3D converter only; not in the app bundle) |
 
 ## npm dependencies that carry art
 

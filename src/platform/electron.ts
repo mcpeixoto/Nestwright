@@ -1,5 +1,5 @@
 import { steamFromBridge } from './steam'
-import type { Platform } from './types'
+import { PHOTO3D_UNAVAILABLE, type Platform } from './types'
 
 export function electronPlatform(): Platform {
   const bridge = window.nestwright
@@ -28,5 +28,6 @@ export function electronPlatform(): Platform {
     onCoopClose: (cb) => bridge.onCoopClose?.(cb) ?? (() => {}),
     quit: () => bridge.quit?.() ?? Promise.resolve(),
     steam: steamFromBridge(bridge.steam),
+    photo3d: bridge.photo3d ? { available: true, ...bridge.photo3d } : PHOTO3D_UNAVAILABLE,
   }
 }

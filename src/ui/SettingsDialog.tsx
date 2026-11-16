@@ -11,6 +11,7 @@ import {
   type ToneMapSetting,
 } from '../settings'
 import { EV_COMP_MAX, EV_COMP_MIN, formatEv } from '../model/exposure'
+import { getPlatform } from '../platform'
 import { useStore } from '../store'
 import { Modal } from './Modal'
 import { isSettingsOpen, setSettingsOpen, subscribeSettings } from './settingsDialogState'
@@ -45,6 +46,7 @@ export function SettingsDialog() {
   if (!open) return null
   const set = useSettings.getState().setSettings
   const showPlayer = coopJoinAvailable()
+  const showPhoto3d = getPlatform().photo3d?.available === true
   return (
     <Modal className="settings-dialog" label={tr('Settings')} onClose={() => setSettingsOpen(false)}>
         <h2>
@@ -198,6 +200,22 @@ export function SettingsDialog() {
           />
           <T k="Continue last project" />
         </label>
+        {showPhoto3d && (
+          <label className="field">
+            <T k="Photo to 3D converter" />
+            <input
+              type="text"
+              spellCheck={false}
+              aria-label={tr('Photo to 3D converter')}
+              placeholder="/path/to/photo3d.sh"
+              value={settings.photo3dCommand}
+              onChange={(event) => set({ photo3dCommand: event.target.value })}
+            />
+            <span className="hint">
+              <T k="Full path of the program that turns photos into a 3D model. Empty uses NESTWRIGHT_PHOTO3D." />
+            </span>
+          </label>
+        )}
         <h3>
           <T k="Sound" />
         </h3>
