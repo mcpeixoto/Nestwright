@@ -5,8 +5,10 @@ import { forgetThumb, requestThumb } from '../catalog/thumbnails'
 import type { CatalogEntry } from '../catalog/types'
 import { getEntry, listEntries, registerEntries, unregisterEntry } from '../catalog/registry'
 import { fill, translate } from '../i18n'
+import { fitScale, type AssetFit } from '../model/assetFit'
 import { newId } from '../model/ids'
-import type { ImportedAsset } from '../model/types'
+import { addItem } from '../model/ops'
+import type { ImportedAsset, Vec2 } from '../model/types'
 import { getPlatform } from '../platform'
 import { useSettings } from '../settings'
 import { useStore } from '../store'
@@ -54,19 +56,15 @@ function cloneModel(source: THREE.Object3D): THREE.Group {
   return clone
 }
 
-function fit(clone: THREE.Object3D, size: { w: number; d: number; h: number }): void {
+function fit(clone: THREE.Object3D, size: { w: number; d: number; h: number }, mode?: AssetFit): void {
   clone.position.set(0, 0, 0)
   clone.scale.set(1, 1, 1)
   clone.updateMatrixWorld(true)
   const box = new THREE.Box3().setFromObject(clone)
   const measured = new THREE.Vector3()
   box.getSize(measured)
-  const uniform = Math.min(
-    size.w / Math.max(measured.x, 1e-4),
-    size.h / Math.max(measured.y, 1e-4),
-    size.d / Math.max(measured.z, 1e-4),
-  )
-  clone.scale.setScalar(Number.isFinite(uniform) ? uniform : 1)
+  const scale = fitScale(measured, size, mode)
+  clone.scale.set(scale.x, scale.y, scale.z)
   clone.updateMatrixWorld(true)
   const fitted = new THREE.Box3().setFromObject(clone)
   const center = new THREE.Vector3()
@@ -89,8 +87,28 @@ function finish(assetId: string, source: THREE.Object3D): void {
   cache.set(assetId, holder)
   const measured = clampMeasured(size.x, size.y, size.z)
   const entry = getEntry(catalogIdForAsset(assetId))
-  if (entry) entry.defaultSize = measured
   const catalogId = catalogIdForAsset(assetId)
+  const stretch = useStore.getState().project.assets.some((asset) => asset.id === assetId && asset.fit === 'stretch')
+  if (stretch) {
+    // A model made from photos keeps the real size the player typed; more copies from the
+    // Library get that size too, not the converter's arbitrary scale.
+    const placed = placedSize(catalogId)
+    if (entry && placed) entry.defaultSize = { ...placed }
+    else if (entry) entry.defaultSize = measured
+    if (!placed) return
+    useStore.getState().apply('Model ready', (draft) => {
+      for (const level of draft.levels) {
+        for (const item of level.items) {
+          if (item.catalogId !== catalogId) continue
+          const ready = typeof item.params.ready === 'number' ? item.params.ready : 0
+          item.params.ready = ready + 1
+        }
+      }
+    })
+    requestThumb(catalogId)
+    return
+  }
+  if (entry) entry.defaultSize = measured
   const used = useStore.getState().project.levels.some((level) => level.items.some((item) => item.catalogId === catalogId))
   if (!used) return
   useStore.getState().apply('Model ready', (draft) => {
@@ -104,6 +122,14 @@ function finish(assetId: string, source: THREE.Object3D): void {
     }
   })
   requestThumb(catalogId)
+}
+
+function placedSize(catalogId: string): { w: number; d: number; h: number } | null {
+  for (const level of useStore.getState().project.levels) {
+    const item = level.items.find((entry) => entry.catalogId === catalogId)
+    if (item) return item.size
+  }
+  return null
 }
 
 function parseAsset(asset: ImportedAsset): void {
@@ -149,7 +175,8 @@ function registerImportedAsset(asset: ImportedAsset): void {
       tags: ['imported'],
       defaultSize: { w: 1, d: 1, h: 1 },
       price: 120,
-      materialSlots: { body: { id: 'plaster-white' } },
+      // The model keeps its own materials once loaded, so there is nothing to pick.
+      materialSlots: {},
       build(ctx) {
         const g = new THREE.Group()
         const cached = cache.get(asset.id)
@@ -164,7 +191,7 @@ function registerImportedAsset(asset: ImportedAsset): void {
           return g
         }
         const clone = cloneModel(cached)
-        fit(clone, ctx.size)
+        fit(clone, ctx.size, asset.fit)
         g.add(clone)
         return g
       },
@@ -213,6 +240,54 @@ export async function importModelFile(): Promise<void> {
     draft.assets.push(asset)
   })
   registerImportedAsset(asset)
+}
+
+/**
+ * Stores a GLB made from photos as a project asset and places one item of it, at `size`
+ * exactly, on `levelId` at `position`. One apply, so one undo removes both.
+ */
+export function addPhotoFurniture(options: {
+  name: string
+  data: string
+  size: { w: number; d: number; h: number }
+  levelId: string
+  position: Vec2
+  /** Plan rotation in radians; 0 when left out. */
+  rotation?: number
+}): { assetId: string; itemId: string } | null {
+  const language = useSettings.getState().language
+  const asset: ImportedAsset = {
+    id: newId('asset'),
+    name: options.name.trim() || translate(language, 'Furniture from photo'),
+    format: 'glb',
+    data: options.data,
+    fit: 'stretch',
+  }
+  registerImportedAsset(asset)
+  const entry = getEntry(catalogIdForAsset(asset.id))
+  if (!entry) return null
+  entry.defaultSize = { ...options.size }
+  const itemId = newId('item')
+  let placed = false
+  useStore.getState().apply('Add furniture from photo', (draft) => {
+    const level = draft.levels.find((item) => item.id === options.levelId)
+    if (!level) return
+    draft.assets.push(asset)
+    addItem(level, {
+      id: itemId,
+      catalogId: entry.id,
+      position: { x: options.position.x, y: options.position.y },
+      elevation: 0,
+      rotation: options.rotation ?? 0,
+      size: { ...options.size },
+      materials: Object.fromEntries(Object.entries(entry.materialSlots).map(([key, value]) => [key, { ...value }])),
+      params: {},
+      price: entry.price,
+    })
+    placed = true
+  })
+  if (!placed) return null
+  return { assetId: asset.id, itemId }
 }
 
 export function removeImportedModel(assetId: string): void {

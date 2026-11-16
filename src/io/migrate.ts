@@ -13,6 +13,7 @@ function invalid(key: string, vars: Record<string, string | number> = {}): Error
  * Optional Budget.overrides and Budget.extras are absent on older files;
  * readers treat a missing field as unset, so those files load unchanged.
  * Optional Project.brief is the same: a file without it loads unchanged.
+ * Optional ImportedAsset.fit too: absent means `uniform`, how every older import was fitted.
  */
 export function migrate(data: unknown): unknown {
   if (!data || typeof data !== 'object') {

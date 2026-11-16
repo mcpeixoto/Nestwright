@@ -8,6 +8,7 @@ import { bootImportedModels, catalogIdForAsset, importModelFile, removeImportedM
 import { useSettings } from '../settings'
 import { useStore } from '../store'
 import { beginPlace } from '../tools/placeItem'
+import { PhotoFurnitureDialog } from './PhotoFurnitureDialog'
 
 function categoryLabel(id: string): string {
   if (id === 'imported') return 'My models'
@@ -21,6 +22,7 @@ export function LibraryDrawer() {
   const tr = useTranslate()
   const [category, setCategory] = useState<string>('living')
   const [query, setQuery] = useState('')
+  const [photoOpen, setPhotoOpen] = useState(false)
   const revision = useSyncExternalStore(subscribeThumbs, thumbRevision, () => 0)
   const assets = useStore((s) => s.project.assets)
   const needle = query.trim().toLowerCase()
@@ -51,6 +53,10 @@ export function LibraryDrawer() {
       <button type="button" onClick={() => void importModelFile()}>
         <T k="Import model" />
       </button>
+      <button type="button" onClick={() => setPhotoOpen(true)}>
+        <T k="From photo…" />
+      </button>
+      {photoOpen && <PhotoFurnitureDialog onClose={() => setPhotoOpen(false)} />}
       <div className="cats">
         {DRAWER_CATEGORIES.map((item) => (
           <button type="button" key={item.id} className={item.id === category ? 'on' : ''} onClick={() => setCategory(item.id)}>

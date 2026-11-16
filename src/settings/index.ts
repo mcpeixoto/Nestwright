@@ -46,6 +46,11 @@ export interface Settings {
   muted: boolean
   /** Best star count per brief id. Older saved settings omit this. */
   briefStars: Record<string, number>
+  /**
+   * Absolute path of the local photo-to-3D converter (desktop app only). Empty falls back to
+   * the NESTWRIGHT_PHOTO3D environment variable. Older saved settings omit this.
+   */
+  photo3dCommand: string
 }
 
 const KEY = 'nestwright:settings'
@@ -77,6 +82,7 @@ export const DEFAULT_SETTINGS: Settings = {
   volumeAmbience: 50,
   muted: false,
   briefStars: {},
+  photo3dCommand: '',
 }
 
 function clamp(value: number, min: number, max: number, fallback: number): number {
@@ -120,7 +126,18 @@ export function normalizeSettings(partial: Partial<Settings> | null | undefined)
     volumeAmbience: volumePercent(source.volumeAmbience, DEFAULT_SETTINGS.volumeAmbience),
     muted: source.muted === true,
     briefStars: normalizeBriefStars(source.briefStars),
+    photo3dCommand: normalizeCommandPath(source.photo3dCommand),
   }
+}
+
+/** A path, trimmed, with surrounding quotes (from a pasted "Copy as pathname") removed. One line, capped. */
+export function normalizeCommandPath(value: unknown): string {
+  if (typeof value !== 'string') return ''
+  let text = value.replace(/[\r\n\0]/g, '').trim()
+  if (text.length >= 2 && ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("'") && text.endsWith("'")))) {
+    text = text.slice(1, -1).trim()
+  }
+  return text.slice(0, 1024)
 }
 
 function volumePercent(value: unknown, fallback: number): number {

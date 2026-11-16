@@ -1033,6 +1033,31 @@ export const en = {
   '{used} of {limit}': '{used} of {limit}',
   '{n} stars': '{n} stars',
   '{n} stars of {max}': '{n} stars of {max}',
+  'From photo…': 'From photo…',
+  'Furniture from photo': 'Furniture from photo',
+  'Photo to 3D converter': 'Photo to 3D converter',
+  'Full path of the program that turns photos into a 3D model. Empty uses NESTWRIGHT_PHOTO3D.':
+    'Full path of the program that turns photos into a 3D model. Empty uses NESTWRIGHT_PHOTO3D.',
+  'Making a 3D model from photos only works in the desktop app.':
+    'Making a 3D model from photos only works in the desktop app.',
+  'Use 1 to 3 photos of the same piece, from different sides.':
+    'Use 1 to 3 photos of the same piece, from different sides.',
+  'Choose photos…': 'Choose photos…',
+  'Real size': 'Real size',
+  'Model quality': 'Model quality',
+  Fast: 'Fast',
+  Best: 'Best',
+  'No photo to 3D converter is set up.': 'No photo to 3D converter is set up.',
+  'Open Settings': 'Open Settings',
+  'Making the 3D model': 'Making the 3D model',
+  'Starting…': 'Starting…',
+  'Make 3D model': 'Make 3D model',
+  'Make it again': 'Make it again',
+  'Preview of the 3D model': 'Preview of the 3D model',
+  'The 3D model is ready.': 'The 3D model is ready.',
+  'Add to house': 'Add to house',
+  'Could not make the 3D model: {error}': 'Could not make the 3D model: {error}',
+  'The converter made a file that is not a 3D model.': 'The converter made a file that is not a 3D model.',
 } as const
 
 export type MessageKey = keyof typeof en
