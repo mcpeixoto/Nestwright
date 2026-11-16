@@ -17,6 +17,9 @@ while (( ${#todo} > 0 )); do
     if [[ $state == MERGED || $state == CLOSED ]]; then printf '%s #%s %s\n' "$(date +%H:%M)" $n $state; continue; fi
     buckets=$(gh pr checks $n --json bucket --jq '.[].bucket' 2>/dev/null)
     if [[ -z $buckets ]] || print -r -- "$buckets" | grep -q pending; then next+=$n; continue; fi
+    # A skipped job registers before CI's verify job exists; without verify there is nothing to trust yet.
+    verify=$(gh pr checks $n --json name --jq '[.[] | select(.name == "verify")] | length' 2>/dev/null)
+    if [[ ${verify:-0} -lt 1 ]]; then next+=$n; continue; fi
     if gh pr checks $n --json bucket --jq 'length > 0 and all(.[]; .bucket == "pass" or .bucket == "skipping")' | grep -qx true; then
       mg=$(gh pr view $n --json mergeable --jq .mergeable)
       if [[ $mg == UNKNOWN ]]; then next+=$n; continue; fi  # GitHub still computing
