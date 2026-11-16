@@ -4,6 +4,7 @@ import { add, dist, dot, len, lerp, normalize, perp, pointInPolygon, scale, sub 
 import { cutsSkirting, levelRooms, openingTrim, resolveTrim, roomBeside, SKIRTING, type ResolvedTrim } from '../model/trim'
 import type { Level, MaterialRef, Room, Vec2, Wall } from '../model/types'
 import { JOIN_EPS, openingInterval, sampleFrame, wallFrame, wallLength, mitrePoint, type WallFrame } from '../model/walls'
+import { EAVE_DRIP, FACADE_ATTRIBUTE, NO_SPLASH, SILL_DRIP } from '../materials/facadeWeathering'
 import { buildRailing } from './railings'
 import { edgeStrip, Sheet, sweep, type PathFrame, type ProfilePoint } from './trim'
 
@@ -39,6 +40,12 @@ class Bucket {
   readonly norm: number[] = []
   readonly uv: number[] = []
   readonly idx: number[] = []
+  /** Facade weathering per vertex (see FACADE_ATTRIBUTE); only kept when `weathered`. */
+  readonly weather: number[] = []
+  /** Weather written with the next vertices: drip source height, drip strength, splash base. */
+  drip: [number, number, number] = [0, 0, NO_SPLASH]
+
+  constructor(readonly weathered = false) {}
 
   private get count(): number {
     return this.pos.length / 3
@@ -48,6 +55,7 @@ class Bucket {
     this.pos.push(x, y, z)
     this.norm.push(nx, ny, nz)
     this.uv.push(u, v)
+    if (this.weathered) this.weather.push(...this.drip)
   }
 
   /** Vertical quad. `a`/`b` are plan points; outward is a plan vector. */
@@ -88,6 +96,7 @@ class Bucket {
     this.norm.push(...sheet.norm)
     this.uv.push(...sheet.uv)
     for (const i of sheet.idx) this.idx.push(base + i)
+    if (this.weathered) for (let k = 0; k < sheet.pos.length / 3; k++) this.weather.push(...this.drip)
   }
 
   geometry(): THREE.BufferGeometry | null {
@@ -96,6 +105,7 @@ class Bucket {
     geo.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3))
     geo.setAttribute('normal', new THREE.Float32BufferAttribute(this.norm, 3))
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2))
+    if (this.weathered) geo.setAttribute(FACADE_ATTRIBUTE, new THREE.Float32BufferAttribute(this.weather, 3))
     geo.setIndex(this.idx)
     return geo
   }
@@ -191,12 +201,25 @@ export function buildWall(wall: Wall, level: Level, neighbours: readonly Wall[],
   group.userData.kind = 'wall'
   const frame = wallFrame(wall)
   const spans = spansFor(wall, level)
+  // Each side splits where it stops facing a room: the outdoor part gets the weathered facade.
   const left = new Bucket()
   const right = new Bucket()
+  const leftOut = new Bucket(true)
+  const rightOut = new Bucket(true)
   const ends = new Bucket()
   const others = neighbours.filter((n) => n.id !== wall.id)
+  const rooms = ctx.rooms ?? levelRooms(level)
+  const outward = (side: 1 | -1, d: number) => !roomBeside(wall, side, d, rooms)
+  const splash = ctx.ground ? level.elevation : NO_SPLASH
+  const eaves = ctx.above ? 0 : EAVE_DRIP
+  const top = level.elevation + wall.height
 
   for (const span of spans) {
+    // A span that stops short of the top under an opening is the piece under a sill.
+    const underSill = span.y0 < 1e-4 && span.y1 < wall.height - 1e-4
+    const drip: [number, number, number] = [level.elevation + span.y1, underSill ? SILL_DRIP : eaves, splash]
+    leftOut.drip = drip
+    rightOut.drip = drip
     const ds = samples(frame, span.t0, span.t1)
     for (let i = 0; i < ds.length - 1; i++) {
       const d0 = ds[i] ?? span.t0
@@ -209,8 +232,9 @@ export function buildWall(wall: Wall, level: Level, neighbours: readonly Wall[],
       const p3 = corner(wall, frame, d0, -1, cap0 ? 'start' : 'none', others)
       const mid = sampleFrame(frame, (d0 + d1) / 2)
       const center = mid.point
-      left.side(p0, p1, span.y0, span.y1, level.elevation, d0, d1, mid.normal)
-      right.side(p3, p2, span.y0, span.y1, level.elevation, d0, d1, scale(mid.normal, -1))
+      const dm = (d0 + d1) / 2
+      ;(outward(1, dm) ? leftOut : left).side(p0, p1, span.y0, span.y1, level.elevation, d0, d1, mid.normal)
+      ;(outward(-1, dm) ? rightOut : right).side(p3, p2, span.y0, span.y1, level.elevation, d0, d1, scale(mid.normal, -1))
       ends.side(p1, p2, span.y0, span.y1, level.elevation, 0, dist(p1, p2), outwardOf(p1, p2, center))
       ends.side(p3, p0, span.y0, span.y1, level.elevation, 0, dist(p3, p0), outwardOf(p3, p0, center))
       const quad = [p0, p1, p2, p3]
@@ -219,21 +243,25 @@ export function buildWall(wall: Wall, level: Level, neighbours: readonly Wall[],
     }
   }
 
-  const rooms = ctx.rooms ?? levelRooms(level)
   const bevels = edgeBevels(wall, level, frame, others, rooms)
-  left.absorb(bevels.left)
-  right.absorb(bevels.right)
+  // Bevels go with the outdoor part when the side has one (outside corners are outdoors).
+  leftOut.drip = rightOut.drip = [top, eaves, splash]
+  ;(leftOut.idx.length > 0 ? leftOut : left).absorb(bevels.left)
+  ;(rightOut.idx.length > 0 ? rightOut : right).absorb(bevels.right)
 
   const addPart = (bucket: Bucket, ref: Wall['left'], face: 'left' | 'right' | 'end') => {
     const geo = bucket.geometry()
     if (!geo) return
-    const mesh = new THREE.Mesh(geo, getMaterial(ref))
+    const mesh = new THREE.Mesh(geo, getMaterial(ref, bucket.weathered ? { facade: true } : undefined))
     tag(mesh, wall.id)
     mesh.userData.face = face
+    if (bucket.weathered) mesh.userData.outdoor = true
     group.add(mesh)
   }
   addPart(left, wall.left, 'left')
+  addPart(leftOut, wall.left, 'left')
   addPart(right, wall.right, 'right')
+  addPart(rightOut, wall.right, 'right')
   addPart(ends, wall.left, 'end')
 
   const trim = interiorTrim(wall, level, frame, others, rooms, ctx.trim ?? resolveTrim(level.trim), ctx.above)
