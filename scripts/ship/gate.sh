@@ -19,6 +19,7 @@ while (( ${#todo} > 0 )); do
     if [[ -z $buckets ]] || print -r -- "$buckets" | grep -q pending; then next+=$n; continue; fi
     if gh pr checks $n --json bucket --jq 'length > 0 and all(.[]; .bucket == "pass" or .bucket == "skipping")' | grep -qx true; then
       mg=$(gh pr view $n --json mergeable --jq .mergeable)
+      if [[ $mg == UNKNOWN ]]; then next+=$n; continue; fi  # GitHub still computing
       if [[ $mg != MERGEABLE ]]; then printf '%s #%s not mergeable (%s), dropped\n' "$(date +%H:%M)" $n $mg; continue; fi
       if gh pr merge $n --squash; then printf '%s #%s merged: %s\n' "$(date +%H:%M)" $n "$(gh pr view $n --json state --jq .state)"
       else printf '%s #%s merge command failed\n' "$(date +%H:%M)" $n; fi

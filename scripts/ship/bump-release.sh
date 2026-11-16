@@ -26,4 +26,5 @@ print "bump PR: $url"
 pr=${url##*/}
 cd "$repo" && git worktree remove --force "$wt" && git branch -D chore/v$ver >/dev/null
 zsh "$here/release.sh" $pr $ver "$notes"
-git push -q origin --delete chore/v$ver 2>/dev/null
+# Only a merged bump PR may lose its branch: deleting the head of an open PR closes it.
+[[ $(gh pr view $pr --json state --jq .state) == MERGED ]] && git push -q origin --delete chore/v$ver 2>/dev/null
