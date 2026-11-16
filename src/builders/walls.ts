@@ -24,6 +24,8 @@ export interface WallBuildContext {
    * the visible ceiling sits a slab lower than level.height.
    */
   above?: CeilingAbove
+  /** The lowest storey, the only one with a plinth. */
+  ground?: boolean
 }
 
 export interface CeilingAbove {
@@ -245,6 +247,14 @@ export function buildWall(wall: Wall, level: Level, neighbours: readonly Wall[],
     mesh.userData.trim = name
     group.add(mesh)
   }
+  if (ctx.ground) {
+    const mesh = exteriorPlinth(wall, level, frame, others, rooms).mesh(getMaterial({ id: 'concrete' }))
+    if (mesh) {
+      tag(mesh, wall.id)
+      mesh.userData.trim = 'plinth'
+      group.add(mesh)
+    }
+  }
   return group
 }
 
@@ -396,6 +406,42 @@ function interiorTrim(
     }
   }
   return { paint, gap }
+}
+
+/**
+ * Socle on the outdoor faces of a ground-floor wall. Floor-length openings break it the same
+ * way they break skirting; a face that looks into a room stays bare, and railings never get one.
+ */
+function exteriorPlinth(wall: Wall, level: Level, frame: WallFrame, others: readonly Wall[], rooms: readonly Room[]): Sheet {
+  const sheet = new Sheet()
+  const length = frame.length
+  if (length < 0.05 || wall.kind === 'railing') return sheet
+  const cuts: [number, number][] = []
+  for (const opening of level.openings) {
+    if (opening.wallId !== wall.id || !cutsSkirting(opening)) continue
+    const iv = openingInterval(wall, opening)
+    cuts.push([iv.start, iv.end])
+  }
+  // 350 mm tall, 25 mm proud of the face, 10 mm 45° chamfer on the top outer edge.
+  const height = 0.35
+  const depth = 0.025
+  const chamfer = 0.01
+  const profile: ProfilePoint[] = [
+    [0, 0],
+    [height, 0],
+    [height, depth - chamfer],
+    [height - chamfer, depth],
+    [0, depth],
+  ]
+  const y = level.elevation
+  for (const side of [1, -1] as const) {
+    for (const [t0, t1] of gaps(length, cuts)) {
+      if (roomBeside(wall, side, (t0 + t1) / 2, rooms)) continue
+      const path = facePath(wall, frame, others, side, t0, t1, y)
+      sweep(sheet, path, profile, { skip: [0], capStart: t0 > 1e-3, capEnd: t1 < length - 1e-3 })
+    }
+  }
+  return sheet
 }
 
 function v3(p: Vec2, y: number): THREE.Vector3 {
