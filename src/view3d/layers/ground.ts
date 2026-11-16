@@ -9,29 +9,19 @@ export function distantGroundMode(kind: string | undefined): 'meadow' | 'asphalt
   return kind === 'apartment' ? 'asphalt' : 'meadow'
 }
 
+/** The lawn material for flat ground planes: the cached outdoor grass, scanned once loaded. */
+export function groundMaterial(): THREE.MeshStandardMaterial {
+  return getMaterial({ id: 'grass' }, { outdoor: true })
+}
+
 /**
  * Lawn under the house, extended well past the plot so distant haze has
  * somewhere to land. The plot itself stays inside the fog's near distance.
  */
 export function createGroundLayer(ctx: SceneLayerContext): SceneLayer {
-  const source = getMaterial({ id: 'grass' })
-  const material = source.clone()
-  if (material.map) {
-    material.map = material.map.clone()
-    material.map.colorSpace = THREE.SRGBColorSpace
-    material.map.wrapS = THREE.RepeatWrapping
-    material.map.wrapT = THREE.RepeatWrapping
-    material.map.needsUpdate = true
-  }
-  if (material.roughnessMap) {
-    material.roughnessMap = material.roughnessMap.clone()
-    material.roughnessMap.colorSpace = THREE.NoColorSpace
-    material.roughnessMap.wrapS = THREE.RepeatWrapping
-    material.roughnessMap.wrapT = THREE.RepeatWrapping
-    material.roughnessMap.needsUpdate = true
-    material.bumpMap = material.roughnessMap
-  }
-  material.needsUpdate = true
+  // The shared outdoor lawn, not a clone: a clone taken before the content pack loads keeps the
+  // procedural art forever, while the cached material swaps the scan in when it arrives.
+  const material = groundMaterial()
 
   let size = 1
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material)
@@ -61,10 +51,8 @@ export function createGroundLayer(ctx: SceneLayerContext): SceneLayer {
     },
     dispose() {
       ctx.scene.remove(mesh)
+      // The material belongs to the material cache.
       mesh.geometry.dispose()
-      material.map?.dispose()
-      material.roughnessMap?.dispose()
-      material.dispose()
     },
   }
 }
