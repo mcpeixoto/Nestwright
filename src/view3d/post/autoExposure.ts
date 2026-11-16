@@ -145,15 +145,16 @@ function adaptSpeed(): number {
 
 /**
  * Advance the exposure by `dt` seconds and return the multiplier on `base` (the sun look's
- * exposure) including manual compensation. `indoor` is whether the camera stands in a room.
+ * exposure) including manual compensation. `indoor` is whether the camera stands in a room;
+ * `daylight` and `climb` are the sun look's (see targetEv).
  */
-export function stepAutoExposure(dt: number, base: number, indoor: boolean, compensation: number, daylight = 1): number {
+export function stepAutoExposure(dt: number, base: number, indoor: boolean, compensation: number, daylight = 1, climb = 0): number {
   const speed = adaptSpeed()
   // Indoor/outdoor crossfades over ~0.4 s, so a door step does not jump the range.
   const k = dt > 0 ? 1 - Math.exp((-dt * speed) / 0.4) : 0
   state.indoor += ((indoor ? 1 : 0) - state.indoor) * k
   state.meter = meteredLog2()
-  if (state.meter != null) state.target = targetEv(state.meter, base, state.indoor, daylight)
+  if (state.meter != null) state.target = targetEv(state.meter, base, state.indoor, daylight, climb)
   state.ev = adaptEv(state.ev, state.target, dt, speed)
   return evGain(state.ev, compensation)
 }

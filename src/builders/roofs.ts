@@ -335,6 +335,9 @@ function faceMesh(
     normals.push(n.x, n.y, n.z)
     uvs.push(uv[0], uv[1])
   }
+  // Earcut winds counter-clockwise in plan (x, y), and plan y becomes world z, which mirrors
+  // it: seen from above, a plan-CCW triangle is clockwise. The top face therefore takes
+  // (a, c, b) and the underside (a, b, c), or the slab renders inside out (see roofWinding test).
   const index: number[] = []
   const base = 0
   for (const p of top) push(p, normal)
@@ -342,7 +345,7 @@ function faceMesh(
     const a = indices[i] ?? 0
     const b = indices[i + 1] ?? 0
     const c = indices[i + 2] ?? 0
-    index.push(base + a, base + b, base + c)
+    index.push(base + a, base + c, base + b)
   }
   const bottomStart = verts.length
   const down = normal.clone().multiplyScalar(-1)
@@ -351,7 +354,7 @@ function faceMesh(
     const a = indices[i] ?? 0
     const b = indices[i + 1] ?? 0
     const c = indices[i + 2] ?? 0
-    index.push(bottomStart + a, bottomStart + c, bottomStart + b)
+    index.push(bottomStart + a, bottomStart + b, bottomStart + c)
   }
   // Fascia on edges that belong to only one triangle: eaves, hole rims, gable base.
   const edgeCount = new Map<string, { a: number; b: number; n: number }>()
@@ -377,7 +380,8 @@ function faceMesh(
     const d = verts[edge.b]
     if (!a || !b || !c || !d) continue
     const i0 = positions.length / 3
-    const outward = edgeOutward(a, b, normal)
+    // edge × normal points into the face for the mirrored (plan y → world z) ring.
+    const outward = edgeOutward(a, b, normal).negate()
     // The fascia stands square to the roof plane, so the plane's projection would squash its
     // thickness to nothing. Metres along the edge by metres across the thickness instead.
     const length = Math.hypot(b.x - a.x, b.h - a.h, b.y - a.y)

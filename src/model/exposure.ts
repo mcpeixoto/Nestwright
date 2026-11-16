@@ -18,30 +18,46 @@ export interface EvRange {
 /** Correction range with the camera outside. */
 export const OUTDOOR_RANGE: EvRange = { min: -0.3, max: 0.3 }
 /**
- * Correction range with the camera inside a room by day. The lift is small on purpose:
- * archviz interiors read real through contrast (sun patches, falloff into the corners), and
- * a meter that opens a room up to grey washes that out. Downwards it has room for a lamp-lit
- * room at night (three bright lamps meter ~3 stops over the bare room) and for more lamps
- * than that: the frame darkens before the walls burn.
+ * Correction range with the camera inside a room by day, before the sun's climb adds
+ * INDOOR_CLIMB_MAX. At the old 0.6 EV cap every harness room stopped 1–2.5 stops under
+ * metered grey and read dim and grey-purple; the contrast that sells an interior comes from
+ * the sun patches and the falloff into the corners, which survive a metered exposure.
+ * Downwards it has room for a lamp-lit room at night (three bright lamps meter ~3 stops over
+ * the bare room) and for more lamps than that: the frame darkens before the walls burn.
  */
-export const INDOOR_RANGE: EvRange = { min: -2.5, max: 0.6 }
+export const INDOOR_RANGE: EvRange = { min: -2.5, max: 1 }
+/**
+ * Extra indoor ceiling with the sun fully up (sun look `climb` 1). The look exposure drops by
+ * CLIMB_EXPOSURE_DROP as the sun climbs, so exteriors keep their colour under the stronger
+ * sun; a room has to open up by that much and more to reach metered grey. Measured on the
+ * harness rooms at noon base 0.45: with the bias they ask for +2.5 (bathroom) to +4.05 EV
+ * (living room), under the 4.2 ceiling.
+ */
+export const INDOOR_CLIMB_MAX = 3.2
 /**
  * Highest indoor correction at night. A lamp-lit room metered to grey reads as daytime; a
  * camera at night is let open up only a little, so the room stays a night room.
  */
 export const INDOOR_NIGHT_MAX = 0.3
 /**
- * Stops added to the metered target inside by day. Zero: with the trimmed meter and the
- * 0.6 EV cap, an interior lands at or a little under metered grey, which keeps the sun
- * patches bright and the corners dark.
+ * Stops added to the metered target inside by day. A white-walled room metered to grey
+ * reads as a dull grey room (harness living room: plaster ~158 sRGB); 0.4 EV over puts its
+ * walls at ~170 and lets the sun patches and windows burn, as an interior photo does.
  */
-export const INDOOR_BIAS = 0
+export const INDOOR_BIAS = 0.4
 /**
  * Metered log2 luminance + log2(base exposure) that counts as "correctly exposed". Measured
  * on the harness exteriors at their tuned look (front-facade −2.6 and terrace-pool −2.5 at
  * the day base of 1.05), so exteriors meter near 0 EV correction.
  */
 export const METER_KEY_LOG2 = -2.45
+/**
+ * Key shift outside with the sun fully up. The stronger noon sun under a lower look exposure
+ * (see sunLook) leaves the harness exteriors ~0.8 EV under the old key at noon (aerial
+ * −2.38 at base 0.48, was −2.74 at 1.05); shifting the key keeps them metering near zero
+ * instead of pinned at the top of the outdoor range.
+ */
+export const OUTDOOR_CLIMB_KEY = -0.8
 /** Seconds to close 63 % of the gap when the exposure has to rise (scene got darker). */
 export const ADAPT_UP_S = 1
 /** Seconds to close 63 % of the gap when the exposure has to fall (scene got brighter). */
@@ -115,12 +131,13 @@ function unit(value: number, fallback: number): number {
 /**
  * The correction range for this scene: outdoor and indoor ranges blended by `indoor` (0
  * outside … 1 in a room), the indoor ceiling lowered towards INDOOR_NIGHT_MAX as `daylight`
- * (the sun look's 0 night … 1 day) falls.
+ * (the sun look's 0 night … 1 day) falls and raised by INDOOR_CLIMB_MAX as the sun's `climb`
+ * (0 on the horizon … 1 fully up) rises.
  */
-export function evRange(indoor: number, daylight = 1): EvRange {
+export function evRange(indoor: number, daylight = 1, climb = 0): EvRange {
   const t = unit(indoor, 0)
   const day = unit(daylight, 1)
-  const indoorMax = INDOOR_NIGHT_MAX + (INDOOR_RANGE.max - INDOOR_NIGHT_MAX) * day
+  const indoorMax = INDOOR_NIGHT_MAX + (INDOOR_RANGE.max - INDOOR_NIGHT_MAX) * day + INDOOR_CLIMB_MAX * unit(climb, 0)
   return {
     min: OUTDOOR_RANGE.min + (INDOOR_RANGE.min - OUTDOOR_RANGE.min) * t,
     max: OUTDOOR_RANGE.max + (indoorMax - OUTDOOR_RANGE.max) * t,
@@ -129,14 +146,16 @@ export function evRange(indoor: number, daylight = 1): EvRange {
 
 /**
  * The EV correction a frame asks for: stops from its metered average (scene log2 luminance,
- * before exposure) at `baseExposure` to the key, plus the daytime indoor bias, clamped to
- * the scene's range.
+ * before exposure) at `baseExposure` to the key (shifted outdoors as the sun climbs), plus
+ * the daytime indoor bias, clamped to the scene's range.
  */
-export function targetEv(meterLog2: number, baseExposure: number, indoor: number, daylight = 1): number {
-  const range = evRange(indoor, daylight)
+export function targetEv(meterLog2: number, baseExposure: number, indoor: number, daylight = 1, climb = 0): number {
+  const range = evRange(indoor, daylight, climb)
   if (!Number.isFinite(meterLog2) || !(baseExposure > 0)) return 0
-  const bias = INDOOR_BIAS * unit(indoor, 0) * unit(daylight, 1)
-  const raw = METER_KEY_LOG2 - meterLog2 - Math.log2(baseExposure) + bias
+  const inside = unit(indoor, 0)
+  const bias = INDOOR_BIAS * inside * unit(daylight, 1)
+  const key = METER_KEY_LOG2 + OUTDOOR_CLIMB_KEY * (1 - inside) * unit(climb, 0)
+  const raw = key - meterLog2 - Math.log2(baseExposure) + bias
   return clamp(raw, range.min, range.max)
 }
 

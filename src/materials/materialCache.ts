@@ -175,7 +175,8 @@ export function getMaterial(ref: MaterialRef | undefined, options?: MaterialOpti
   if (id === 'roof-tiles') {
     mat.metalness = 0
     mat.roughness = Math.max(mat.roughness, 0.82)
-    mat.envMapIntensity = 0.15
+    // No envMapIntensity: without a material envMap, three scales the scene environment by
+    // scene.environmentIntensity and ignores it (MaterialProperties materialEnvIntensity).
     mat.bumpScale = 0.04
   }
   if (id === 'mirror') {

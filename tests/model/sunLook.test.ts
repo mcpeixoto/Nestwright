@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { sunLook } from '../../src/model/sunLook'
+import {
+  CLIMB_EXPOSURE_DROP,
+  DAYLIGHT_EXPOSURE,
+  NIGHT_EXPOSURE,
+  SUN_HORIZON_INTENSITY,
+  SUN_PEAK_INTENSITY,
+  sunLook,
+} from '../../src/model/sunLook'
 
 describe('sunLook', () => {
   it('warms and dims monotonically through dusk', () => {
@@ -37,6 +44,22 @@ describe('sunLook', () => {
     expect(twilight.intensity).toBeGreaterThan(0.15)
     expect(twilight.intensity).toBeLessThan(horizon.intensity)
     expect(night.intensity).toBeLessThan(0.05)
-    expect(afternoon.exposure).toBeCloseTo(0.42 + afternoon.daylight * 0.63, 6)
+    expect(afternoon.exposure).toBeCloseTo(
+      NIGHT_EXPOSURE + afternoon.daylight * DAYLIGHT_EXPOSURE - afternoon.climb * CLIMB_EXPOSURE_DROP,
+      6,
+    )
+  })
+
+  it('peaks the sun at SUN_PEAK_INTENSITY and lowers the exposure only while the sun is up', () => {
+    const noon = sunLook(1.2)
+    expect(noon.climb).toBe(1)
+    expect(noon.intensity).toBeCloseTo(SUN_PEAK_INTENSITY, 6)
+    expect(noon.exposure).toBeCloseTo(NIGHT_EXPOSURE + DAYLIGHT_EXPOSURE - CLIMB_EXPOSURE_DROP, 6)
+    for (const alt of [0, -0.05, -0.2, -0.6]) {
+      const look = sunLook(alt)
+      expect(look.climb).toBe(0)
+      expect(look.exposure).toBeCloseTo(NIGHT_EXPOSURE + look.daylight * DAYLIGHT_EXPOSURE, 9)
+    }
+    expect(sunLook(0).intensity).toBeLessThanOrEqual(SUN_HORIZON_INTENSITY)
   })
 })

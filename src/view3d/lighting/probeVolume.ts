@@ -52,8 +52,11 @@ import type { ProbeResolution } from '../../model/probeGrid'
  */
 export const PROBE_LAYER = 3
 
-/** Share of the bounce light's chroma that reaches surfaces (1 = all of it). */
-export const PROBE_SATURATION = 0.5
+/**
+ * Share of the bounce light's chroma that reaches surfaces (1 = all of it). At 0.5 the warm
+ * bounce off oak floors and sunlit plaster was halved to grey and the rooms read grey-purple.
+ */
+export const PROBE_SATURATION = 0.8
 
 /**
  * Share of a material's environment reflection that takes the local probe irradiance indoors:

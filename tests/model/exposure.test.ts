@@ -7,10 +7,13 @@ import {
   evGain,
   evRange,
   formatEv,
+  INDOOR_BIAS,
+  INDOOR_CLIMB_MAX,
   INDOOR_NIGHT_MAX,
   INDOOR_RANGE,
   meterAverage,
   METER_KEY_LOG2,
+  OUTDOOR_CLIMB_KEY,
   OUTDOOR_RANGE,
   targetEv,
 } from '../../src/model/exposure'
@@ -81,10 +84,27 @@ describe('targetEv', () => {
     expect(day).toBeGreaterThan(night)
   })
 
-  it('lifts a daytime interior by at most 0.6 EV, and never above metered grey', () => {
-    expect(INDOOR_RANGE.max).toBeLessThanOrEqual(0.6)
-    expect(targetEv(METER_KEY_LOG2, 1, 1, 1)).toBeCloseTo(0, 9)
+  it('lifts a daytime interior to under half a stop over metered grey, and a night room only to grey', () => {
+    expect(INDOOR_RANGE.max).toBeLessThanOrEqual(1)
+    expect(INDOOR_BIAS).toBeGreaterThan(0)
+    expect(INDOOR_BIAS).toBeLessThanOrEqual(0.5)
+    expect(targetEv(METER_KEY_LOG2, 1, 1, 1)).toBeCloseTo(INDOOR_BIAS, 9)
     expect(targetEv(METER_KEY_LOG2, 1, 1, 0)).toBeCloseTo(0, 9)
+  })
+
+  it('opens the indoor ceiling as the sun climbs, by the stops the look exposure drops', () => {
+    expect(targetEv(-10, 1, 1, 1, 0)).toBe(INDOOR_RANGE.max)
+    expect(targetEv(-10, 1, 1, 1, 1)).toBeCloseTo(INDOOR_RANGE.max + INDOOR_CLIMB_MAX, 9)
+    expect(targetEv(-10, 1, 1, 0, 0)).toBe(INDOOR_NIGHT_MAX)
+    expect(evRange(1, 1, 0.5).max).toBeCloseTo(INDOOR_RANGE.max + INDOOR_CLIMB_MAX / 2, 9)
+    expect(evRange(0, 1, 1)).toEqual(OUTDOOR_RANGE)
+  })
+
+  it('shifts the outdoor key, not the indoor one, as the sun climbs', () => {
+    expect(OUTDOOR_CLIMB_KEY).toBeLessThan(0)
+    expect(targetEv(METER_KEY_LOG2 + OUTDOOR_CLIMB_KEY, 1, 0, 1, 1)).toBeCloseTo(0, 9)
+    expect(targetEv(METER_KEY_LOG2, 1, 0, 1, 0)).toBeCloseTo(0, 9)
+    expect(targetEv(METER_KEY_LOG2, 1, 1, 1, 1)).toBeCloseTo(INDOOR_BIAS, 9)
   })
 
   it('accounts for the base exposure already applied', () => {
