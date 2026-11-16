@@ -1,8 +1,9 @@
-import type { Platform } from './types'
+import { PHOTO3D_UNAVAILABLE, type Platform } from './types'
 
 export function webPlatform(): Platform {
   return {
     isElectron: false,
+    photo3d: PHOTO3D_UNAVAILABLE,
     async openFile(accept) {
       if (typeof document === 'undefined') return null
       return new Promise((resolve) => {

@@ -41,6 +41,18 @@ declare global {
       onCoopMessage?: (cb: (msg: { peerId: string; raw: string }) => void) => () => void
       onCoopClose?: (cb: (msg: { peerId: string }) => void) => () => void
       quit?: () => Promise<void>
+      photo3d?: {
+        configured(command: string): Promise<boolean>
+        pick(): Promise<{ photos: import('./types').PickedPhoto[]; truncated: boolean } | null>
+        run(request: {
+          runId: string
+          command: string
+          images: string[]
+          quality: import('./types').Photo3dQuality
+        }): Promise<import('./types').Photo3dResult>
+        cancel(runId: string): Promise<boolean>
+        onProgress(cb: (progress: import('./types').Photo3dProgress) => void): () => void
+      }
       steam?: {
         available(): Promise<boolean>
         playerName(): Promise<string>

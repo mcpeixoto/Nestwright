@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, dialog, ipcMain, screen, type IpcMainEvent } from 'electron'
+import { app, BrowserWindow, Menu, dialog, ipcMain, nativeImage, screen, type IpcMainEvent } from 'electron'
 import fs from 'node:fs/promises'
 import fsSync from 'node:fs'
 import path from 'node:path'
@@ -31,6 +31,14 @@ import {
   type RecentRecord,
 } from './saves'
 import { fitWindow, parseWindowState, type WindowBounds } from './windowState'
+import {
+  PHOTO3D_EXTENSIONS,
+  PHOTO3D_MAX_IMAGES,
+  isPhotoPath,
+  normalizeQuality,
+  resolvePhoto3dCommand,
+} from './photo3dProtocol'
+import { runPhoto3d, type Photo3dRun } from './photo3dRun'
 // The bundle is CJS, so the directory of main.cjs is __dirname.
 // import.meta.url is empty in that format.
 declare const __dirname: string
@@ -485,6 +493,122 @@ function installMenu(): void {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
 
+/** Photos the open dialog returned: the only paths a converter run may read. */
+const pickedPhotos = new Set<string>()
+let photo3dRun: { runId: string; run: Photo3dRun } | null = null
+let photo3dBusy = false
+/** Where scripts/photo3d/setup.sh installs the converter by default. */
+function installedPhoto3d(): string {
+  return path.join(app.getPath('userData'), 'photo3d', 'photo3d.sh')
+}
+
+async function photoPreview(filePath: string): Promise<string> {
+  try {
+    const thumb = await nativeImage.createThumbnailFromPath(filePath, { width: 160, height: 160 })
+    if (!thumb.isEmpty()) return thumb.toDataURL()
+  } catch {
+    // Linux has no thumbnailer; fall back to decoding the file.
+  }
+  try {
+    const image = nativeImage.createFromPath(filePath)
+    if (image.isEmpty()) return ''
+    return image.resize({ width: 160 }).toDataURL()
+  } catch {
+    return ''
+  }
+}
+
+async function photo3dCommandUsable(command: string): Promise<boolean> {
+  if (!command || !path.isAbsolute(command)) return false
+  try {
+    const stat = await fs.stat(command)
+    if (!stat.isFile()) return false
+    if (process.platform !== 'win32') await fs.access(command, fsSync.constants.X_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function registerPhoto3dIpc() {
+  ipcMain.handle('nestwright:photo3d-configured', async (_event, setting: unknown) =>
+    photo3dCommandUsable(resolvePhoto3dCommand(setting, process.env.NESTWRIGHT_PHOTO3D, installedPhoto3d())),
+  )
+
+  ipcMain.handle('nestwright:photo3d-pick', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const options: Electron.OpenDialogOptions = {
+      title: 'Photos of the furniture',
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: 'Image', extensions: [...PHOTO3D_EXTENSIONS] }],
+    }
+    const result = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
+    if (result.canceled) return null
+    const paths = result.filePaths.filter(isPhotoPath).slice(0, PHOTO3D_MAX_IMAGES)
+    if (paths.length === 0) return null
+    const photos = []
+    for (const filePath of paths) {
+      pickedPhotos.add(filePath)
+      photos.push({ path: filePath, name: path.basename(filePath), preview: await photoPreview(filePath) })
+    }
+    return { photos, truncated: result.filePaths.length > paths.length }
+  })
+
+  ipcMain.handle('nestwright:photo3d-run', async (event, request: unknown) => {
+    const body = (request && typeof request === 'object' ? request : {}) as {
+      runId?: unknown
+      command?: unknown
+      images?: unknown
+      quality?: unknown
+    }
+    const runId = typeof body.runId === 'string' ? body.runId : ''
+    if (photo3dBusy) return { ok: false, error: 'A 3D model is already being made.' }
+    photo3dBusy = true
+    try {
+      return await startPhoto3dRun(event.sender, runId, body)
+    } finally {
+      photo3dBusy = false
+      photo3dRun = null
+    }
+  })
+
+  async function startPhoto3dRun(
+    sender: Electron.WebContents,
+    runId: string,
+    body: { command?: unknown; images?: unknown; quality?: unknown },
+  ) {
+    const command = resolvePhoto3dCommand(body.command, process.env.NESTWRIGHT_PHOTO3D, installedPhoto3d())
+    if (!(await photo3dCommandUsable(command))) return { ok: false, error: 'The converter was not found or cannot run.' }
+    const images = Array.isArray(body.images)
+      ? body.images.filter((item): item is string => typeof item === 'string' && pickedPhotos.has(item))
+      : []
+    if (images.length === 0 || images.length > PHOTO3D_MAX_IMAGES) return { ok: false, error: 'Pick 1 to 3 photos.' }
+    const out = path.join(app.getPath('temp'), `nestwright-photo3d-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.glb`)
+    const run = runPhoto3d({
+      command,
+      images,
+      quality: normalizeQuality(body.quality),
+      out,
+      onProgress: (value, stage) => {
+        if (!sender.isDestroyed()) sender.send('nestwright:photo3d-progress', { runId, value, stage })
+      },
+    })
+    photo3dRun = { runId, run }
+    return run.result
+  }
+
+  ipcMain.handle('nestwright:photo3d-cancel', (_event, runId: unknown) => {
+    if (!photo3dRun) return false
+    if (typeof runId === 'string' && runId && runId !== photo3dRun.runId) return false
+    photo3dRun.run.cancel()
+    return true
+  })
+
+  app.on('before-quit', () => {
+    photo3dRun?.run.cancel()
+  })
+}
+
 function registerIpc(steam: SteamRuntime) {
   seedAllowedFromRecent()
 
@@ -578,6 +702,8 @@ function registerIpc(steam: SteamRuntime) {
   ipcMain.handle('nestwright:quit', () => {
     app.quit()
   })
+
+  registerPhoto3dIpc()
 
   ipcMain.handle('nestwright:open-file', async (_event, accept: string) => {
     const acceptText = String(accept)

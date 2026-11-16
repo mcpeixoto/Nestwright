@@ -106,6 +106,24 @@ contextBridge.exposeInMainWorld('nestwright', {
     return () => ipcRenderer.removeListener('nestwright:coop-closed', listener)
   },
   quit: () => ipcRenderer.invoke('nestwright:quit') as Promise<void>,
+  photo3d: {
+    configured: (command: string) => ipcRenderer.invoke('nestwright:photo3d-configured', command) as Promise<boolean>,
+    pick: () =>
+      ipcRenderer.invoke('nestwright:photo3d-pick') as Promise<{
+        photos: { path: string; name: string; preview: string }[]
+        truncated: boolean
+      } | null>,
+    run: (request: { runId: string; command: string; images: string[]; quality: 'fast' | 'best' }) =>
+      ipcRenderer.invoke('nestwright:photo3d-run', request) as Promise<
+        { ok: true; data: string } | { ok: false; error: string; cancelled?: boolean }
+      >,
+    cancel: (runId: string) => ipcRenderer.invoke('nestwright:photo3d-cancel', runId) as Promise<boolean>,
+    onProgress: (cb: (progress: { runId: string; value: number; stage: string }) => void) => {
+      const listener = (_event: IpcRendererEvent, progress: { runId: string; value: number; stage: string }) => cb(progress)
+      ipcRenderer.on('nestwright:photo3d-progress', listener)
+      return () => ipcRenderer.removeListener('nestwright:photo3d-progress', listener)
+    },
+  },
   steam: {
     available: () => ipcRenderer.invoke('nestwright:steam-available') as Promise<boolean>,
     playerName: () => ipcRenderer.invoke('nestwright:steam-player') as Promise<string>,

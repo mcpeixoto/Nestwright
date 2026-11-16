@@ -371,6 +371,12 @@ export interface ImportedAsset {
   format: 'glb' | 'obj';
   /** base64 data. */
   data: string;
+  /**
+   * How the model fills an item's size. `uniform` (the default, and what an absent field means)
+   * keeps its proportions; `stretch` scales each axis to the exact w/d/h, for furniture made from
+   * photos at a measured real size.
+   */
+  fit?: 'uniform' | 'stretch';
 }
 
 export interface TraceImage {
