@@ -4,6 +4,7 @@ import {
   CLEAR_FOG_NEAR,
   CLEAR_MIE,
   CLEAR_RAYLEIGH,
+  DAY_HEMI_INTENSITY,
   NOON_HORIZON_SRGB,
   NOON_ZENITH_SRGB,
   displayedSrgb,
@@ -54,7 +55,8 @@ describe('skyParams', () => {
     expect(night.zenithDisplay[2]).toBe(40)
     expect(night.horizonDisplay[2]).toBe(65)
     expect(night.hemiIntensity).toBeGreaterThan(0.8)
-    expect(skyParams(1.05, 'clear', 0).hemiIntensity).toBe(0.8)
+    expect(skyParams(1.05, 'clear', 0).hemiIntensity).toBe(DAY_HEMI_INTENSITY)
+    expect(DAY_HEMI_INTENSITY).toBeLessThan(night.hemiIntensity)
   })
 
   it('keeps civil twilight brighter than night', () => {

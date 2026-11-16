@@ -25,6 +25,8 @@ export interface SunLook {
   exposure: number
   /** 0 at night, 1 in full daylight. */
   daylight: number
+  /** 0 with the sun at or below the horizon, 1 once it is fully up (~16°). */
+  climb: number
 }
 
 function clamp01(value: number): number {
@@ -37,6 +39,26 @@ function smooth(edge0: number, edge1: number, value: number): number {
   const t = clamp01((value - edge0) / (edge1 - edge0))
   return t * t * (3 - 2 * t)
 }
+
+/** Directional sun intensity with the sun on the horizon. */
+export const SUN_HORIZON_INTENSITY = 0.9
+/**
+ * Directional sun intensity once the sun is fully up (~16°). Against a daytime fill of
+ * hemisphere 0.3 + environment ENV_INTENSITY this puts the sky at ~20 % of the light on open
+ * ground at noon, as on a clear day; at 2.5 with a 0.8 hemisphere the fill was ~60 % and the
+ * whole scene read flat and hazy.
+ */
+export const SUN_PEAK_INTENSITY = 4.5
+/** Look exposure with the sun down, and what daylight adds by the end of civil twilight. */
+export const NIGHT_EXPOSURE = 0.42
+export const DAYLIGHT_EXPOSURE = 0.63
+/**
+ * Look exposure taken off as the sun climbs from the horizon to ~16°. It offsets the stronger
+ * peak sun so sunlit surfaces land on their albedo comments (roof, lawn): the noon base is
+ * 1.05 − 0.6 = 0.45, just above the 0.42 of night. Dusk and night, with the sun at or below
+ * the horizon, keep the exposure they had (see tests/view3d/litColour.test.ts).
+ */
+export const CLIMB_EXPOSURE_DROP = 0.6
 
 /**
  * Colour and brightness of the sun from its altitude in radians.
@@ -52,13 +74,13 @@ export function sunLook(altitude: number): SunLook {
   // through civil twilight. Full sun by ~16°, off once the sun is ~8° down.
   const above = smooth(-0.14, 0.04, alt)
   const climb = smooth(0, 0.28, Math.max(0, alt))
-  const intensity = (0.9 + climb * 1.6) * above
+  const intensity = (SUN_HORIZON_INTENSITY + climb * (SUN_PEAK_INTENSITY - SUN_HORIZON_INTENSITY)) * above
   const r = 1
   const g = 0.22 + (1 - warmth) * 0.7
   const b = 0.12 + (1 - warmth) * 0.7
-  const exposure = 0.42 + daylight * 0.63
+  const exposure = NIGHT_EXPOSURE + daylight * DAYLIGHT_EXPOSURE - climb * CLIMB_EXPOSURE_DROP
   const moon = (1 - daylight) * 0.75
-  return { r, g, b, warmth, intensity, moon, exposure, daylight }
+  return { r, g, b, warmth, intensity, moon, exposure, daylight, climb }
 }
 
 /**

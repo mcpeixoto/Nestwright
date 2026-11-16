@@ -19,6 +19,18 @@ export const NIGHT_ZENITH_SRGB: readonly [number, number, number] = [10, 16, 40]
 export const NIGHT_HORIZON_SRGB: readonly [number, number, number] = [25, 35, 65]
 
 /** Clear-day scattering. High rayleigh and low mie keep the zenith blue before the grade. */
+/**
+ * Environment (PMREM sky) fill, scene.environmentIntensity. Every material without its own
+ * envMap scales by this, not by its envMapIntensity. High values let a cyan sky tint red
+ * roofs lilac.
+ */
+export const ENV_INTENSITY = 0.7
+/**
+ * Hemisphere fill by day. With the environment fill it is the whole sky light; at 0.8 it
+ * matched the sun on open ground and washed out every shadow.
+ */
+export const DAY_HEMI_INTENSITY = 0.3
+
 export const CLEAR_TURBIDITY = 2
 export const CLEAR_RAYLEIGH = 2.6
 export const CLEAR_MIE = 0.0014
@@ -230,7 +242,7 @@ export function writeSkyParams(
   // hemi has to be brighter or a horizontal lawn reads as black.
   out.hemiSky = night > 0.55 ? '#9aafc8' : sunset > 0.45 ? '#d7c4a4' : '#b7cbe4'
   out.hemiGround = night > 0.55 ? '#4a5c58' : sunset > 0.45 ? '#6a7848' : '#4a5538'
-  out.hemiIntensity = night > 0.55 ? 2.4 : sunset > 0.45 ? 2 : 0.8
+  out.hemiIntensity = night > 0.55 ? 2.4 : sunset > 0.45 ? 2 : DAY_HEMI_INTENSITY
   return out
 }
 

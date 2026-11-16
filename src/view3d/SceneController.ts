@@ -18,6 +18,7 @@ import { getRig, type CameraRig } from './rigs'
 import { bindWalkScene } from './rigs/walk'
 import { recordFrame, setPerfExtra, type PerfRenderer } from './perfMonitor'
 import { setPbrRenderer } from '../materials/pbrTextures'
+import { ENV_INTENSITY } from './atmosphere/skyParams'
 import { activeTone, toneMappingFor } from './atmosphere/toneMap'
 import { PostPipeline } from './post/pipeline'
 import { backendPreference, createRenderer, type RendererBackend } from './render/createRenderer'
@@ -143,7 +144,7 @@ export class SceneController {
     this.primary = options?.primary !== false
     this.canvas = canvas
     this.scene = new THREE.Scene()
-    this.scene.environmentIntensity = 0.48
+    this.scene.environmentIntensity = ENV_INTENSITY
     this.camera = new THREE.PerspectiveCamera(48, 1, 0.2, 6000)
     this.camera.position.set(12, 10, 14)
     if (this.primary) bindController(this)

@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import type { Environment, Project } from '../../model/types'
-import { sunDirection, sunLook, TWILIGHT_RAD } from '../../model/sunLook'
+import { SUN_PEAK_INTENSITY, sunDirection, sunLook, TWILIGHT_RAD } from '../../model/sunLook'
 import { exteriorWindowSpills } from '../../model/windowSpill'
 import { useSettings, type ToneMapSetting } from '../../settings'
 import { castFoliageShadows, setFoliageSun } from '../lighting/foliage'
@@ -27,13 +27,11 @@ import { aoIndirectCap, aoStrength } from '../post/effects'
  */
 const INDOOR_AO_STRENGTH = 1
 const INDOOR_AO_INDIRECT_CAP = 0.8
-import { createSkyParams, writeSkyParams, type SkyParams } from './skyParams'
+import { createSkyParams, DAY_HEMI_INTENSITY, ENV_INTENSITY, writeSkyParams, type SkyParams } from './skyParams'
 import { createStars } from './stars'
 import { activeTone, rendererExposure, toneMappingFor } from './toneMap'
 import { dressOutdoorMesh, isOutdoorMesh, setWeatherMix } from './weather'
 
-/** PMREM fill. High values let a cyan sky tint red roofs lilac. */
-const ENV_INTENSITY = 0.7
 /** Added before tone mapping so the disc clips to a warm white, not a green blob. */
 const SUN_DISC: readonly [number, number, number] = [14, 8.2, 2.4]
 
@@ -112,7 +110,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
 
   // The one shadow-casting directional light: the sun by day, the moon by night. It never
   // drops castShadow, so nightfall does not recompile every material.
-  const sun = new THREE.DirectionalLight('#fff4e0', 2.5)
+  const sun = new THREE.DirectionalLight('#fff4e0', SUN_PEAK_INTENSITY)
   sun.name = 'sun'
   sun.castShadow = true
   scene.add(sun)
@@ -126,7 +124,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
   scene.add(moon)
   scene.add(moon.target)
 
-  const hemi = new THREE.HemisphereLight('#b7cbe4', '#4a5538', 0.5)
+  const hemi = new THREE.HemisphereLight('#b7cbe4', '#4a5538', DAY_HEMI_INTENSITY)
   scene.add(hemi)
 
   const clouds = createClouds()
@@ -309,7 +307,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     ctx.camera.getWorldPosition(camPos)
     const focus = shadowFocus(project, view, camPos, ctx.camera.near)
     const compensation = useSettings.getState().exposureComp + photoExposure()
-    const gain = stepAutoExposure(frameDt, exp, focus.indoor, compensation, look.daylight)
+    const gain = stepAutoExposure(frameDt, exp, focus.indoor, compensation, look.daylight, look.climb)
     frameDt = 0
     // Rooms lean on contact shadows (furniture undersides, corners) far more than exteriors:
     // occlusion grows with the smoothed indoor share, so exteriors keep their tuned AO.
