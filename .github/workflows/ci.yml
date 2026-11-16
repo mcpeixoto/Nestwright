@@ -12,7 +12,9 @@ concurrency:
 jobs:
   verify:
     runs-on: [self-hosted, vrserver]
-    timeout-minutes: 20
+    # The VRServer job-started hook queues a job for up to 45 min when the box is busy
+    # (CI_SLOT_WAIT_MIN), and that wait counts against this limit. 20 min cancelled every job.
+    timeout-minutes: 75
     env:
       ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
     steps:
