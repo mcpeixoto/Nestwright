@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { materialColor, positionWorld, sin, uniform, vec4 } from 'three/tsl'
+import { abs, cameraPosition, cameraViewMatrix, clamp, cos, length, materialColor, normalize as normalizeNode, positionWorld, sin, smoothstep, uniform, vec3, vec4 } from 'three/tsl'
 import { metricUVs } from '../../builders/uv'
 import { getMaterial } from '../../materials/materialCache'
 import { srgbByteToLinear } from '../colorLinear'
@@ -25,24 +25,88 @@ function clearGroup(group: THREE.Group): void {
   }
 }
 
-/** Clear turquoise. Normals stay geometric: a tilted normal reads as a white shaft on the lawn. */
+/** Clear turquoise. */
 const POOL_WATER = '#2f8f9a'
 const POOL_FLOOR = '#1a5c66'
 const COPING_STONE = '#e4ddd2'
+/** Still water is a near mirror; the ripples, not the roughness, break the reflection up. */
+export const POOL_ROUGHNESS = 0.04
+/** Ripples are full strength nearer than this (m) and gone beyond the far distance. */
+const RIPPLE_FADE_NEAR = 10
+const RIPPLE_FADE_FAR = 30
+/** Share of the usual dielectric reflection the water keeps, and its tint. */
+export const POOL_SPECULAR = 0.55
+const POOL_SPECULAR_TINT = '#c4e8ec'
 
 type TimeUniform = THREE.Node<'float'>
 
-// PHASE1-PORT: colour-only ripple and caustic, as in the GLSL; real water is a later step.
+/**
+ * Wind ripples as a sum of travelling sine waves: direction (x, z), wavenumber k (rad/m),
+ * angular speed w (rad/s) and slope amplitude a (rise per metre at the crest). The slopes stay
+ * small (sum ≈ 0.05) so the sky reflection wobbles without the surface reading as choppy.
+ */
+export const POOL_WAVES = [
+  { x: 0.8, z: 0.6, k: 7.4, w: 1.2, a: 0.022 },
+  { x: -0.45, z: 0.89, k: 11.3, w: 1.7, a: 0.016 },
+  { x: 0.2, z: -0.98, k: 17.9, w: 2.3, a: 0.011 },
+] as const
+
+/**
+ * Surface slope (dh/dx, dh/dz) of `POOL_WAVES` at a world point and time. Plain maths so the
+ * test can check the shader's amplitude; the shader builds the same sum in TSL.
+ */
+export function poolSlope(x: number, z: number, t: number): { dx: number; dz: number } {
+  let dx = 0
+  let dz = 0
+  for (const wave of POOL_WAVES) {
+    const c = Math.cos(wave.k * (wave.x * x + wave.z * z) + wave.w * t) * wave.a
+    dx += c * wave.x
+    dz += c * wave.z
+  }
+  return { dx, dz }
+}
+
+// Colour ripple and caustic as in the GLSL port, plus a moving ripple normal and a glossy surface.
 /** Scale the base colour by a world-space ripple; `time` is shared by every pool. */
 function bindRipple(mat: THREE.MeshStandardNodeMaterial, ripple: THREE.Node<'float'>): void {
   mat.colorNode = vec4(materialColor.rgb.mul(ripple), 1)
 }
 
+/** View-space normal of the rippled water surface (the pool is flat, facing +y). */
+function rippleNormal(time: TimeUniform): THREE.Node<'vec3'> {
+  const w = positionWorld
+  let dx: THREE.Node<'float'> | null = null
+  let dz: THREE.Node<'float'> | null = null
+  for (const wave of POOL_WAVES) {
+    const phase = w.x.mul(wave.k * wave.x).add(w.z.mul(wave.k * wave.z)).add(time.mul(wave.w))
+    const c = cos(phase).mul(wave.a)
+    const cx = c.mul(wave.x)
+    const cz = c.mul(wave.z)
+    dx = dx ? dx.add(cx) : cx
+    dz = dz ? dz.add(cz) : cz
+  }
+  // Far away or at a grazing angle the waves are smaller than a pixel: they alias into stripes
+  // and tilt the reflection below the horizon (the ground half of the sky), which reads as a
+  // wooden deck. Fade them out there and let the flat surface mirror the sky.
+  const toCamera = cameraPosition.sub(w)
+  const far = smoothstep(RIPPLE_FADE_NEAR, RIPPLE_FADE_FAR, length(toCamera)).oneMinus()
+  const steep = clamp(abs(normalizeNode(toCamera).y).mul(4), 0, 1)
+  const fade = far.mul(steep)
+  // Height field h(x, z): the normal is (-dh/dx, 1, -dh/dz), taken from world to view space.
+  const world = vec3(dx!.mul(fade).negate(), 1, dz!.mul(fade).negate())
+  return normalizeNode(cameraViewMatrix.mul(vec4(world, 0)).xyz)
+}
+
 function waterMaterial(time: TimeUniform): THREE.MeshStandardNodeMaterial {
-  const mat = new THREE.MeshStandardNodeMaterial({
+  const mat = new THREE.MeshPhysicalNodeMaterial({
     color: POOL_WATER,
-    roughness: 0.64,
+    roughness: POOL_ROUGHNESS,
     metalness: 0,
+    // Water, not glass: weaker reflection, tinted by the water, so a grazing view keeps some
+    // turquoise instead of mirroring the dim lower half of the sky probe.
+    ior: 1.33,
+    specularIntensity: POOL_SPECULAR,
+    specularColor: new THREE.Color(POOL_SPECULAR_TINT),
     transparent: true,
     opacity: 0.8,
     depthWrite: true,
@@ -55,6 +119,7 @@ function waterMaterial(time: TimeUniform): THREE.MeshStandardNodeMaterial {
   })
   const w = positionWorld
   bindRipple(mat, sin(w.x.mul(7.4).add(time.mul(1.2))).mul(sin(w.z.mul(6.1).sub(time))).mul(0.05).add(0.95))
+  mat.normalNode = rippleNormal(time)
   return mat
 }
 

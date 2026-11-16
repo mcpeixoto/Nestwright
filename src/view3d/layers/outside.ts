@@ -1,6 +1,5 @@
 import * as THREE from 'three'
 import { metricUVs } from '../../builders/uv'
-import { getMaterial } from '../../materials/materialCache'
 import { sampleHeight } from '../../model/terrain'
 import type { Project, Terrain, Vec2 } from '../../model/types'
 import { useStore } from '../../store'
@@ -14,7 +13,7 @@ import { plantPointer } from '../../tools/plant-brush'
 import { terrainPointer } from '../../tools/terrain-sculpt'
 import { waterPointer, waterPreview } from '../../tools/water'
 import { replaceSceneLayer, type SceneLayer, type SceneLayerContext, type SceneViewState } from '../layers'
-import { distantGroundMode } from './ground'
+import { distantGroundMode, groundMaterial } from './ground'
 import { OutsideFeatures } from '../terrain/features'
 import { GrassField } from '../terrain/grass'
 import { PlantField } from '../terrain/plants'
@@ -89,15 +88,8 @@ function writeHeights(geo: THREE.BufferGeometry, terrain: Terrain): boolean {
 }
 
 function flatGrass(): { mesh: THREE.Mesh; material: THREE.MeshStandardMaterial; resize: (size: number) => void } {
-  const source = getMaterial({ id: 'grass' })
-  const material = source.clone()
-  material.userData.own = true
-  if (material.map) {
-    material.map = material.map.clone()
-    material.map.wrapS = THREE.RepeatWrapping
-    material.map.wrapT = THREE.RepeatWrapping
-    material.map.needsUpdate = true
-  }
+  // Shared cached lawn (see groundMaterial): a clone would never get the scan.
+  const material = groundMaterial()
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material)
   mesh.receiveShadow = true
   mesh.position.y = -0.02
@@ -399,8 +391,6 @@ function createOutsideGround(ctx: SceneLayerContext): SceneLayer {
       canvas?.removeEventListener('pointercancel', onUp)
       ctx.scene.remove(flat.mesh)
       flat.mesh.geometry.dispose()
-      flat.material.map?.dispose()
-      flat.material.dispose()
       ctx.scene.remove(surround.group)
       surround.dispose()
       ctx.scene.remove(mesh)
