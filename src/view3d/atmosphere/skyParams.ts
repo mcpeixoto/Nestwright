@@ -17,6 +17,15 @@ export const SUNSET_ZENITH_SRGB: readonly [number, number, number] = [86, 98, 15
 export const SUNSET_HORIZON_SRGB: readonly [number, number, number] = [236, 132, 72]
 export const NIGHT_ZENITH_SRGB: readonly [number, number, number] = [10, 16, 40]
 export const NIGHT_HORIZON_SRGB: readonly [number, number, number] = [25, 35, 65]
+/**
+ * The environment map's lower half: sunlit lawn and paving seen from a wall. Warm and about a
+ * quarter of the horizon's brightness, like real ground bounce. Without it every shaded face
+ * took the bright blue horizon from below.
+ */
+export const NOON_GROUND_SRGB: readonly [number, number, number] = [112, 110, 92]
+const SUNSET_GROUND_SRGB: readonly [number, number, number] = [84, 70, 56]
+const NIGHT_GROUND_SRGB: readonly [number, number, number] = [12, 13, 16]
+const OVERCAST_GROUND_SRGB: readonly [number, number, number] = [96, 98, 94]
 
 /** Clear-day scattering. High rayleigh and low mie keep the zenith blue before the grade. */
 /**
@@ -58,6 +67,8 @@ export interface SkyParams {
   /** sRGB→linear, for the PMREM environment (not inverse-ACES). */
   zenithLight: RGB
   horizonLight: RGB
+  /** sRGB→linear ground under the environment map (bounce light from below). */
+  groundLight: RGB
   fogNear: number
   fogFar: number
   night: number
@@ -198,6 +209,7 @@ export function createSkyParams(): SkyParams {
     horizonScene: [...zero],
     zenithLight: [...zero],
     horizonLight: [...zero],
+    groundLight: [...zero],
     fogNear: CLEAR_FOG_NEAR,
     fogFar: CLEAR_FOG_FAR,
     night: 0,
@@ -290,6 +302,13 @@ export function writeSkyParams(
   out.horizonLight[0] = horizonLight[0]
   out.horizonLight[1] = horizonLight[1]
   out.horizonLight[2] = horizonLight[2]
+  let ground = mix3(NOON_GROUND_SRGB, SUNSET_GROUND_SRGB, sunset)
+  ground = mix3(ground, OVERCAST_GROUND_SRGB, (clear ? 0 : 1) * day)
+  ground = mix3(ground, NIGHT_GROUND_SRGB, night)
+  const groundLight = srgbToLinear3(ground)
+  out.groundLight[0] = groundLight[0]
+  out.groundLight[1] = groundLight[1]
+  out.groundLight[2] = groundLight[2]
   out.night = night
   out.sunset = sunset
   out.sunDisc = night > 0.85 ? 0 : 1

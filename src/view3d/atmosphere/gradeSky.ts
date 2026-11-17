@@ -5,6 +5,8 @@ export interface SkyGrade {
   zenith: THREE.Color
   horizon: THREE.Color
   sunDisc: THREE.Color
+  /** Below the horizon. The environment dome uses real ground bounce; the visible dome repeats the horizon. */
+  ground: THREE.Color
 }
 
 export interface GradedSky {
@@ -28,11 +30,13 @@ export function createGradedSky(grade: SkyGrade): GradedSky {
   const uZenith = uniform(grade.zenith)
   const uHorizon = uniform(grade.horizon)
   const uSunDisc = uniform(grade.sunDisc)
+  const uGround = uniform(grade.ground)
   const uSun = uniform(sunDirection)
   const uShowSun = uniform(1)
   const direction = positionWorld.sub(cameraPosition).normalize()
   const cosTheta = direction.dot(uSun)
-  const graded = mix(uHorizon, uZenith, smoothstep(0.0, 0.62, clamp(direction.y, 0.0, 1.0))).add(
+  const above = mix(uHorizon, uZenith, smoothstep(0.0, 0.62, clamp(direction.y, 0.0, 1.0)))
+  const graded = mix(above, uGround, smoothstep(0.0, 0.18, direction.y.negate())).add(
     uSunDisc.mul(smoothstep(0.99955, 0.99992, cosTheta)).mul(uShowSun),
   )
   const material = new THREE.MeshBasicNodeMaterial({ side: THREE.BackSide, depthWrite: false, fog: false })
