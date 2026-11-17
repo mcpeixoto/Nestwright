@@ -2,7 +2,10 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { buildFloors } from '../builders/floors'
 import { stairHoleOutline } from '../model/stairs'
+import { contactShadowFor, releaseContactShadow, CONTACT } from '../builders/contactShadow'
 import { buildItem } from '../builders/items'
+import { isFlatItem, itemFootprint } from '../model/clearance'
+import { pointInPolygon } from '../model/geometry'
 import { isSharedGeometry, modelFor, modelsLoading, releaseModelGeometry, subscribeModels } from '../catalog/models'
 import { ModelInstancer } from './modelInstances'
 import { buildOpening } from '../builders/openings'
@@ -64,7 +67,9 @@ interface Bucket {
   elevation: number
   height: number
   slab: number
-  itemMap: Map<string, { source: Item; object: THREE.Object3D; scanned: boolean }>
+  /** Baked contact-shadow decals, apart from the items so picking and bounds never see them. */
+  shadows: THREE.Group
+  itemMap: Map<string, { source: Item; object: THREE.Object3D; scanned: boolean; shadow: THREE.Mesh | null }>
   instancer: ModelInstancer
 }
 
@@ -530,19 +535,29 @@ export class SceneController {
       if (prev) {
         bucket.items.remove(prev.object)
         disposeTree(prev.object)
+        dropShadow(bucket, prev.shadow)
       }
       const object = buildItem(item)
       object.position.y = level.elevation + item.elevation
       bucket.items.add(object)
-      bucket.itemMap.set(item.id, { source: item, object, scanned: typeof object.userData.scanned === 'string' })
+      const shadow = contactShadowFor(object, item)
+      if (shadow) {
+        shadow.position.x = object.position.x
+        shadow.position.z = object.position.z
+        shadow.rotation.y = object.rotation.y
+        bucket.shadows.add(shadow)
+      }
+      bucket.itemMap.set(item.id, { source: item, object, scanned: typeof object.userData.scanned === 'string', shadow })
     }
     for (const [id, prev] of bucket.itemMap) {
       if (seen.has(id)) continue
       changed = true
       bucket.items.remove(prev.object)
       disposeTree(prev.object)
+      dropShadow(bucket, prev.shadow)
       bucket.itemMap.delete(id)
     }
+    if (changed) liftShadows(bucket, level)
     if (changed || bucket.instancer.dirty) {
       bucket.instancer.rebuild([...bucket.itemMap].map(([id, entry]) => ({ id, object: entry.object })))
       bucket.instancer.update(this.camera, true)
@@ -874,11 +889,37 @@ export class SceneController {
   }
 }
 
+function dropShadow(bucket: Bucket, shadow: THREE.Mesh | null): void {
+  if (!shadow) return
+  bucket.shadows.remove(shadow)
+  releaseContactShadow(shadow)
+}
+
+/**
+ * Sit each contact shadow on what its item stands on: the floor, or a rug when the item's
+ * centre is over one (a rug is drawn above the floor and would hide the decal).
+ */
+function liftShadows(bucket: Bucket, level: Level): void {
+  const rugs = level.items.filter((item) => isFlatItem(item) && Math.abs(item.elevation) <= 0.05)
+  const outlines = rugs.map((rug) => ({ top: rug.elevation + rug.size.h, outline: itemFootprint(rug) }))
+  for (const entry of bucket.itemMap.values()) {
+    if (!entry.shadow) continue
+    let base = 0
+    for (const rug of outlines) {
+      if (rug.top > base && pointInPolygon(entry.source.position, rug.outline)) base = rug.top
+    }
+    entry.shadow.position.y = level.elevation + base + CONTACT.lift
+  }
+}
+
 function emptyBucket(): Bucket {
   const group = new THREE.Group()
   const structural = new THREE.Group()
   const items = new THREE.Group()
+  const shadows = new THREE.Group()
+  shadows.name = 'contact-shadows'
   group.add(structural)
+  group.add(shadows)
   group.add(items)
   return {
     group,
@@ -896,6 +937,7 @@ function emptyBucket(): Bucket {
     elevation: Number.NaN,
     height: Number.NaN,
     slab: Number.NaN,
+    shadows,
     itemMap: new Map(),
     instancer: new ModelInstancer(items),
   }
@@ -968,6 +1010,11 @@ function visibleWallBounds(project: Project, state: SceneViewState | null): THRE
 function disposeTree(obj: THREE.Object3D): void {
   obj.traverse((child) => {
     const mesh = child as THREE.Mesh
+    // Contact-shadow decals share a cached texture; hand them back instead of disposing.
+    if (mesh.userData?.contactShadow) {
+      releaseContactShadow(mesh)
+      return
+    }
     // Scanned models share geometry between items; a sliced copy is freed with its last user.
     if (isSharedGeometry(mesh.geometry)) releaseModelGeometry(mesh.geometry)
     else mesh.geometry?.dispose()
