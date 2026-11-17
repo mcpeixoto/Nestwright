@@ -46,9 +46,9 @@ function project(poly: readonly Vec2[], axis: Vec2): [number, number] {
   return [min, max]
 }
 
-/** Separating-axis penetration depth of two convex polygons; 0 or less means apart or touching. */
-export function convexPenetration(a: readonly Vec2[], b: readonly Vec2[]): number {
-  let depth = Infinity
+/** Unit edge normals of both polygons: the candidate separating axes. */
+function edgeNormals(a: readonly Vec2[], b: readonly Vec2[]): Vec2[] {
+  const out: Vec2[] = []
   for (const poly of [a, b]) {
     for (let i = 0; i < poly.length; i++) {
       const p = poly[i]!
@@ -57,25 +57,62 @@ export function convexPenetration(a: readonly Vec2[], b: readonly Vec2[]): numbe
       const ey = q.y - p.y
       const l = Math.hypot(ex, ey)
       if (l < 1e-9) continue
-      const axis = { x: -ey / l, y: ex / l }
-      const [amin, amax] = project(a, axis)
-      const [bmin, bmax] = project(b, axis)
-      const overlap = Math.min(amax, bmax) - Math.max(amin, bmin)
-      if (overlap <= 0) return overlap
-      if (overlap < depth) depth = overlap
+      out.push({ x: -ey / l, y: ex / l })
     }
+  }
+  return out
+}
+
+/** Separating-axis penetration depth of two convex polygons; 0 or less means apart or touching. */
+export function convexPenetration(a: readonly Vec2[], b: readonly Vec2[]): number {
+  let depth = Infinity
+  for (const axis of edgeNormals(a, b)) {
+    const [amin, amax] = project(a, axis)
+    const [bmin, bmax] = project(b, axis)
+    const overlap = Math.min(amax, bmax) - Math.max(amin, bmin)
+    if (overlap <= 0) return overlap
+    if (overlap < depth) depth = overlap
   }
   return depth === Infinity ? 0 : depth
 }
 
-function verticalOverlap(a: Item, b: Item): boolean {
+export interface PushOut {
+  /** Unit direction to move `a` in. */
+  dir: Vec2
+  /** Distance along `dir` that leaves `a` just touching `b`. */
+  depth: number
+}
+
+/**
+ * Every way to push convex `a` clear of convex `b` along one separating axis, shortest first.
+ * Empty when the two are already apart or touching.
+ */
+export function pushOutCandidates(a: readonly Vec2[], b: readonly Vec2[]): PushOut[] {
+  const out: PushOut[] = []
+  for (const axis of edgeNormals(a, b)) {
+    const [amin, amax] = project(a, axis)
+    const [bmin, bmax] = project(b, axis)
+    if (Math.min(amax, bmax) - Math.max(amin, bmin) <= 0) return []
+    out.push({ dir: axis, depth: bmax - amin }, { dir: { x: -axis.x, y: -axis.y }, depth: amax - bmin })
+  }
+  return out.sort((p, q) => p.depth - q.depth)
+}
+
+/** True when two items share more than a centimetre of height (a lamp on a table does not). */
+export function verticalOverlap(a: Pick<Item, 'elevation' | 'size'>, b: Pick<Item, 'elevation' | 'size'>): boolean {
   const top = Math.min(a.elevation + a.size.h, b.elevation + b.size.h)
   const bottom = Math.max(a.elevation, b.elevation)
   return top - bottom > 0.01
 }
 
-function solidItem(item: Item): boolean {
+/** Items that take part in collisions: a real footprint and not flat. */
+export function solidItem(item: Pick<Item, 'size' | 'catalogId'>): boolean {
   return item.size.w > 0 && item.size.d > 0 && !isFlatItem(item)
+}
+
+/** True when the wall stands high enough to meet an item based at `elevation`. */
+export function wallReaches(wall: Pick<Wall, 'height'>, elevation: number): boolean {
+  return elevation < wall.height - 1e-3
 }
 
 export interface WallPiece {
@@ -141,7 +178,7 @@ export function itemOverlaps(level: Level): OverlapReport {
     const seen = new Set<string>()
     for (const piece of pieces) {
       if (seen.has(piece.wall.id)) continue
-      if (item.elevation >= piece.wall.height - 1e-3) continue
+      if (!wallReaches(piece.wall, item.elevation)) continue
       if (convexPenetration(shapes[i]!, piece.polygon) > OVERLAP_EPS) {
         seen.add(piece.wall.id)
         walls.push({ itemId: item.id, wallId: piece.wall.id })

@@ -51,7 +51,7 @@ export function familyHouse(): Project {
   ])
   furnish(ground, 'sofa-3', 1.5, -1.8, Math.PI)
   furnish(ground, 'coffee-table', 1.5, -2.7)
-  furnish(ground, 'kitchen-run', -5.6, 2.6, Math.PI / 2)
+  furnish(ground, 'kitchen-run', -5.6, 2.5, Math.PI / 2)
   furnish(ground, 'dining-table', -4.2, 2.2)
   furnish(ground, 'armchair', 3.5, -2.7, Math.PI / 2)
   furnish(ground, 'armchair-wingback', -0.5, -2.7, -Math.PI / 2)
@@ -97,10 +97,10 @@ export function familyHouse(): Project {
   furnish(upper, 'nightstand', 6.15, 1.6)
   furnish(upper, 'nightstand', 0.75, -2.0)
   furnish(upper, 'nightstand', 3.25, -2.0)
-  furnish(upper, 'wardrobe', -2.8, 1.2)
+  furnish(upper, 'wardrobe', -2.7, 1.0)
   furnish(upper, 'toilet', 1.2, 3.4)
   furnish(upper, 'washbasin', 2.2, 3.5)
-  furnish(upper, 'bathtub', 2.6, 1.6)
+  furnish(upper, 'bathtub', 2.45, 1.6)
   garden(project, 5)
   addPool(project, [
     { x: 8.2, y: -1.2 },
