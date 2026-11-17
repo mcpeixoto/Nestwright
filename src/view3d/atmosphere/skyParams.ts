@@ -36,9 +36,17 @@ export const CLEAR_RAYLEIGH = 2.6
 export const CLEAR_MIE = 0.0014
 export const CLEAR_MIE_G = 0.72
 
-/** Trees at 80 m stay outside the fog. Ridges out to ~850 m fade into the haze. */
-export const CLEAR_FOG_NEAR = 130
-export const CLEAR_FOG_FAR = 1100
+/**
+ * Clear-day haze. Linear fog mixes the bright horizon in before tone mapping, so it whitens far
+ * faster than the numbers suggest: at 1100 m (≈1 km visibility) woods at 450 m were already 80%
+ * haze, and even 14% still beat a dark forest 10:1. Real clear-day inscatter at 450 m is a few
+ * percent; the far ridge fades by its own vertex colour instead.
+ */
+export const CLEAR_FOG_NEAR = 300
+export const CLEAR_FOG_FAR = 6000
+/** Rain and snow keep the old murk. */
+export const WET_FOG_NEAR = 130
+export const WET_FOG_FAR = 1100
 
 type RGB = [number, number, number]
 
@@ -236,8 +244,8 @@ export function writeSkyParams(
   out.sunset = sunset
   out.sunDisc = night > 0.85 ? 0 : 1
   out.star = night * (1 - cover * 0.65) * (weather === 'fog' ? 0.15 : 1)
-  out.fogNear = weather === 'fog' ? 22 : night > 0.6 ? 80 : CLEAR_FOG_NEAR
-  out.fogFar = weather === 'fog' ? 150 : night > 0.6 ? 1000 : CLEAR_FOG_FAR
+  out.fogNear = weather === 'fog' ? 22 : night > 0.6 ? 80 : clear ? CLEAR_FOG_NEAR : WET_FOG_NEAR
+  out.fogFar = weather === 'fog' ? 150 : night > 0.6 ? 1000 : clear ? CLEAR_FOG_FAR - cover * 3000 : WET_FOG_FAR
   // Fill colours are lights, not the sky dome. Night sky bytes stay dark; the
   // hemi has to be brighter or a horizontal lawn reads as black.
   out.hemiSky = night > 0.55 ? '#9aafc8' : sunset > 0.45 ? '#d7c4a4' : '#b7cbe4'

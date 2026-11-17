@@ -1,4 +1,7 @@
 import * as THREE from 'three'
+import { attribute, float, vertexColor } from 'three/tsl'
+import { aerialHaze } from '../atmosphere/aerial'
+import { forestBeltGeometry } from './forestBelt'
 import { ASPHALT_ROUGHNESS, GROUND_ENV_INTENSITY, SIDEWALK_ALBEDO_SRGB, URBAN_HAZE_SRGB } from '../../model/cityLook'
 import { sampleHeight } from '../../model/terrain'
 import type { Terrain } from '../../model/types'
@@ -166,7 +169,8 @@ function ridgeGeometry(): THREE.BufferGeometry {
   const outer = 850
   const positions: number[] = []
   const colors: number[] = []
-  const ridge: readonly [number, number, number] = [86, 108, 102]
+  const ridge: readonly [number, number, number] = [92, 116, 98]
+  const hazes: number[] = []
   for (let iy = 0; iy <= rings; iy++) {
     const v = iy / rings
     const radius = inner + (outer - inner) * v
@@ -176,12 +180,9 @@ function ridgeGeometry(): THREE.BufferGeometry {
       const n = ridgeNoise(angle + v * 0.35)
       const height = skirt * (25 + (n * 0.5 + 0.5) * 65)
       positions.push(Math.cos(angle) * radius, height, Math.sin(angle) * radius)
-      const fade = Math.min(1, v * 0.72 + (1 - skirt) * 0.45)
-      colors.push(
-        srgbByteToLinear(ridge[0] + (HAZE[0] - ridge[0]) * fade),
-        srgbByteToLinear(ridge[1] + (HAZE[1] - ridge[1]) * fade),
-        srgbByteToLinear(ridge[2] + (HAZE[2] - ridge[2]) * fade),
-      )
+      // Aerial perspective: the share of horizon haze in front of this point (see aerial.ts).
+      hazes.push(Math.min(0.85, 0.12 + v * 0.3 + (1 - skirt) * 0.4))
+      colors.push(srgbByteToLinear(ridge[0]), srgbByteToLinear(ridge[1]), srgbByteToLinear(ridge[2]))
     }
   }
   const index: number[] = []
@@ -195,9 +196,19 @@ function ridgeGeometry(): THREE.BufferGeometry {
   const geo = new THREE.BufferGeometry()
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  geo.setAttribute('haze', new THREE.Float32BufferAttribute(hazes, 1))
   geo.setIndex(index)
   geo.computeVertexNormals()
   return geo
+}
+
+/** Lit ridge colour blended toward the horizon haze by the vertex `haze` share, as fog would. */
+function ridgeMaterial(): THREE.MeshStandardNodeMaterial {
+  const mat = new THREE.MeshStandardNodeMaterial({ roughness: 1, metalness: 0 })
+  const haze = attribute<'float'>('haze', 'float')
+  mat.colorNode = vertexColor().rgb.mul(float(1).sub(haze))
+  mat.emissiveNode = aerialHaze.mul(haze)
+  return mat
 }
 
 function solid(color: string): THREE.MeshStandardMaterial {
@@ -376,14 +387,19 @@ export function createSurround(): Surround {
   hedges.name = 'hedgerow'
   hedges.frustumCulled = false
   noRaycast(hedges)
-  const ridgeMat = new THREE.MeshStandardMaterial({
+  const ridgeMat = ridgeMaterial()
+  const ridge = new THREE.Mesh(ridgeGeometry(), ridgeMat)
+  ridge.name = 'horizon'
+  const beltMat = new THREE.MeshStandardMaterial({
     vertexColors: true,
     roughness: 1,
     metalness: 0,
     envMapIntensity: 0.15,
   })
-  const ridge = new THREE.Mesh(ridgeGeometry(), ridgeMat)
-  ridge.name = 'horizon'
+  const belt = new THREE.Mesh(forestBeltGeometry(), beltMat)
+  belt.name = 'horizon-belt'
+  belt.frustumCulled = false
+  noRaycast(belt)
   ridge.frustumCulled = false
   noRaycast(ridge)
   group.add(meadow)
@@ -391,6 +407,7 @@ export function createSurround(): Surround {
   group.add(trees.group)
   group.add(hedges)
   group.add(ridge)
+  group.add(belt)
   const dummy = new THREE.Object3D()
   let placed = ''
   let fieldKey = ''
@@ -489,6 +506,7 @@ export function createSurround(): Surround {
       trees.group.visible = !paved
       hedges.visible = !paved
       ridge.visible = !paved
+      belt.visible = !paved
       const key = `${terrain.width}|${terrain.depth}|${terrain.resolution}|${mode}`
       if (key !== fieldKey || terrain.heights !== heightRef) {
         fieldKey = key
@@ -533,7 +551,9 @@ export function createSurround(): Surround {
       hedges.geometry.dispose()
       dropMat(hedges)
       ridge.geometry.dispose()
+      belt.geometry.dispose()
       dropMat(ridge)
+      dropMat(belt)
     },
   }
 }

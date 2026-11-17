@@ -14,6 +14,7 @@ import type { SceneLayer, SceneLayerContext, SceneViewState } from '../layers'
 import { photoExposure } from '../../ui/photoSession'
 import { clockTime } from './clock'
 import { createClouds } from './clouds'
+import { setAerialHaze } from './aerial'
 import { createGradedSky, type GradedSky, type SkyGrade } from './gradeSky'
 import { createPrecip, driftPrecip } from './precip'
 import { autoExposureState, stepAutoExposure } from '../post/autoExposure'
@@ -184,6 +185,7 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     fog.near = skyState.fogNear
     fog.far = skyState.fogFar
     fog.color.setRGB(skyState.horizonScene[0], skyState.horizonScene[1], skyState.horizonScene[2])
+    setAerialHaze(skyState.horizonScene)
     background.copy(fog.color)
     hemi.color.set(skyState.hemiSky)
     hemi.groundColor.set(skyState.hemiGround)
