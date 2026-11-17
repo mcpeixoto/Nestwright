@@ -43,11 +43,11 @@ export function studioApartment(): Project {
     zone('Entrance', 'hall', 1.6, -2.5, 3.5, -0.9, 'tile-hex'),
     zone('Living', 'living', -3.5, -2.5, 3.5, 2.5),
   ])
-  furnish(level, 'sofa-3', -0.3, 0.85, Math.PI)
-  furnish(level, 'coffee-table', -0.3, 0)
-  furnish(level, 'kitchen-run', -2.55, 1.4, Math.PI / 2)
-  furnish(level, 'dining-table', 1.4, 0.5)
-  furnish(level, 'dining-chair', 1.4, -0.15)
+  furnish(level, 'sofa-3', -0.5, 0.85, Math.PI)
+  furnish(level, 'coffee-table', -0.5, 0)
+  furnish(level, 'kitchen-run', 3.1, 0.8, Math.PI / 2)
+  furnish(level, 'dining-table', 1.45, 0.5)
+  furnish(level, 'dining-chair', 1.45, -0.3)
   furnish(level, 'toilet', -2.9, -1.7)
   furnish(level, 'washbasin', -2.15, -2.15)
   furnish(level, 'plant-pot', 0.5, 1.7)

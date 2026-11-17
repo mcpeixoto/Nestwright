@@ -1,9 +1,11 @@
 import { getEntry } from '../catalog/registry'
+import type { CatalogEntry } from '../catalog/types'
 import { newId } from '../model/ids'
+import { resolveItemPose } from '../model/itemCollision'
 import { addItem } from '../model/ops'
 import { nearestWallPoint } from '../model/rooms'
 import { itemCorners } from '../plan2d/snap'
-import type { Vec2 } from '../model/types'
+import type { Level, Vec2 } from '../model/types'
 import { selectActiveLevel, useStore } from '../store'
 import { icon } from './icons'
 import { registerTool } from './registry'
@@ -22,10 +24,15 @@ export function beginPlace(id: string): void {
   useStore.getState().setTool('place-item')
 }
 
-function poseAt(point: Vec2): { position: Vec2; rotation: number } {
-  const level = selectActiveLevel(useStore.getState())
-  const entry = catalogId ? getEntry(catalogId) : undefined
-  if (!level || !entry) return { position: point, rotation: 0 }
+function elevationFor(id: string, entry: CatalogEntry, level: Level): number {
+  return entry.mount === 'ceiling' || id === 'pendant-lamp'
+    ? Math.max(0, level.height - entry.defaultSize.h)
+    : entry.mount === 'wall'
+      ? Math.max(0, Math.min(entry.mountHeight ?? 1.45, level.height - entry.defaultSize.h))
+      : 0
+}
+
+function wallPose(point: Vec2, entry: CatalogEntry, level: Level): { position: Vec2; rotation: number } {
   const near = nearestWallPoint(level, point)
   const reach = entry.againstWall ? Math.max(1.4, entry.defaultSize.d + 0.8) : 0.45 + entry.defaultSize.d
   if (!near || near.distance > reach) return { position: point, rotation: 0 }
@@ -39,6 +46,23 @@ function poseAt(point: Vec2): { position: Vec2; rotation: number } {
     position: { x: near.point.x + nx * gap, y: near.point.y + ny * gap },
     rotation: Math.atan2(-nx, ny),
   }
+}
+
+/** Where a click at `point` drops the item; unless `free` (Alt), pushed clear of walls and furniture. */
+function poseAt(point: Vec2, free: boolean): { position: Vec2; rotation: number } {
+  const level = selectActiveLevel(useStore.getState())
+  const id = catalogId
+  const entry = id ? getEntry(id) : undefined
+  if (!level || !entry || !id) return { position: point, rotation: 0 }
+  const pose = wallPose(point, entry, level)
+  if (free) return pose
+  const resolved = resolveItemPose(level, {
+    ...pose,
+    size: entry.defaultSize,
+    elevation: elevationFor(id, entry, level),
+    catalogId: id,
+  })
+  return { position: resolved.position, rotation: pose.rotation }
 }
 
 registerTool({
@@ -56,22 +80,17 @@ registerTool({
   },
   onPointerMove(ctx) {
     if (!catalogId) return
-    ghost = poseAt(ctx.point)
+    ghost = poseAt(ctx.point, ctx.alt)
   },
   onPointerDown(ctx) {
     if (!catalogId) return
     const entry = getEntry(catalogId)
     const level = selectActiveLevel(useStore.getState())
     if (!entry || !level) return
-    const pose = poseAt(ctx.point)
+    const pose = poseAt(ctx.point, ctx.alt)
     const id = catalogId
     const levelId = level.id
-    const elevation =
-      entry.mount === 'ceiling' || id === 'pendant-lamp'
-        ? Math.max(0, level.height - entry.defaultSize.h)
-        : entry.mount === 'wall'
-          ? Math.max(0, Math.min(entry.mountHeight ?? 1.45, level.height - entry.defaultSize.h))
-          : 0
+    const elevation = elevationFor(id, entry, level)
     useStore.getState().apply('Place item', (draft) => {
       const target = draft.levels.find((l) => l.id === levelId)
       if (!target) return

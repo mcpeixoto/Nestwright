@@ -1,6 +1,7 @@
 import { bulgeDelta, clampBulge, curveHandle } from '../model/curve'
 import { snapItemPose, type SnapGuide } from '../model/furnitureSnap'
 import { add, dist, len, sub } from '../model/geometry'
+import { resolveItemPose } from '../model/itemCollision'
 import { traceContains } from '../model/trace'
 import { moveItems, moveRoom, moveWall, moveWallEndpoint } from '../model/ops'
 import { slideOpening } from '../model/ops/sizes'
@@ -238,11 +239,29 @@ registerTool({
         { position: add(origin.position, delta), rotation: single ? origin.rotation : firstNow.rotation, size: firstNow.size },
         { snap: !ctx.alt, ignore: ids, rotate: single },
       )
+      // Snapped single drags may not clip walls or furniture; Alt stays free placement.
+      let target = snapped.position
+      if (single && !ctx.alt) {
+        const resolved = resolveItemPose(
+          level,
+          {
+            position: snapped.position,
+            rotation: snapped.rotation,
+            size: firstNow.size,
+            elevation: firstNow.elevation,
+            catalogId: firstNow.catalogId,
+          },
+          { ignore: ids },
+        )
+        // Boxed in: hold the last clear spot until the pointer reaches open floor.
+        if (resolved.blocked) return
+        target = resolved.position
+      }
       guides = snapped.guides
       applyMove('Move items', (draft) => {
         const first = draft.items.find((item) => item.id === origin.id)
         if (!first) return
-        const step = sub(snapped.position, first.position)
+        const step = sub(target, first.position)
         if (len(step) >= 1e-6) moveItems(draft, ids, step)
         if (single && Math.abs(first.rotation - snapped.rotation) > 1e-9) first.rotation = snapped.rotation
       })

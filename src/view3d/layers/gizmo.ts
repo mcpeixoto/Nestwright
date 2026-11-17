@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
+import { resolveItemPose } from '../../model/itemCollision'
 import type { Item, Vec2 } from '../../model/types'
 import { selectActiveLevel, useStore } from '../../store'
 import { registerShortcut } from '../../ui/shortcuts'
@@ -121,7 +122,9 @@ export function createGizmoLayer(ctx: SceneLayerContext): SceneLayer {
     orbit.enabled = on && useStore.getState().view !== 'walk'
   }
 
+  let freeMove = false
   const snapForShift = (free: boolean) => {
+    freeMove = free
     gizmo.setTranslationSnap(free ? null : 0.05)
     gizmo.setRotationSnap(free ? null : Math.PI / 12)
   }
@@ -158,6 +161,8 @@ export function createGizmoLayer(ctx: SceneLayerContext): SceneLayer {
     const activeId = String(object.userData.entityId ?? '')
     const elev = levelElev
     const storedLevel = levelId
+    // A snapped single-item move lands clear of walls and furniture; Shift keeps it free.
+    const resolve = mode === 'translate' && ids.length === 1 && !freeMove
     useStore.getState().apply(mode === 'rotate' ? 'Rotate items' : 'Move items', (draft) => {
       const level = draft.levels.find((entry) => entry.id === storedLevel)
       if (!level) return
@@ -166,8 +171,23 @@ export function createGizmoLayer(ctx: SceneLayerContext): SceneLayer {
         const origin = snapshot.get(id)
         if (!item || !origin || item.locked) continue
         if (id === activeId) {
-          item.position = { x: object.position.x, y: object.position.z }
-          item.elevation = object.position.y - elev
+          const elevation = object.position.y - elev
+          const position = { x: object.position.x, y: object.position.z }
+          const resolved = resolve
+            ? resolveItemPose(
+                level,
+                { position, rotation: item.rotation, size: item.size, elevation, catalogId: item.catalogId },
+                { ignore: ids },
+              )
+            : null
+          if (resolved?.blocked) {
+            // Boxed in: back to where the drag started rather than into the clip.
+            item.position = { ...origin.position }
+            item.elevation = origin.elevation
+          } else {
+            item.position = resolved ? resolved.position : position
+            item.elevation = elevation
+          }
           item.rotation = -object.rotation.y
         } else {
           item.position = { x: origin.position.x + dx, y: origin.position.y + dz }
