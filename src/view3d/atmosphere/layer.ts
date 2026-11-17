@@ -326,11 +326,6 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
 
     stars.points.renderOrder = -1
     stars.setNight(skyState.star)
-    const density =
-      weather === 'clear' ? 0.15 + cloudiness * 0.45 : weather === 'fog' ? 0.15 : 0.45 + cloudiness * 0.5
-    const cover = weather === 'clear' ? 0.62 - cloudiness * 0.2 : 0.42 - cloudiness * 0.12
-    const cloudColor = skyState.night > 0.55 ? '#7d8794' : skyState.sunset > 0.45 ? '#f0c4a4' : '#f4f6f8'
-    clouds.set(density, cover, cloudColor)
     const nextQuality = useSettings.getState().graphicsQuality
     precip.set(weather, weather === 'clear' ? cloudiness : 0.7, nextQuality)
     setWeatherMix(weather === 'rain' ? 0.82 : weather === 'fog' ? 0.2 : 0, weather === 'snow' ? 0.4 + cloudiness * 0.6 : 0)
@@ -338,6 +333,15 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     const box = boundsOf(project, view)
     const center = box.getCenter(new THREE.Vector3())
     const keyDir = sunKey ? unit : moonDir
+    clouds.set({
+      coverage: skyState.cloudCoverage,
+      density: skyState.cloudDensity,
+      lit: skyState.cloudLitScene,
+      shade: skyState.cloudShadeScene,
+      horizon: skyState.horizonScene,
+      sun: keyDir,
+      day: 1 - skyState.night,
+    })
     sun.target.position.copy(center)
     sun.position.copy(center).addScaledVector(keyDir, 60)
     setFoliageSun(keyDir, sun.color, sun.intensity)

@@ -68,6 +68,38 @@ export interface SkyParams {
   hemiSky: string
   hemiGround: string
   hemiIntensity: number
+  /** Fraction of the sky under cloud and the opacity of a thick cloud (see `cloudLook`). */
+  cloudCoverage: number
+  cloudDensity: number
+  /** Display targets (sRGB bytes) for a sunlit cloud top and a shadowed base. */
+  cloudLitDisplay: RGB
+  cloudShadeDisplay: RGB
+  /** Scene radiance that the tone mapper maps back to the cloud display bytes. */
+  cloudLitScene: RGB
+  cloudShadeScene: RGB
+}
+
+/** Cloud colours on screen. Fair-weather cumulus: near-white tops, cool grey bases. */
+export const CLOUD_LIT_SRGB: readonly [number, number, number] = [246, 246, 243]
+export const CLOUD_SHADE_SRGB: readonly [number, number, number] = [160, 170, 188]
+const CLOUD_SUNSET_LIT: readonly [number, number, number] = [250, 186, 136]
+const CLOUD_SUNSET_SHADE: readonly [number, number, number] = [126, 106, 122]
+const CLOUD_NIGHT_LIT: readonly [number, number, number] = [72, 80, 98]
+const CLOUD_NIGHT_SHADE: readonly [number, number, number] = [30, 34, 46]
+const CLOUD_RAIN_LIT: readonly [number, number, number] = [190, 194, 200]
+const CLOUD_RAIN_SHADE: readonly [number, number, number] = [108, 114, 124]
+const CLOUD_FOG_LIT: readonly [number, number, number] = [214, 217, 221]
+const CLOUD_FOG_SHADE: readonly [number, number, number] = [168, 173, 180]
+
+/**
+ * How much cloud the sky shows for a weather and the cloudiness slider. A clear day at the default
+ * 0.15 still carries scattered cumulus; an empty sky read as computer-made.
+ */
+export function cloudLook(weather: string, cloudiness: number): { coverage: number; density: number } {
+  const c = clamp01(Number.isFinite(cloudiness) ? cloudiness : 0)
+  if (weather === 'fog') return { coverage: 0.85, density: 0.4 }
+  if (weather === 'rain' || weather === 'snow') return { coverage: Math.min(1, 0.86 + c * 0.12), density: 0.97 }
+  return { coverage: 0.24 + c * 0.55, density: 0.88 + c * 0.1 }
 }
 
 function clamp01(value: number): number {
@@ -175,7 +207,33 @@ export function createSkyParams(): SkyParams {
     hemiSky: '#b7cbe4',
     hemiGround: '#4e5a3c',
     hemiIntensity: 0.45,
+    cloudCoverage: 0,
+    cloudDensity: 0,
+    cloudLitDisplay: [0, 0, 0],
+    cloudShadeDisplay: [0, 0, 0],
+    cloudLitScene: [...zero],
+    cloudShadeScene: [...zero],
   }
+}
+
+function writeCloudColours(out: SkyParams, weather: string, cover: number, exp: number, tone: ToneMapSetting): void {
+  const look = cloudLook(weather, cover)
+  out.cloudCoverage = look.coverage
+  out.cloudDensity = look.density
+  const day = 1 - out.night
+  const grey = weather === 'fog' ? 1 : weather === 'rain' || weather === 'snow' ? 1 : cover * 0.35
+  const greyLit = weather === 'fog' ? CLOUD_FOG_LIT : CLOUD_RAIN_LIT
+  const greyShade = weather === 'fog' ? CLOUD_FOG_SHADE : CLOUD_RAIN_SHADE
+  let lit = mix3(CLOUD_LIT_SRGB, CLOUD_SUNSET_LIT, out.sunset)
+  let shade = mix3(CLOUD_SHADE_SRGB, CLOUD_SUNSET_SHADE, out.sunset)
+  lit = mix3(lit, greyLit, grey * day)
+  shade = mix3(shade, greyShade, grey * day)
+  lit = mix3(lit, CLOUD_NIGHT_LIT, out.night)
+  shade = mix3(shade, CLOUD_NIGHT_SHADE, out.night)
+  out.cloudLitDisplay = lit
+  out.cloudShadeDisplay = shade
+  invertTone(srgbToLinear3(lit), exp, tone, out.cloudLitScene)
+  invertTone(srgbToLinear3(shade), exp, tone, out.cloudShadeScene)
 }
 
 const sceneZenith: RGB = [0, 0, 0]
@@ -243,6 +301,7 @@ export function writeSkyParams(
   out.hemiSky = night > 0.55 ? '#9aafc8' : sunset > 0.45 ? '#d7c4a4' : '#b7cbe4'
   out.hemiGround = night > 0.55 ? '#4a5c58' : sunset > 0.45 ? '#6a7848' : '#4a5538'
   out.hemiIntensity = night > 0.55 ? 2.4 : sunset > 0.45 ? 2 : DAY_HEMI_INTENSITY
+  writeCloudColours(out, weather, cover, exp, tone)
   return out
 }
 
