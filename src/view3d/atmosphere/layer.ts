@@ -56,6 +56,9 @@ function paintSky(sky: GradedSky, unit: THREE.Vector3, showSun: boolean, grade: 
   const horizon = light ? params.horizonLight : params.horizonScene
   grade.zenith.setRGB(zenith[0], zenith[1], zenith[2])
   grade.horizon.setRGB(horizon[0], horizon[1], horizon[2])
+  // Only the lighting dome gets ground bounce; terrain covers the visible dome's lower half.
+  const ground = light ? params.groundLight : horizon
+  grade.ground.setRGB(ground[0], ground[1], ground[2])
   if (showSun) grade.sunDisc.setRGB(SUN_DISC[0], SUN_DISC[1], SUN_DISC[2])
   else grade.sunDisc.setRGB(0, 0, 0)
 }
@@ -94,8 +97,8 @@ export function createAtmosphereLayer(ctx: SceneLayerContext): SceneLayer {
     ctx.renderer.shadowMap.type = THREE.PCFShadowMap
   }
 
-  const skyGrade: SkyGrade = { zenith: new THREE.Color(), horizon: new THREE.Color(), sunDisc: new THREE.Color() }
-  const envGrade: SkyGrade = { zenith: new THREE.Color(), horizon: new THREE.Color(), sunDisc: new THREE.Color() }
+  const skyGrade: SkyGrade = { zenith: new THREE.Color(), horizon: new THREE.Color(), sunDisc: new THREE.Color(), ground: new THREE.Color() }
+  const envGrade: SkyGrade = { zenith: new THREE.Color(), horizon: new THREE.Color(), sunDisc: new THREE.Color(), ground: new THREE.Color() }
   const skyDome = createGradedSky(skyGrade)
   const sky = skyDome.mesh
   sky.scale.setScalar(480)
