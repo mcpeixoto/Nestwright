@@ -205,6 +205,13 @@ export const useSettings = create<SettingsState>((set, get) => ({
   },
 }))
 
+/** Preferences back to defaults. Brief progress is not a preference. */
+export function resetSettings(): void {
+  const next = normalizeSettings({ ...DEFAULT_SETTINGS, briefStars: useSettings.getState().briefStars })
+  useSettings.setState(next)
+  persist(next)
+}
+
 /** Stores a higher star count for one brief. Returns whether the saved count went up. */
 export function commitBriefStars(id: string, stars: number): boolean {
   const current = useSettings.getState().briefStars

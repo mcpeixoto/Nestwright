@@ -1062,4 +1062,15 @@ export const pt: { [K in MessageKey]: string } = {
   'Add to house': 'Adicionar à casa',
   'Could not make the 3D model: {error}': 'Não foi possível criar o modelo 3D: {error}',
   'The converter made a file that is not a 3D model.': 'O conversor criou um ficheiro que não é um modelo 3D.',
+  Controls: 'Controlos',
+  Advanced: 'Avançado',
+  'Reset to defaults': 'Repor predefinições',
+  'Reset all settings to their defaults?': 'Repor todas as definições?',
+  'Lower values draw fewer pixels and run faster.':
+    'Valores mais baixos desenham menos píxeis e correm mais depressa.',
+  'WebGPU is faster where available; WebGL 2 works everywhere.':
+    'WebGPU é mais rápido onde existe; WebGL 2 funciona em todo o lado.',
+  'How bright colours roll off into white.': 'Como as cores fortes se fundem no branco.',
+  'Nudges the automatic exposure darker or brighter.':
+    'Ajusta a exposição automática para mais escuro ou mais claro.',
 }

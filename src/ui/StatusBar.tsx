@@ -7,6 +7,7 @@ import { formatArea, formatLength } from '../model/units'
 import { roomsFor, selectActiveLevel, useStore } from '../store'
 import { T } from '../i18n/T'
 import { useTranslate } from '../i18n'
+import { setUnits } from '../settings/units'
 
 export function StatusBar() {
   const tr = useTranslate()
@@ -37,15 +38,7 @@ export function StatusBar() {
       <button type="button" className={snapAngles ? 'on' : ''} onClick={() => useStore.getState().setSnap({ snapAngles: !snapAngles })}>
         <T k="Angles" />
       </button>
-      <button
-        type="button"
-        onClick={() => {
-          const next = units === 'metric' ? 'imperial' : 'metric'
-          useStore.getState().apply('Units', (draft) => {
-            draft.units = next
-          })
-        }}
-      >
+      <button type="button" onClick={() => setUnits(units === 'metric' ? 'imperial' : 'metric')}>
         {units === 'metric' ? tr('Metric') : tr('Imperial')}
       </button>
       {house.rooms > 0 ? (
