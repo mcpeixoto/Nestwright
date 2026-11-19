@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { isDirty, subscribeDirty } from '../io/dirty'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store'
 import { noteReturnView } from '../view3d/rigs/walk'
 import { useOpenPanelIds, usePanelList, togglePanel } from './panels/registry'
@@ -12,6 +11,7 @@ import type { PanelDef } from './panels/registry'
 import { Tooltip } from './Tooltip'
 import { NARROW_BAR } from './breakpoints'
 import { useMediaQuery } from './useMediaQuery'
+import { saveStateLabel, useSaveState } from './saveState'
 import { redoIcon, saveIcon, undoIcon, variantsIcon, wishesIcon } from './topbar/icons'
 
 const FILE_MENU = ['new', 'open', 'export-json', 'settings', 'shortcuts']
@@ -195,7 +195,8 @@ function LoosePanelButton({ panel, open }: { panel: PanelDef; open: boolean }) {
 export function TopBar() {
   const tr = useTranslate()
   const name = useStore((s) => s.project.name)
-  const dirty = useSyncExternalStore(subscribeDirty, isDirty, () => false)
+  const saveState = useSaveState()
+  const label = saveStateLabel(saveState)
   const view = useStore((s) => s.view)
   const canUndo = useStore((s) => s.canUndo)
   const canRedo = useStore((s) => s.canRedo)
@@ -233,7 +234,9 @@ export function TopBar() {
             })
           }}
         />
-        {dirty && <span className="unsaved-dot" role="img" aria-label={tr('Unsaved changes')} title={tr('Unsaved changes')} />}
+        <span className={saveState.dirty ? 'save-state dirty' : 'save-state'} role="status">
+          {label ? tr(label) : ''}
+        </span>
       </div>
       <div className="view-switch" role="group" aria-label={tr('View')}>
         {VIEWS.map((item) => (

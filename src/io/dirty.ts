@@ -1,6 +1,8 @@
 import { subscribeLocalApplies } from '../store'
 
 let dirty = false
+let savedAt: number | null = null
+let snapshot: { dirty: boolean; savedAt: number | null } = { dirty, savedAt }
 const listeners = new Set<() => void>()
 
 function emit(): void {
@@ -13,9 +15,14 @@ function emit(): void {
   }
 }
 
+function remember(): void {
+  snapshot = { dirty, savedAt }
+}
+
 function setDirty(next: boolean): void {
   if (dirty === next) return
   dirty = next
+  remember()
   emit()
 }
 
@@ -23,9 +30,16 @@ export function isDirty(): boolean {
   return dirty
 }
 
+export function getSaveState(): { dirty: boolean; savedAt: number | null } {
+  return snapshot
+}
+
 /** Successful save, open, or new project. Undo does not call this. */
 export function markSaved(): void {
-  setDirty(false)
+  savedAt = Date.now()
+  dirty = false
+  remember()
+  emit()
 }
 
 export function subscribeDirty(listener: () => void): () => void {

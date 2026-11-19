@@ -1,23 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { sendChat, useLive, useToasts } from '../../net/live'
 import { T } from '../../i18n/T'
 import { useTranslate } from '../../i18n'
+import { showToast } from '../toast'
 
 export function TogetherChrome() {
   const live = useLive()
   const toasts = useToasts()
+  const seen = useRef(new Set<number>())
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
   const tr = useTranslate()
+  useEffect(() => {
+    for (const toast of toasts) {
+      if (seen.current.has(toast.id)) continue
+      seen.current.add(toast.id)
+      showToast(toast.text)
+    }
+  }, [toasts])
   return (
     <>
-      <div className="toast-stack">
-        {toasts.map((toast) => (
-          <div key={toast.id} className="toast" role="status">
-            {toast.text}
-          </div>
-        ))}
-      </div>
       {live.role !== 'idle' && (
         <aside className="chat-dock" aria-label={tr('Chat')}>
           <button type="button" onClick={() => setOpen((value) => !value)}>

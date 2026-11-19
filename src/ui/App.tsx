@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { installAudio } from '../audio/install'
+import { translate } from '../i18n'
 import { saveAutosave } from '../io/autosave'
 import { PlanCanvas } from '../plan2d/PlanCanvas'
 import { useSettings } from '../settings'
@@ -35,7 +36,9 @@ import { useCompareVariant } from './together/compare'
 import { CompareBanner } from './together/CompareBanner'
 import { VariantPane } from './together/VariantPane'
 import { Tour } from './onboarding/Tour'
+import { noteAutosave } from './saveState'
 import { useScreen } from './session'
+import { showToast } from './toast'
 import { StartScreen } from './start/StartScreen'
 import './start/home'
 import { scheduleThumb } from './start/thumbs'
@@ -140,6 +143,7 @@ export function App() {
       timer = setTimeout(() => {
         const project = useStore.getState().project
         saveAutosave(project)
+        if (noteAutosave()) showToast(translate(useSettings.getState().language, 'Autosaved'), { duration: 1500 })
         scheduleThumb((thumb) => rememberProject(project, thumb))
       }, seconds * 1000)
     })

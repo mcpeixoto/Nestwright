@@ -17,6 +17,8 @@ import { useSettings } from '../settings'
 import { requestEnterEditor } from './enterEditor'
 import { rememberProject } from './start/recent'
 import { scheduleThumb } from './start/thumbs'
+import { formatClock } from './saveState'
+import { showToast } from './toast'
 
 function say(key: string): void {
   useStore.getState().setMessage(translate(useSettings.getState().language, key))
@@ -30,7 +32,8 @@ function fileName(name: string, ext: string): string {
 function finishSave(saved: Project): void {
   if (useStore.getState().project === saved) markSaved()
   scheduleThumb((thumb) => rememberProject(saved, thumb))
-  say('Saved')
+  const language = useSettings.getState().language
+  showToast(fill(language, 'Saved · {time}', { time: formatClock(Date.now()) }))
 }
 
 async function writeProject(forceDialog: boolean): Promise<boolean> {
@@ -94,7 +97,8 @@ export function openReceivedFile(file: { name: string; data: string; path?: stri
     setFilePath(file.path && /\.nest$/i.test(file.path) ? file.path : null)
     markSaved()
     scheduleThumb((thumb) => rememberProject(project, thumb))
-    useStore.getState().setMessage(`${translate(useSettings.getState().language, 'Open')} ${file.name}`)
+    const language = useSettings.getState().language
+    showToast(fill(language, 'Opened {name}', { name: file.name }))
     return true
   } catch (err) {
     useStore.getState().setMessage(translate(useSettings.getState().language, err instanceof Error ? err.message : 'Could not open that file.'))
