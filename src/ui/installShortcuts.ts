@@ -3,6 +3,7 @@ import { useStore } from '../store'
 import { getTool } from '../tools/registry'
 import type { PlanTransform, ToolContext } from '../tools/types'
 import './builtinShortcuts'
+import { isPauseOpen } from './pauseMenuState'
 import { isPhotoMode } from './photoSession'
 import { isHelpOpen, listShortcuts, setHelpOpen, shortcutMatches } from './shortcuts'
 
@@ -27,6 +28,7 @@ export function installShortcuts(): () => void {
       event.preventDefault()
       return
     }
+    if (isPauseOpen()) return
     if (isTyping(event.target)) {
       if (event.key === 'Escape') (event.target as HTMLElement).blur()
       return

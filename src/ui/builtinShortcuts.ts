@@ -11,6 +11,7 @@ import {
   selectAllItems,
 } from './actions'
 import { fitVisible } from './fit'
+import { setPauseOpen } from './pauseMenuState'
 import { registerShortcut, setHelpOpen } from './shortcuts'
 
 /** The Electron File menu registers these accelerators. Handling them here as well would save twice. */
@@ -112,7 +113,19 @@ registerShortcut({
   id: 'clear-selection',
   keys: 'escape',
   description: 'Clear selection',
-  run: () => useStore.getState().select([]),
+  run: () => {
+    if (typeof document !== 'undefined' && document.querySelector('[role="menu"]')) return
+    const state = useStore.getState()
+    if (state.selection.length > 0) {
+      state.select([])
+      return
+    }
+    if (state.tool !== 'select') {
+      state.setTool('select')
+      return
+    }
+    setPauseOpen(true)
+  },
 })
 
 registerShortcut({
