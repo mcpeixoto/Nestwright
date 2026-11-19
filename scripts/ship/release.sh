@@ -10,6 +10,7 @@ repo=${NESTWRIGHT_REPO:-$(git -C "$here" rev-parse --show-toplevel)}
 # Work from the primary checkout even when called from a worktree.
 repo=$(git -C "$repo" worktree list --porcelain | awk 'NR==1{print $2}')
 out=${NESTWRIGHT_OUT:-$(mktemp -d -t nestwright-release)}
+mkdir -p "$out" || exit 1
 export GH_REPO=${GH_REPO:-mcpeixoto/Nestwright}
 zsh "$here/gate.sh" $pr || exit 1
 [[ $(gh pr view $pr --json state --jq .state) == MERGED ]] || { print "bump PR not merged"; exit 1; }
