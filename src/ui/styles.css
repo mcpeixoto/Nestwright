@@ -176,12 +176,21 @@ input, select {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.unsaved-dot {
+.save-state {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+.save-state.dirty { color: var(--accent); }
+.save-state.dirty::before {
+  content: '';
+  display: inline-block;
   width: 8px;
   height: 8px;
+  margin-right: 6px;
   border-radius: 50%;
-  background: var(--sand);
-  flex: none;
+  background: currentColor;
+  vertical-align: 1px;
 }
 
 .view-switch, .top-actions { display: flex; gap: 4px; flex-wrap: nowrap; flex: none; }
@@ -778,6 +787,7 @@ input, select {
   pointer-events: none;
 }
 .toast {
+  pointer-events: auto;
   min-width: 240px;
   max-width: 420px;
   padding: 10px 14px;
@@ -786,6 +796,12 @@ input, select {
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
   box-shadow: var(--sh-2);
+}
+.toast-action {
+  margin-left: var(--s3);
+  padding: 2px var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
 }
 .celebrate {
   position: fixed;
