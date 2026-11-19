@@ -8,6 +8,7 @@ import {
   type AppLanguage,
   type GraphicsQuality,
   type RendererBackendSetting,
+  type ThemeSetting,
   type ToneMapSetting,
 } from '../settings'
 import { EV_COMP_MAX, EV_COMP_MIN, formatEv } from '../model/exposure'
@@ -57,6 +58,13 @@ export function SettingsDialog() {
           <select value={settings.language} onChange={(event) => set({ language: event.target.value as AppLanguage })}>
             <option value="en">{tr('English')}</option>
             <option value="pt-PT">{tr('Portuguese (Portugal)')}</option>
+          </select>
+        </label>
+        <label className="field">
+          <T k="Theme" />
+          <select value={settings.theme} onChange={(event) => set({ theme: event.target.value as ThemeSetting })}>
+            <option value="cozy">{tr('Cozy')}</option>
+            <option value="night">{tr('Night')}</option>
           </select>
         </label>
         <label className="field">

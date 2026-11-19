@@ -10,11 +10,9 @@ import { listShortcuts } from './shortcuts'
 import { useTranslate } from '../i18n'
 import type { PanelDef } from './panels/registry'
 import { Tooltip } from './Tooltip'
+import { NARROW_BAR } from './breakpoints'
 import { useMediaQuery } from './useMediaQuery'
 import { redoIcon, saveIcon, undoIcon, variantsIcon, wishesIcon } from './topbar/icons'
-
-/** Variants, Together, and Photo leave the bar below this width. */
-const NARROW_BAR = '(max-width: 1099px)'
 
 const FILE_MENU = ['new', 'open', 'export-json', 'settings', 'shortcuts']
 const NARROW_ACTIONS = ['together', 'photo']

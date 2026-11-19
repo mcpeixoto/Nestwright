@@ -129,9 +129,12 @@ Rules:
 - Store-page checklist in `docs/STEAM.md`.
 
 ## Visual identity
-Own look: dark slate glass panels with warm sand accent (#E8B86D) and teal (#3FB8AF) for active
-states; left vertical tool rail, right inspector, top bar with view switcher. Plan view: off-white
-paper with soft grid, charcoal walls, pastel room fills by room type.
+The app opens warm and light. Cream page (`--paper` #F6F1E7), off-white panels (`--panel` #FFFDF8),
+ink text (`--ink` #2B2620), terracotta accent (`--accent` #C8643B), sage (`--sage` #6F8F72) for active
+states, rounded corners and soft shadows. Headings use Fraunces. Night, chosen in Settings, is the
+alternate theme: the pre-0.16 dark look, with slate panels, sand accent (#E8B86D) and teal (#3FB8AF)
+for active states. Layout stays a left vertical tool rail, right inspector, and top bar with the view
+switcher. Plan view: off-white paper with a soft grid, charcoal walls, pastel room fills by room type.
 
 ## Out of scope for v1
 Ray tracing, VR, DWG/DXF import, Steam Workshop upload (designed for, not built).
