@@ -699,9 +699,15 @@ input, select {
   gap: 8px;
 }
 .start-panel button, .gallery-head button { width: 100%; text-align: left; }
+.start-panel .menu-head { display: flex; justify-content: space-between; align-items: center; }
+.start-panel button {
+  border-radius: var(--r-md);
+  padding: var(--s3) var(--s4);
+  font-size: var(--fs-md);
+}
 .start-panel .start-pair { display: flex; gap: 8px; }
 .start-panel .start-pair button { flex: 1; width: auto; }
-.start-primary { background: rgba(63, 184, 175, 0.22); border-color: rgba(63, 184, 175, 0.45); }
+.start-primary { background: color-mix(in srgb, var(--accent) 18%, transparent); border-color: var(--accent); }
 .gallery { width: min(920px, calc(100% - 32px)); }
 .gallery-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
 .gallery-head button { width: auto; }

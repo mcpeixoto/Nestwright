@@ -1,11 +1,15 @@
 import { useSyncExternalStore } from 'react'
+import { setHelpPage } from '../achievements/helpPage'
+import { translate } from '../i18n'
 import { loadAutosave } from '../io/autosave'
 import { setFilePath } from '../io/documentPath'
 import { markSaved } from '../io/dirty'
+import { createProject } from '../model/defaults'
 import { useSettings } from '../settings'
 import { useStore, type ViewMode } from '../store'
 import { registerEnterEditor } from './enterEditor'
 import { presentProject } from './presentProject'
+import { setHelpOpen } from './shortcuts'
 import { studioApartment } from '../templates'
 import type { Project } from '../model/types'
 
@@ -54,6 +58,10 @@ export function useScreen(): Screen {
   return useSyncExternalStore(subscribeScreen, () => screen, () => 'editor')
 }
 
+export function currentScreen(): Screen {
+  return screen
+}
+
 export function canContinueProject(): boolean {
   return canContinue
 }
@@ -92,6 +100,16 @@ export function enterEditor(): void {
   screen = 'editor'
   if (returnView) useStore.getState().setView(returnView)
   publish()
+}
+
+export function beginBlankProject(): void {
+  const project = createProject(translate(useSettings.getState().language, 'Untitled'), 'house')
+  beginProject(project)
+}
+
+export function openCredits(): void {
+  setHelpPage('credits')
+  setHelpOpen(true)
 }
 
 export function beginProject(project: Project, filePath: string | null = null): void {
