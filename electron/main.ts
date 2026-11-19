@@ -343,7 +343,7 @@ function createWindow(): BrowserWindow {
     ...(fitted ? { x: fitted.x, y: fitted.y, width: fitted.width, height: fitted.height } : { width: 1600, height: 1000 }),
     minWidth: 1280,
     minHeight: 720,
-    backgroundColor: '#171a1f',
+    backgroundColor: '#F6F1E7',
     title: 'Nestwright',
     webPreferences: {
       preload: path.join(here, 'preload.cjs'),

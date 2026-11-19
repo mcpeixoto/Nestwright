@@ -26,6 +26,7 @@ import { SettingsDialog } from './SettingsDialog'
 import { StatusBar } from './StatusBar'
 import { installDocumentSession } from './documentSession'
 import { installShortcuts } from './installShortcuts'
+import { installTheme } from './theme'
 import { TopBar } from './TopBar'
 import { ToolRail } from './ToolRail'
 import { TogetherChrome } from './together/chrome'
@@ -126,6 +127,8 @@ export function App() {
     apply()
     return useSettings.subscribe(apply)
   }, [])
+
+  useEffect(() => installTheme(), [])
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined

@@ -9,11 +9,15 @@ export type AppLanguage = 'en' | 'pt-PT'
 export type RendererBackendSetting = 'auto' | 'webgpu' | 'webgl'
 /** AgX keeps saturated sun and lamp highlights from clipping to flat hues; ACES is the old look. */
 export type ToneMapSetting = 'agx' | 'aces'
+/** Cozy is the warm light default. Night is the pre-0.16 dark look. */
+export type ThemeSetting = 'cozy' | 'night'
 
 export interface Settings {
   units: 'metric' | 'imperial'
   graphicsQuality: GraphicsQuality
   language: AppLanguage
+  /** Night is the pre-0.16 dark look. */
+  theme: ThemeSetting
   showFps: boolean
   playerName: string
   playerColor: string
@@ -63,6 +67,7 @@ export const DEFAULT_SETTINGS: Settings = {
   units: 'metric',
   graphicsQuality: 'high',
   language: 'en',
+  theme: 'cozy',
   showFps: false,
   playerName: '',
   playerColor: '#3FB8AF',
@@ -104,6 +109,7 @@ export function normalizeSettings(partial: Partial<Settings> | null | undefined)
     units: source.units === 'imperial' ? 'imperial' : 'metric',
     graphicsQuality,
     language,
+    theme: source.theme === 'night' ? 'night' : 'cozy',
     showFps: source.showFps === true,
     playerName: typeof source.playerName === 'string' ? source.playerName : '',
     playerColor:
