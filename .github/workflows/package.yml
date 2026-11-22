@@ -1,6 +1,6 @@
 name: Package
 
-# Cross-builds the Windows and Linux apps on the self-hosted Linux runner and enforces the
+# Cross-builds the Windows and Linux apps on a GitHub-hosted Linux runner and enforces the
 # installed-size budget. Runs on PRs labelled `release` and on version tags only: a package
 # run takes several minutes and downloads two Electron builds.
 on:
@@ -9,6 +9,9 @@ on:
   push:
     tags: ['v*']
 
+permissions:
+  contents: read
+
 concurrency:
   group: package-${{ github.ref }}
   cancel-in-progress: true
@@ -16,9 +19,8 @@ concurrency:
 jobs:
   package:
     if: startsWith(github.ref, 'refs/tags/v') || contains(github.event.pull_request.labels.*.name, 'release')
-    runs-on: [self-hosted, vrserver]
-    # Same 45 min slot wait as ci.yml, plus the packaging itself.
-    timeout-minutes: 110
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       # electron-builder fetches the per-OS Electron zips itself; the host binary is not needed.
       ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
@@ -46,7 +48,7 @@ jobs:
             ls -l release/*.AppImage release/*.exe
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-      # Artifact storage on a private repo is metered, so only tags keep the binaries, briefly.
+      # Only tags keep the binaries, and only briefly: the GitHub release is the real download.
       - name: Upload installers (tags only)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4

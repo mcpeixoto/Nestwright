@@ -5,16 +5,19 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   verify:
-    runs-on: [self-hosted, vrserver]
-    # The VRServer job-started hook queues a job for up to 45 min when the box is busy
-    # (CI_SLOT_WAIT_MIN) after up to ~15 min of disk reclaim; both count against this limit.
-    timeout-minutes: 100
+    # GitHub-hosted only: this repository is public, and a self-hosted runner would run
+    # code from anyone's pull request on that machine.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
     steps:
