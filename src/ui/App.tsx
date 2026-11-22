@@ -37,6 +37,7 @@ import { CompareBanner } from './together/CompareBanner'
 import { VariantPane } from './together/VariantPane'
 import { Tour } from './onboarding/Tour'
 import { noteAutosave } from './saveState'
+import { PauseMenu } from './PauseMenu'
 import { useScreen } from './session'
 import { showToast } from './toast'
 import { StartScreen } from './start/StartScreen'
@@ -109,6 +110,7 @@ function EditorShell() {
       <Celebrate />
       {photo && <PhotoMode />}
       <Tour />
+      <PauseMenu />
     </>
   )
 }
