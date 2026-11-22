@@ -1069,6 +1069,15 @@ export const en = {
   'Add to house': 'Add to house',
   'Could not make the 3D model: {error}': 'Could not make the 3D model: {error}',
   'The converter made a file that is not a 3D model.': 'The converter made a file that is not a 3D model.',
+  Controls: 'Controls',
+  Advanced: 'Advanced',
+  'Reset to defaults': 'Reset to defaults',
+  'Reset all settings to their defaults?': 'Reset all settings to their defaults?',
+  'Lower values draw fewer pixels and run faster.': 'Lower values draw fewer pixels and run faster.',
+  'WebGPU is faster where available; WebGL 2 works everywhere.':
+    'WebGPU is faster where available; WebGL 2 works everywhere.',
+  'How bright colours roll off into white.': 'How bright colours roll off into white.',
+  'Nudges the automatic exposure darker or brighter.': 'Nudges the automatic exposure darker or brighter.',
 } as const
 
 export type MessageKey = keyof typeof en
