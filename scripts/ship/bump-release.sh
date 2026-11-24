@@ -26,5 +26,10 @@ print "bump PR: $url"
 pr=${url##*/}
 cd "$repo" && git worktree remove --force "$wt" && git branch -D chore/v$ver >/dev/null
 zsh "$here/release.sh" $pr $ver "$notes"
+rc=$?
 # Only a merged bump PR may lose its branch: deleting the head of an open PR closes it.
-[[ $(gh pr view $pr --json state --jq .state) == MERGED ]] && git push -q origin --delete chore/v$ver 2>/dev/null
+# GitHub usually deleted it already (delete_branch_on_merge), so a missing branch is fine.
+if [[ $(gh pr view $pr --json state --jq .state) == MERGED ]]; then
+  git ls-remote --exit-code --heads origin chore/v$ver >/dev/null 2>&1 && git push -q origin --delete chore/v$ver
+fi
+exit $rc
