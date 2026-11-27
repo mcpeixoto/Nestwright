@@ -39,12 +39,52 @@ export interface RendererOptions {
   alpha?: boolean
 }
 
+/**
+ * Limits raised past WebGPU's defaults when the adapter allows it. At Ultra the ground splat's
+ * fragment stage samples 17 textures (eight layers, two weight maps, the lawn scan's relief,
+ * shadows and probes) against a default of 16; past it the pipeline is invalid and the ground
+ * is not drawn at all.
+ */
+const RAISED_LIMITS = { maxSampledTexturesPerShaderStage: 16, maxSamplersPerShaderStage: 16 } as const
+
+type RaisedLimit = keyof typeof RAISED_LIMITS
+
+/** Every raised limit the adapter offers above the default; nothing it does not report. */
+export function raisedLimits(limits: Partial<Record<RaisedLimit, number>> | null | undefined): Partial<Record<RaisedLimit, number>> {
+  const out: Partial<Record<RaisedLimit, number>> = {}
+  for (const key of Object.keys(RAISED_LIMITS) as RaisedLimit[]) {
+    const offered = limits?.[key]
+    if (typeof offered === 'number' && offered > RAISED_LIMITS[key]) out[key] = offered
+  }
+  return out
+}
+
+interface GpuLike {
+  requestAdapter(options?: object): Promise<{ limits: Partial<Record<RaisedLimit, number>> } | null>
+}
+
+/**
+ * The limits of the adapter three will pick. Same options as its WebGPUBackend, so a limit
+ * read here is one the device request can be granted. Null without WebGPU or an adapter.
+ */
+export async function adapterLimits(gpu: GpuLike | null | undefined): Promise<Partial<Record<RaisedLimit, number>> | null> {
+  if (!gpu) return null
+  try {
+    const adapter = await gpu.requestAdapter({ featureLevel: 'compatibility' })
+    return adapter?.limits ?? null
+  } catch {
+    return null
+  }
+}
+
 async function attempt(canvas: HTMLCanvasElement, forceWebGL: boolean, options: RendererOptions): Promise<THREE.WebGPURenderer> {
+  const gpu = forceWebGL ? null : (globalThis.navigator as { gpu?: GpuLike } | undefined)?.gpu
   const renderer = new THREE.WebGPURenderer({
     canvas,
     antialias: options.antialias ?? false,
     alpha: options.alpha ?? false,
     forceWebGL,
+    requiredLimits: raisedLimits(await adapterLimits(gpu)),
   })
   try {
     await renderer.init()

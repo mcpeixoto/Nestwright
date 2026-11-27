@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import {
   cameraViewMatrix,
+  int,
   materialColor,
   max,
   mx_noise_float,
@@ -221,6 +222,54 @@ export function groundLayerTextures(): THREE.Texture[] {
   return cachedLayers
 }
 
+/** Side of every painted ground layer, in texels. */
+const LAYER_SIZE = 128
+
+/** RGBA bytes of a painted layer at LAYER_SIZE: read from its canvas, or the fallback's one texel spread. */
+function layerPixels(tex: THREE.Texture): Uint8Array {
+  const out = new Uint8Array(LAYER_SIZE * LAYER_SIZE * 4)
+  const image = tex.image as (HTMLCanvasElement | OffscreenCanvas | { data?: ArrayLike<number> }) | undefined
+  const ctx =
+    image && 'getContext' in image ? (image.getContext('2d') as Ctx | null) : null
+  if (ctx) {
+    out.set(ctx.getImageData(0, 0, LAYER_SIZE, LAYER_SIZE).data)
+    return out
+  }
+  const texel = (image && 'data' in image ? image.data : undefined) ?? [120, 140, 80, 255]
+  for (let i = 0; i < out.length; i += 4) {
+    out[i] = texel[0] ?? 0
+    out[i + 1] = texel[1] ?? 0
+    out[i + 2] = texel[2] ?? 0
+    out[i + 3] = texel[3] ?? 255
+  }
+  return out
+}
+
+let cachedArray: THREE.DataArrayTexture | null = null
+
+/**
+ * Layers 1–7 (every one but the lawn, which the scan replaces) as one array texture. three gives
+ * each distinct texture its own sampler, and a fragment stage gets 16: at Ultra, seven separate
+ * layer textures plus shadows, environment and probes made 17, so WebGPU dropped the ground.
+ */
+export function groundLayerArray(): THREE.DataArrayTexture {
+  if (cachedArray) return cachedArray
+  const layers = groundLayerTextures().slice(1)
+  const stride = LAYER_SIZE * LAYER_SIZE * 4
+  const data = new Uint8Array(stride * layers.length)
+  layers.forEach((tex, i) => data.set(layerPixels(tex), i * stride))
+  const array = new THREE.DataArrayTexture(data, LAYER_SIZE, LAYER_SIZE, layers.length)
+  array.wrapS = THREE.RepeatWrapping
+  array.wrapT = THREE.RepeatWrapping
+  array.magFilter = THREE.LinearFilter
+  array.minFilter = THREE.LinearMipmapLinearFilter
+  array.generateMipmaps = true
+  array.colorSpace = THREE.SRGBColorSpace
+  array.needsUpdate = true
+  cachedArray = array
+  return array
+}
+
 export interface SplatMaterial extends THREE.MeshStandardNodeMaterial {
   userData: THREE.MeshStandardNodeMaterial['userData'] & {
     syncSplat?: (terrain: Terrain) => void
@@ -312,6 +361,7 @@ export function applyLawnScan(mat: SplatMaterial, maps: PbrMaps): boolean {
  */
 export function createSplatMaterial(): SplatMaterial {
   const layers = groundLayerTextures()
+  const layerArray = groundLayerArray()
   const splat0 = texture(dataTexture(new Uint8Array(4), 1), uv())
   const splat1 = texture(dataTexture(new Uint8Array(4), 1), uv())
   const uniforms = { splat0, splat1 }
@@ -333,7 +383,8 @@ export function createSplatMaterial(): SplatMaterial {
     const layer = layers[i]
     const weight = weights[i]
     if (!layer || !weight) continue
-    let sample: THREE.Node<'vec3'> = i === 0 ? lawnAlbedo.rgb.mul(lawnTint) : texture(layer, tuv.mul(LAYER_TILING[i] ?? 1)).rgb
+    let sample: THREE.Node<'vec3'> =
+      i === 0 ? lawnAlbedo.rgb.mul(lawnTint) : texture(layerArray, tuv.mul(LAYER_TILING[i] ?? 1)).depth(int(i - 1)).rgb
     // Lawn and meadow get the macro swell; paving, gravel and paths stay even.
     if (i <= 1) sample = sample.mul(macro)
     const term = sample.mul(weight)
