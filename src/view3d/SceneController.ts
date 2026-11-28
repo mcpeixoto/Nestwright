@@ -10,6 +10,7 @@ import { isSharedGeometry, modelFor, modelsLoading, releaseModelGeometry, subscr
 import { ModelInstancer } from './modelInstances'
 import { buildOpening } from '../builders/openings'
 import { buildWall } from '../builders/walls'
+import { diffWalls } from './wallDiff'
 import { resolveTrim } from '../model/trim'
 import type { Item, Level, Project } from '../model/types'
 import { gizmoOwnsPointer, releaseGizmo } from './layers/gizmo'
@@ -71,6 +72,9 @@ interface Bucket {
   shadows: THREE.Group
   itemMap: Map<string, { source: Item; object: THREE.Object3D; scanned: boolean; shadow: THREE.Mesh | null }>
   instancer: ModelInstancer
+  /** Per wall: its group plus its opening groups, so one wall edit rebuilds only what it touched. */
+  wallObjects: Map<string, THREE.Object3D[]>
+  floorObject: THREE.Object3D | null
 }
 
 /** Longest a batch of model loads waits for the rest before swapping in what has arrived. */
@@ -113,6 +117,9 @@ export class SceneController {
   private root = new THREE.Group()
   private helpers = new THREE.Group()
   private levels = new Map<string, Bucket>()
+  /** Wall/opening/floor rebuild cost of the last reconcile that rebuilt anything (perf report extras). */
+  private lastRebuildMs = 0
+  private lastWallsRebuilt = 0
   private layers = new Map<string, SceneLayer>()
   private raycaster = new THREE.Raycaster()
   private pointer = new THREE.Vector2()
@@ -171,6 +178,8 @@ export class SceneController {
       canvas.addEventListener('pointerdown', this.onDown, true)
       canvas.addEventListener('pointerup', this.onUp)
       setPerfExtra('instancing', () => this.instancingStats())
+      setPerfExtra('structuralRebuildMs', () => Math.round(this.lastRebuildMs * 100) / 100)
+      setPerfExtra('structuralWallsRebuilt', () => this.lastWallsRebuilt)
     }
     this.unsubscribeModels = subscribeModels(() => {
       this.modelsWaitingSince ??= performance.now()
@@ -459,6 +468,9 @@ export class SceneController {
       disposeTree(bucket.group)
       this.levels.delete(id)
     }
+    let rebuildMs = 0
+    let wallsTotal = 0
+    let rebuiltAny = false
     let lowest = Infinity
     for (const level of project.levels) lowest = Math.min(lowest, level.elevation)
     for (const level of project.levels) {
@@ -472,9 +484,7 @@ export class SceneController {
       const above = levelAbove(project, level)
       const belowStairs = below?.stairs
       const ground = level.elevation <= lowest + 1e-6
-      const same =
-        bucket.walls === level.walls &&
-        bucket.openings === level.openings &&
+      const others =
         bucket.rooms === level.rooms &&
         bucket.elevation === level.elevation &&
         bucket.ground === ground &&
@@ -485,26 +495,74 @@ export class SceneController {
         bucket.trim === level.trim &&
         bucket.aboveWalls === above?.walls &&
         bucket.aboveSlab === above?.slabThickness
+      const same = others && bucket.walls === level.walls && bucket.openings === level.openings
       if (!same) {
-        disposeTree(bucket.structural)
-        bucket.structural.clear()
+        const started = performance.now()
         const rooms = roomsFor(level)
-        const trim = resolveTrim(level.trim)
-        const ceiling = above ? { rooms: roomsFor(above), slab: above.slabThickness } : undefined
-        for (const wall of level.walls) {
-          bucket.structural.add(buildWall(wall, level, level.walls, { rooms, trim, above: ceiling, ground }))
-          if (wall.kind === 'railing') continue
-          for (const opening of level.openings) {
-            if (opening.wallId === wall.id) bucket.structural.add(buildOpening(opening, wall, level.elevation, { rooms }))
-          }
+        const ctx = {
+          rooms,
+          trim: resolveTrim(level.trim),
+          above: above ? { rooms: roomsFor(above), slab: above.slabThickness } : undefined,
+          ground,
         }
-        bucket.structural.add(
-          buildFloors(level, roomsFor(level), {
+        const buildFor = (wall: Level['walls'][number]): THREE.Object3D[] => {
+          const objects: THREE.Object3D[] = [buildWall(wall, level, level.walls, ctx)]
+          if (wall.kind !== 'railing') {
+            for (const opening of level.openings) {
+              if (opening.wallId === wall.id) objects.push(buildOpening(opening, wall, level.elevation, { rooms }))
+            }
+          }
+          return objects
+        }
+        const buildFloorObject = () =>
+          buildFloors(level, rooms, {
             holes: (belowStairs ?? []).map((stair) => stairHoleOutline(stair)),
             upper: !!below,
             skipCeiling: level.roofs.length > 0,
-          }),
-        )
+          })
+        let wallsRebuilt = 0
+        if (others && bucket.floorObject) {
+          const diff = diffWalls(bucket.walls, level.walls, bucket.openings, level.openings)
+          for (const id of [...diff.remove, ...diff.rebuild]) {
+            const objects = bucket.wallObjects.get(id)
+            if (!objects) continue
+            for (const object of objects) {
+              bucket.structural.remove(object)
+              disposeTree(object)
+            }
+            bucket.wallObjects.delete(id)
+          }
+          const byId = new Map(level.walls.map((wall) => [wall.id, wall]))
+          for (const id of diff.rebuild) {
+            const wall = byId.get(id)
+            if (!wall) continue
+            const objects = buildFor(wall)
+            for (const object of objects) bucket.structural.add(object)
+            bucket.wallObjects.set(id, objects)
+            wallsRebuilt++
+          }
+          if (diff.floors) {
+            bucket.structural.remove(bucket.floorObject)
+            disposeTree(bucket.floorObject)
+            bucket.floorObject = buildFloorObject()
+            bucket.structural.add(bucket.floorObject)
+          }
+        } else {
+          disposeTree(bucket.structural)
+          bucket.structural.clear()
+          bucket.wallObjects.clear()
+          for (const wall of level.walls) {
+            const objects = buildFor(wall)
+            for (const object of objects) bucket.structural.add(object)
+            bucket.wallObjects.set(wall.id, objects)
+            wallsRebuilt++
+          }
+          bucket.floorObject = buildFloorObject()
+          bucket.structural.add(bucket.floorObject)
+        }
+        rebuildMs += performance.now() - started
+        wallsTotal += wallsRebuilt
+        rebuiltAny = true
         bucket.walls = level.walls
         bucket.belowStairs = belowStairs
         bucket.roofs = level.roofs
@@ -519,6 +577,10 @@ export class SceneController {
         bucket.slab = level.slabThickness
       }
       this.syncItems(bucket, level)
+    }
+    if (rebuiltAny) {
+      this.lastRebuildMs = rebuildMs
+      this.lastWallsRebuilt = wallsTotal
     }
   }
 
@@ -937,6 +999,8 @@ function emptyBucket(): Bucket {
     elevation: Number.NaN,
     height: Number.NaN,
     slab: Number.NaN,
+    wallObjects: new Map(),
+    floorObject: null,
     shadows,
     itemMap: new Map(),
     instancer: new ModelInstancer(items),

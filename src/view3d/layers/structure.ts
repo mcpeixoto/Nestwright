@@ -15,6 +15,7 @@ registerSceneLayer({
     ctx.scene.add(root)
     const levelGroups = new Map<string, THREE.Group>()
     const builtFrom = new Map<string, Level>()
+    const entities = new Map<string, LevelEntities>()
     return {
       sync(project: Project, state: SceneViewState) {
         const live = new Set(project.levels.map((level) => level.id))
@@ -24,6 +25,7 @@ registerSceneLayer({
           disposeGeometries(group)
           levelGroups.delete(id)
           builtFrom.delete(id)
+          entities.delete(id)
         }
         for (const level of project.levels) {
           let group = levelGroups.get(level.id)
@@ -32,8 +34,14 @@ registerSceneLayer({
             levelGroups.set(level.id, group)
             root.add(group)
           }
-          if (builtFrom.get(level.id) !== level) {
-            rebuild(group, level)
+          const prev = builtFrom.get(level.id)
+          if (prev !== level) {
+            let built = entities.get(level.id)
+            if (!built) {
+              built = { stairs: new Map(), columns: new Map(), slabs: new Map(), roofs: new Map() }
+              entities.set(level.id, built)
+            }
+            sync(group, level, prev, built)
             builtFrom.set(level.id, level)
           }
           group.visible = levelVisible(project, level, state)
@@ -50,23 +58,62 @@ registerSceneLayer({
         disposeGeometries(root)
         levelGroups.clear()
         builtFrom.clear()
+        entities.clear()
       },
     }
   },
 })
 
-function rebuild(group: THREE.Group, level: Level) {
-  for (const child of [...group.children]) {
-    group.remove(child)
-    disposeGeometries(child)
+type Built = Map<string, { source: object; object: THREE.Object3D }>
+
+interface LevelEntities {
+  stairs: Built
+  columns: Built
+  slabs: Built
+  roofs: Built
+}
+
+/** Rebuilds only the stairs, columns, slabs and roofs whose source object changed. */
+function sync(group: THREE.Group, level: Level, prev: Level | undefined, built: LevelEntities) {
+  // Every builder reads the level (elevation, height); roofs also follow its walls (eaves, outline).
+  const levelMoved = !prev || prev.elevation !== level.elevation || prev.height !== level.height
+  const wallsMoved = levelMoved || prev.walls !== level.walls
+  syncKind(group, built.stairs, level.stairs, levelMoved, (stair) => buildStair(stair, level))
+  syncKind(group, built.columns, level.columns, levelMoved, (column) => buildColumn(column, level))
+  syncKind(group, built.slabs, level.slabs, levelMoved, (slab) => buildSlab(slab, level))
+  syncKind(group, built.roofs, level.roofs, wallsMoved, (roof) => buildRoof(roof, level))
+}
+
+function syncKind<T extends { id: string }>(
+  group: THREE.Group,
+  built: Built,
+  sources: readonly T[],
+  force: boolean,
+  build: (source: T) => THREE.Object3D,
+) {
+  const seen = new Set<string>()
+  for (const source of sources) {
+    seen.add(source.id)
+    const prev = built.get(source.id)
+    if (prev && prev.source === source && !force) continue
+    if (prev) {
+      group.remove(prev.object)
+      disposeGeometries(prev.object)
+      built.delete(source.id)
+    }
+    try {
+      const object = build(source)
+      group.add(object)
+      built.set(source.id, { source, object })
+    } catch (err) {
+      console.error(err)
+    }
   }
-  try {
-    for (const stair of level.stairs) group.add(buildStair(stair, level))
-    for (const column of level.columns) group.add(buildColumn(column, level))
-    for (const slab of level.slabs) group.add(buildSlab(slab, level))
-    for (const roof of level.roofs) group.add(buildRoof(roof, level))
-  } catch (err) {
-    console.error(err)
+  for (const [id, prev] of built) {
+    if (seen.has(id)) continue
+    group.remove(prev.object)
+    disposeGeometries(prev.object)
+    built.delete(id)
   }
 }
 
