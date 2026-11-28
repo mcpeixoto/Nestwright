@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { buildFloors } from '../builders/floors'
 import { stairHoleOutline } from '../model/stairs'
+import { clampOrbitTarget, easeTarget } from '../model/orbitClamp'
 import { contactShadowFor, releaseContactShadow, CONTACT } from '../builders/contactShadow'
 import { buildItem } from '../builders/items'
 import { isFlatItem, itemFootprint } from '../model/clearance'
@@ -127,6 +128,10 @@ export class SceneController {
   private rig: CameraRig | null = null
   private framedFor: string | null = null
   private pendingFrame = false
+  /** Target the orbit glides to after an active-level change. */
+  private orbitGoal: THREE.Vector3 | null = null
+  /** Visible walls of the active level; the orbit target stays over them. */
+  private orbitBounds: THREE.Box3 | null = null
   private disposed = false
   private failed = false
   private raf = 0
@@ -161,6 +166,7 @@ export class SceneController {
     this.scene.environmentIntensity = ENV_INTENSITY
     this.camera = new THREE.PerspectiveCamera(48, 1, 0.2, 6000)
     this.camera.position.set(12, 10, 14)
+    this.camera.up.set(0, 1, 0)
     if (this.primary) bindController(this)
 
     this.controls = new OrbitControls(this.camera, canvas)
@@ -378,6 +384,7 @@ export class SceneController {
   frameAt(point: { x: number; y: number; z: number }): void {
     if (!this.controls || this.disposed) return
     if (![point.x, point.y, point.z].every((value) => Number.isFinite(value))) return
+    this.orbitGoal = null
     this.controls.target.set(point.x, point.y, point.z)
     this.camera.position.set(point.x + 6, point.y + 5, point.z + 7)
     this.controls.update()
@@ -416,6 +423,8 @@ export class SceneController {
       this.compileWanted = true
     }
     this.reconcile(project)
+    this.orbitBounds = visibleWallBounds(project, state)
+    if (prev && prev.activeLevelId !== state.activeLevelId && state.view !== 'walk') this.glideToLevel(project, state)
     this.applyVisibility(project, state)
     this.updateHelpers(state.selection)
     for (const layer of this.eachLayer()) layer.sync(project, state)
@@ -698,6 +707,7 @@ export class SceneController {
     const pitch = 0.46
     const yaw = Math.PI / 4.2
     const horiz = Math.cos(pitch)
+    this.orbitGoal = null
     this.controls.target.copy(sphere.center)
     this.camera.position.set(
       sphere.center.x + dist * horiz * Math.sin(yaw),
@@ -705,6 +715,34 @@ export class SceneController {
       sphere.center.z + dist * horiz * Math.cos(yaw),
     )
     this.controls.update()
+  }
+
+  private glideToLevel(project: Project, state: SceneViewState): void {
+    const level = project.levels.find((entry) => entry.id === state.activeLevelId)
+    if (!level || !this.controls || !this.orbitBounds) return
+    const goal = { x: this.controls.target.x, y: level.elevation + 1, z: this.controls.target.z }
+    const clamped = clampOrbitTarget(goal, this.orbitBounds, 3)
+    this.orbitGoal = new THREE.Vector3(clamped.x, clamped.y, clamped.z)
+  }
+
+  /** Eases the target toward a level goal, then holds it over the house; the camera moves with it. */
+  private orbitStep(dt: number): void {
+    if (!this.controls) return
+    const target = this.controls.target
+    if (this.orbitGoal) {
+      const next = easeTarget(target, this.orbitGoal, dt)
+      this.camera.position.add(new THREE.Vector3(next.x - target.x, next.y - target.y, next.z - target.z))
+      target.set(next.x, next.y, next.z)
+      if (target.distanceTo(this.orbitGoal) < 0.01) this.orbitGoal = null
+    }
+    if (!this.orbitBounds || this.orbitBounds.isEmpty()) return
+    const held = clampOrbitTarget(target, this.orbitBounds, 3)
+    const dx = held.x - target.x
+    const dy = held.y - target.y
+    const dz = held.z - target.z
+    if (dx === 0 && dy === 0 && dz === 0) return
+    this.camera.position.add(new THREE.Vector3(dx, dy, dz))
+    target.set(held.x, held.y, held.z)
   }
 
   private syncRig(view: SceneViewState['view']): void {
@@ -755,6 +793,7 @@ export class SceneController {
         else {
           const sens = useSettings.getState().mouseSensitivity
           if (this.controls && Number.isFinite(sens) && sens > 0) this.controls.rotateSpeed = sens
+          this.orbitStep(dt)
           this.controls?.update()
         }
       }

@@ -2,10 +2,12 @@ import * as THREE from 'three'
 import { noteCatMode } from '../../achievements/signals'
 import { getEntry } from '../../catalog/registry'
 import { isPassableOpening, levelObstacles, rectFootprint, type Footprint } from '../../model/collision'
+import { ceilingAt, headroomBlocked, WALK_HEIGHT, WALK_RADIUS } from '../../model/headroom'
+import { stairRampHeightAt } from '../../model/stairs'
 import { walkSpawn } from '../../model/walkSpawn'
 import { integrateWalk } from '../../model/walkMove'
 import { pointInPolygon } from '../../model/geometry'
-import type { Item, Level, Project, Stair } from '../../model/types'
+import type { Item, Level, Project } from '../../model/types'
 import { useSettings } from '../../settings'
 import { roomsFor, useStore, type ViewMode } from '../../store'
 import { isPhotoMode } from '../../ui/photoSession'
@@ -13,7 +15,7 @@ import { registerRig } from '../rigs'
 
 const EYE = 1.65
 const CAT_EYE = 0.25
-const RADIUS = 0.22
+const RADIUS = WALK_RADIUS
 const GRAVITY = 9.81
 
 let returnView: ViewMode = '3d'
@@ -42,30 +44,6 @@ export function readFps(): number {
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
   return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable
-}
-
-/** Local ramp when model/stairs.ts is not in this worktree. Straight, L and U share one run; spirals wind once. */
-function stairHeightAt(stair: Stair, level: Level, x: number, y: number): number | null {
-  const rise = stair.rise > 0 ? stair.rise : level.height
-  if (!(rise > 0)) return null
-  const dx = x - stair.position.x
-  const dy = y - stair.position.y
-  const c = Math.cos(stair.rotation)
-  const s = Math.sin(stair.rotation)
-  const lx = dx * c + dy * s
-  const ly = -dx * s + dy * c
-  if (stair.shape === 'spiral') {
-    const radius = Math.hypot(lx, ly)
-    if (radius > Math.max(0.45, stair.width)) return null
-    const turns = (Math.atan2(ly, lx) + Math.PI) / (Math.PI * 2)
-    return level.elevation + turns * rise
-  }
-  const steps = Math.max(1, Math.ceil(rise / 0.18))
-  const length = steps * 0.26 * (stair.shape === 'straight' ? 1 : 1.7)
-  if (Math.abs(lx) > stair.width / 2 + 0.1) return null
-  if (ly < -0.08 || ly > length + 0.08) return null
-  const u = Math.min(1, Math.max(0, ly / length))
-  return level.elevation + u * rise
 }
 
 function insideItem(item: Item, x: number, y: number): boolean {
@@ -101,7 +79,7 @@ function supportAt(project: Project, x: number, y: number, feet: number, rising:
       bestId = level.id
     }
     for (const stair of level.stairs) {
-      const height = stairHeightAt(stair, level, x, y)
+      const height = stairRampHeightAt(stair, level, x, y)
       if (height == null || height > feet + snap) continue
       if (height > bestY + 1e-4) {
         bestY = height
@@ -129,7 +107,7 @@ function blockingFurniture(level: Level, feetY: number, cat: boolean): Footprint
     const top = level.elevation + item.elevation + item.size.h
     const bottom = level.elevation + item.elevation
     if (feetY >= top - 0.08) continue
-    if (feetY + (cat ? 0.45 : 1.6) < bottom) continue
+    if (feetY + (cat ? 0.45 : WALK_HEIGHT) < bottom) continue
     out.push(rectFootprint(item.position, Math.max(0.05, item.size.w), Math.max(0.05, item.size.d), item.rotation))
   }
   return out
@@ -379,10 +357,25 @@ registerRig({
       segments,
       footprints,
     })
-    feetX = moved.x
-    feetZ = moved.y
+    const headId = active?.id ?? supportGuess.levelId
+    const tall = cat ? CAT_EYE + 0.1 : WALK_HEIGHT
+    const blocked = (x: number, z: number) => headroomBlocked(state.project, headId, x, z, feetY, tall, roomsFor)
+    if ((moved.x !== feetX || moved.y !== feetZ) && blocked(moved.x, moved.y) && !blocked(feetX, feetZ)) {
+      if (!blocked(moved.x, feetZ)) feetX = moved.x
+      else if (!blocked(feetX, moved.y)) feetZ = moved.y
+    } else {
+      feetX = moved.x
+      feetZ = moved.y
+    }
     vy -= GRAVITY * step
-    const nextFeet = feetY + vy * step
+    let nextFeet = feetY + vy * step
+    if (vy > 0) {
+      const ceiling = ceilingAt(state.project, headId, feetX, feetZ, feetY, roomsFor)
+      if (ceiling != null && nextFeet > ceiling - tall) {
+        nextFeet = Math.max(feetY, ceiling - tall)
+        vy = 0
+      }
+    }
     const support = supportAt(state.project, feetX, feetZ, Math.max(feetY, nextFeet), vy > 0.05, cat)
     if (nextFeet <= support.y) {
       feetY = support.y
