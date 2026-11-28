@@ -112,7 +112,7 @@ registerShortcut({
 registerShortcut({
   id: 'clear-selection',
   keys: 'escape',
-  description: 'Clear selection',
+  description: 'Clear selection, or pause',
   run: () => {
     if (typeof document !== 'undefined' && document.querySelector('[role="menu"]')) return
     const state = useStore.getState()

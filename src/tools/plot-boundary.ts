@@ -80,7 +80,7 @@ registerShortcut({
 
 registerTool({
   id: 'plot-boundary',
-  label: 'Plot',
+  label: 'Garden boundary',
   shortcut: 'L',
   group: 'outside',
   cursor: 'crosshair',

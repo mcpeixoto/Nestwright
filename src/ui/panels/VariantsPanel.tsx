@@ -157,7 +157,7 @@ export function VariantsPanel() {
 
 registerPanel({
   id: 'variants',
-  title: 'Variants',
+  title: 'Options A/B',
   placement: 'floating',
   Component: VariantsPanel,
 })

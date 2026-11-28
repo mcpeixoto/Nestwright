@@ -96,10 +96,10 @@ describe('top bar', () => {
   it('menus hold the old actions', async () => {
     await renderBar()
     await click('Plan menu')
-    expect(menuItems()).toEqual(expect.arrayContaining(['Wishes', 'Variants', 'Daylight']))
+    expect(menuItems()).toEqual(expect.arrayContaining(['Wish list', 'Options A/B', 'Daylight']))
     expect(menuItems()).not.toContain('House brief')
     await click('Share')
-    expect(menuItems()).toEqual(['Together', 'Photo', 'Image', 'Floor plan PDF', 'Plan PNG', 'GLB'])
+    expect(menuItems()).toEqual(['Play together', 'Photo', 'Image', 'Floor plan PDF', 'Plan PNG', 'GLB'])
     await click('Menu')
     expect(menuItems()).toEqual(['New', 'Open', 'Save', 'Save As…', 'Backup file (JSON)', 'Settings', 'Help'])
   })
@@ -108,11 +108,11 @@ describe('top bar', () => {
     await renderBar()
     expect(isPanelOpen('wishes')).toBe(false)
     await click('Plan menu')
-    await click('Wishes')
+    await click('Wish list')
     expect(isPanelOpen('wishes')).toBe(true)
     expect(document.querySelector('[role="menu"]')).toBeNull()
     await click('Plan menu')
-    expect(buttonNamed('Wishes')?.classList.contains('on')).toBe(true)
+    expect(buttonNamed('Wish list')?.classList.contains('on')).toBe(true)
   })
 
   it('has no native tooltips', async () => {

@@ -265,7 +265,7 @@ export function SettingsDialog() {
       {tab === 'advanced' ? (
         <div className="settings-page">
           <label className="field">
-            <T k="Render scale" />
+            <T k="Resolution" />
             <select value={String(settings.renderScale)} onChange={(event) => set({ renderScale: Number(event.target.value) })}>
               {RENDER_SCALES.map((scale) => (
                 <option key={scale} value={scale}>
@@ -278,7 +278,7 @@ export function SettingsDialog() {
             </span>
           </label>
           <label className="field">
-            <T k="Renderer (applies on restart)" />
+            <T k="Graphics engine (restart needed)" />
             <select
               value={settings.backend}
               onChange={(event) => set({ backend: event.target.value as RendererBackendSetting })}
@@ -294,7 +294,7 @@ export function SettingsDialog() {
             </span>
           </label>
           <label className="field">
-            <T k="Tone mapping" />
+            <T k="Colour look" />
             <select
               value={settings.toneMapping}
               onChange={(event) => set({ toneMapping: event.target.value as ToneMapSetting })}
@@ -307,13 +307,13 @@ export function SettingsDialog() {
             </span>
           </label>
           <label className="field">
-            <T k="Exposure compensation" />
+            <T k="Brightness" />
             <input
               type="range"
               min={EV_COMP_MIN}
               max={EV_COMP_MAX}
               step={0.1}
-              aria-label={tr('Exposure compensation')}
+              aria-label={tr('Brightness')}
               value={settings.exposureComp}
               onChange={(event) => set({ exposureComp: Number(event.target.value) })}
             />

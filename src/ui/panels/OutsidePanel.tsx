@@ -120,7 +120,7 @@ function BrushControls() {
     <div className="props">
       {sculpting && (
         <label className="field">
-          <T k="Sculpt" />
+          <T k="Shape ground" />
           <select value={brush.sculpt} onChange={(event) => setBrush({ sculpt: event.target.value as SculptMode })}>
             {(['raise', 'lower', 'flatten', 'smooth'] as const).map((mode) => (
               <option key={mode} value={mode}>
@@ -258,7 +258,7 @@ function BrushFloat() {
 
 registerPanel({
   id: 'outside',
-  title: 'Outside',
+  title: 'Garden',
   placement: 'right',
   shortcut: 'o',
   icon: icon('<path d="M4 16c2-4 4-6 8-6s6 2 8 6"/><path d="M12 10V4"/><path d="M9 7h6"/>'),
