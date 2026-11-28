@@ -57,6 +57,7 @@ function usedKeys(): { key: string; where: string }[] {
  * format names, and words Portuguese borrows unchanged.
  */
 const SAME_IN_PT = new Set<string>([
+  'Tutorial',
   '2D',
   '3D',
   'GLB',

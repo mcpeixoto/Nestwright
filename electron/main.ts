@@ -5,6 +5,7 @@ import path from 'node:path'
 import { coopSend, coopUsername, setCoopSink, startCoopHost, stopCoopHost } from './coop/server'
 import { handleContentScheme, registerContentScheme } from './contentProtocol'
 import { crashFileName, formatCrash, sanitizeCrash } from './crashLog'
+import { DEFAULT_MENU_LABELS, helpMenuTemplate, isMenuLabels, viewMenuTemplate, type MenuLabels } from './menuLabels'
 import { RENDERER_PROBE, SMOKE_TIMEOUT_MS, judgeSmoke, smokeDir, type RendererProbe, type SmokeReport } from './smoke'
 import {
   safeAchievementId,
@@ -68,15 +69,6 @@ interface ClosePrompt {
   cancel: string
 }
 
-interface MenuLabels {
-  file: string
-  new: string
-  open: string
-  save: string
-  saveAs: string
-  close: string
-}
-
 let closePrompt: ClosePrompt = {
   message: 'Save changes before closing?',
   save: 'Save',
@@ -84,14 +76,7 @@ let closePrompt: ClosePrompt = {
   cancel: 'Cancel',
 }
 
-let menuLabels: MenuLabels = {
-  file: 'File',
-  new: 'New',
-  open: 'Open…',
-  save: 'Save',
-  saveAs: 'Save As…',
-  close: 'Close Window',
-}
+let menuLabels: MenuLabels = { ...DEFAULT_MENU_LABELS }
 
 function savesDir(): string {
   return path.join(app.getPath('userData'), 'saves')
@@ -272,18 +257,6 @@ function isPrompt(value: unknown): value is ClosePrompt {
   )
 }
 
-function isMenu(value: unknown): value is MenuLabels {
-  if (!value || typeof value !== 'object') return false
-  const menu = value as MenuLabels
-  return (
-    typeof menu.file === 'string' &&
-    typeof menu.new === 'string' &&
-    typeof menu.open === 'string' &&
-    typeof menu.save === 'string' &&
-    typeof menu.saveAs === 'string' &&
-    typeof menu.close === 'string'
-  )
-}
 
 function windowStatePath(): string {
   return path.join(app.getPath('userData'), 'window-state.json')
@@ -363,6 +336,12 @@ function createWindow(): BrowserWindow {
   if (fitted?.maximized) win.maximize()
   mainWindow = win
   attachCloseGuard(win)
+  const onFullscreen = (on: boolean) => {
+    if (!win.isDestroyed()) win.webContents.send('nestwright:fullscreen', on)
+    installMenu()
+  }
+  win.on('enter-full-screen', () => onFullscreen(true))
+  win.on('leave-full-screen', () => onFullscreen(false))
   const devUrl = process.env.NESTWRIGHT_DEV_URL
   if (devUrl) void win.loadURL(devUrl)
   else void win.loadFile(path.join(here, '../dist/index.html'))
@@ -436,27 +415,32 @@ function runSmoke(win: BrowserWindow, dir: string): void {
 function showAbout(): void {
   void dialog.showMessageBox({
     type: 'info',
-    title: 'About Nestwright',
+    title: menuLabels.about,
     message: 'Nestwright',
     detail: `Version ${app.getVersion()}`,
   })
 }
 
+function toggleFullscreen(): void {
+  const win = currentWindow()
+  if (win) win.setFullScreen(!win.isFullScreen())
+}
+
 function installMenu(): void {
-  const about: Electron.MenuItemConstructorOptions = { label: 'About Nestwright', click: () => showAbout() }
-  const help: Electron.MenuItemConstructorOptions = {
-    label: 'Help',
-    submenu: [
-      {
-        label: 'Achievements',
-        click: () => {
-          const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
-          win?.webContents.send('nestwright:show-achievements')
-        },
-      },
-      ...(process.platform === 'darwin' ? [] : [about]),
-    ],
-  }
+  const about: Electron.MenuItemConstructorOptions = { label: menuLabels.about, click: () => showAbout() }
+  const help = helpMenuTemplate(
+    menuLabels,
+    (action) => {
+      const win = currentWindow()
+      if (!win) return
+      // achievements/boot.ts listens on its own channel.
+      if (action === 'achievements') win.webContents.send('nestwright:show-achievements')
+      else win.webContents.send('nestwright:help', action)
+    },
+    process.platform,
+    about,
+  )
+  const view = viewMenuTemplate(menuLabels, { fullscreen: currentWindow()?.isFullScreen() ?? false, toggle: toggleFullscreen })
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(process.platform === 'darwin'
       ? [
@@ -486,7 +470,7 @@ function installMenu(): void {
       ],
     },
     { role: 'editMenu' },
-    { role: 'viewMenu' },
+    view,
     { role: 'windowMenu' },
     help,
   ]
@@ -683,14 +667,17 @@ function registerIpc(steam: SteamRuntime) {
 
   ipcMain.on('nestwright:editor-state', (event, payload: unknown) => {
     if (!payload || typeof payload !== 'object') return
-    const body = payload as { dirty?: unknown; prompt?: unknown; menu?: unknown }
+    const body = payload as { dirty?: unknown; prompt?: unknown; menu?: unknown; fullscreen?: unknown }
     dirty = body.dirty === true
     const win = BrowserWindow.fromWebContents(event.sender)
     if (win && process.platform === 'darwin') win.setDocumentEdited(dirty)
     if (isPrompt(body.prompt)) closePrompt = body.prompt
-    if (isMenu(body.menu) && JSON.stringify(menuLabels) !== JSON.stringify(body.menu)) {
+    if (isMenuLabels(body.menu) && JSON.stringify(menuLabels) !== JSON.stringify(body.menu)) {
       menuLabels = body.menu
       installMenu()
+    }
+    if (win && typeof body.fullscreen === 'boolean' && body.fullscreen !== win.isFullScreen()) {
+      win.setFullScreen(body.fullscreen)
     }
   })
 

@@ -1081,6 +1081,9 @@ export const en = {
     'WebGPU is faster where available; WebGL 2 works everywhere.',
   'How bright colours roll off into white.': 'How bright colours roll off into white.',
   'Nudges the automatic exposure darker or brighter.': 'Nudges the automatic exposure darker or brighter.',
+  Tutorial: 'Tutorial',
+  Fullscreen: 'Fullscreen',
+  'About Nestwright': 'About Nestwright',
 } as const
 
 export type MessageKey = keyof typeof en

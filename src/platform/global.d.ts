@@ -28,10 +28,13 @@ declare global {
       setEditorState?(state: {
         dirty: boolean
         prompt: { message: string; save: string; dontSave: string; cancel: string }
-        menu: { file: string; new: string; open: string; save: string; saveAs: string; close: string }
+        menu: import('../../electron/menuLabels').MenuLabels
+        fullscreen: boolean
       }): void
       notifyReady?(): void
       onMenu?(cb: (action: 'new' | 'open' | 'save' | 'save-as') => void): () => void
+      onHelp?(cb: (action: import('../../electron/menuLabels').HelpAction) => void): () => void
+      onFullscreen?(cb: (on: boolean) => void): () => void
       onRequestSave?(cb: () => Promise<boolean> | boolean): () => void
       onOpenPath?(cb: (file: { name: string; data: string; path: string }) => void): () => void
       username?: () => Promise<string>
