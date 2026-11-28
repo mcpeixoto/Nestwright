@@ -314,7 +314,10 @@ function bulgeBetween(a: Vec2, b: Vec2, circle: ArcCircle): number {
   return dot(sub(apex, mid), perp(dir))
 }
 
-/** Split `wallId` at a point on its centre-line. Openings past the cut move to the new wall. */
+/**
+ * Split `wallId` at a point on its centre-line. Openings whose centre lies past the cut move to
+ * the new wall, every opening is clamped to fit its half, and one that cannot fit is removed.
+ */
 export function splitWall(level: Level, wallId: string, point: Vec2): { a: Wall; b: Wall } | null {
   const idx = level.walls.findIndex((w) => w.id === wallId)
   if (idx < 0) return null
@@ -343,12 +346,27 @@ export function splitWall(level: Level, wallId: string, point: Vec2): { a: Wall;
     left: { ...wall.left },
     right: { ...wall.right },
   }
+  const dropped = new Set<string>()
   for (const opening of level.openings) {
     if (opening.wallId !== wall.id) continue
-    if (opening.offset > loc.distance) {
+    // The opening's centre decides its half; a cut exactly at the centre keeps it on `kept`.
+    let target = kept
+    if (opening.offset > loc.distance + JOIN_EPS) {
       opening.wallId = spawned.id
       opening.offset -= loc.distance
+      target = spawned
     }
+    const length = wallLength(target)
+    if (length < opening.width + 2 * JOIN_EPS) {
+      dropped.add(opening.id)
+      continue
+    }
+    const half = opening.width / 2
+    opening.offset = Math.min(Math.max(opening.offset, half), length - half)
+  }
+  for (let i = level.openings.length - 1; i >= 0; i--) {
+    const opening = level.openings[i]
+    if (opening && dropped.has(opening.id)) level.openings.splice(i, 1)
   }
   level.walls.splice(idx, 1, kept, spawned)
   return { a: kept, b: spawned }

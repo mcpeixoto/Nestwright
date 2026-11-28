@@ -22,23 +22,31 @@ export interface WallProps {
   kind?: Wall['kind']
 }
 
-function mergePoint(level: Level, p: Vec2): Vec2 {
-  let best = { x: p.x, y: p.y }
-  let bestD = JOIN_EPS
+/** Endpoints this close to a corner or a wall face are pulled onto it when drawing. */
+export const MERGE_SNAP = 0.05
+
+/** Corners first (nearest within `radius`), then the nearest point strictly inside a wall. */
+function mergePoint(level: Level, p: Vec2, radius = MERGE_SNAP): Vec2 {
+  let corner: Vec2 | null = null
+  let cornerD = radius
   for (const wall of level.walls) {
     for (const q of [wall.a, wall.b]) {
       const d = dist(p, q)
-      if (d <= bestD) {
-        best = { x: q.x, y: q.y }
-        bestD = d
+      if (d <= cornerD) {
+        corner = { x: q.x, y: q.y }
+        cornerD = d
       }
     }
+  }
+  if (corner) return corner
+  let best = { x: p.x, y: p.y }
+  let bestD = radius
+  for (const wall of level.walls) {
     const loc = locateOnWall(wall, p)
     if (
-      loc.distanceToWall <= JOIN_EPS &&
+      loc.distanceToWall <= bestD &&
       loc.distance > JOIN_EPS &&
-      loc.distance < loc.length - JOIN_EPS &&
-      loc.distanceToWall < bestD
+      loc.distance < loc.length - JOIN_EPS
     ) {
       best = { x: loc.point.x, y: loc.point.y }
       bestD = loc.distanceToWall
@@ -103,18 +111,18 @@ function crossings(wall: Wall, a: Vec2, b: Vec2): Vec2[] {
   return hits
 }
 
-function pointOnNewWall(p: Vec2, a: Vec2, b: Vec2): { t: number; distance: number } | null {
+function pointOnNewWall(p: Vec2, a: Vec2, b: Vec2): { t: number; point: Vec2; distance: number } | null {
   const ab = sub(b, a)
   const l2 = ab.x * ab.x + ab.y * ab.y
   if (l2 < 1e-12) return null
   const t = Math.min(1, Math.max(0, ((p.x - a.x) * ab.x + (p.y - a.y) * ab.y) / l2))
   const point = { x: a.x + ab.x * t, y: a.y + ab.y * t }
-  return { t, distance: dist(p, point) }
+  return { t, point, distance: dist(p, point) }
 }
 
 /**
- * Add a chain of walls. Endpoints within 1 mm of an existing wall are pulled
- * onto it, and any wall that gains a T-junction or crossing is split there.
+ * Add a chain of walls. Endpoints within `MERGE_SNAP` of an existing corner or
+ * wall are pulled onto it, existing ends that near the new wall's interior join it, and any wall that gains a T-junction or crossing is split there.
  */
 export function addWallChain(level: Level, points: readonly Vec2[], props: WallProps = {}): string[] {
   const ids: string[] = []
@@ -134,10 +142,13 @@ export function addWallChain(level: Level, points: readonly Vec2[], props: WallP
     const hits: Vec2[] = []
     for (const wall of [...level.walls]) {
       hits.push(...crossings(wall, a, b))
-      for (const q of [wall.a, wall.b]) {
+      for (const end of ['a', 'b'] as const) {
+        const q = wall[end]
         const on = pointOnNewWall(q, a, b)
-        if (on && on.distance <= JOIN_EPS && on.t > 0.0001 && on.t < 0.9999) {
-          hits.push({ x: q.x, y: q.y })
+        if (on && on.distance <= MERGE_SNAP && on.t > 0.0001 && on.t < 0.9999) {
+          // An existing end near the new wall's interior is pulled onto it, making a T.
+          if (on.distance > 0) moveWallEndpoint(level, wall.id, end, on.point)
+          hits.push({ x: on.point.x, y: on.point.y })
         }
       }
     }
@@ -182,6 +193,8 @@ export function moveWallEndpoint(level: Level, wallId: string, end: 'a' | 'b', t
       opening.offset = Math.min(hi, Math.max(half, loc.distance))
     }
   }
+  // A joint dropped onto another wall's interior splits it, so the T stays a graph node.
+  splitExistingAt(level, target)
 }
 
 /**

@@ -106,7 +106,18 @@ function splitSegments(segs: Seg[]): Seg[] {
       out.push({ a, b, wallId: seg.wallId })
     }
   }
-  return out
+  // Collinear overlaps were cut at each other's ends above; drop the doubled pieces so the
+  // face walk sees each edge once. The first copy (and its wallId) wins.
+  const unique: Seg[] = []
+  for (const seg of out) {
+    const twin = unique.some(
+      (u) =>
+        (dist(u.a, seg.a) <= JOIN_EPS && dist(u.b, seg.b) <= JOIN_EPS) ||
+        (dist(u.a, seg.b) <= JOIN_EPS && dist(u.b, seg.a) <= JOIN_EPS),
+    )
+    if (!twin) unique.push(seg)
+  }
+  return unique
 }
 
 interface Vertex {
