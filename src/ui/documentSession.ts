@@ -2,6 +2,9 @@ import { fill, translate } from '../i18n'
 import { isDirty, subscribeDirty } from '../io/dirty'
 import { useSettings } from '../settings'
 import { useStore } from '../store'
+import { setHelpPage } from '../achievements/helpPage'
+import { replayTour } from './onboarding/Tour'
+import { setHelpOpen } from './shortcuts'
 import { newProject, openProject, openReceivedFile, saveProject, saveProjectAs } from './actions'
 import { enterEditor } from './session'
 
@@ -30,7 +33,16 @@ function syncChrome(): void {
       save: translate(language, 'Save'),
       saveAs: translate(language, 'Save As…'),
       close: translate(language, 'Close Window'),
+      view: translate(language, 'View'),
+      fullscreen: translate(language, 'Fullscreen'),
+      help: translate(language, 'Help'),
+      tutorial: translate(language, 'Tutorial'),
+      shortcuts: translate(language, 'Shortcuts'),
+      credits: translate(language, 'Credits'),
+      achievements: translate(language, 'Achievements'),
+      about: translate(language, 'About Nestwright'),
     },
+    fullscreen: useSettings.getState().fullscreen,
   })
 }
 
@@ -51,7 +63,7 @@ export function installDocumentSession(): () => void {
     if (state.project.name !== prev.project.name) syncChrome()
   })
   const unsubSettings = useSettings.subscribe((state, prev) => {
-    if (state.language !== prev.language) syncChrome()
+    if (state.language !== prev.language || state.fullscreen !== prev.fullscreen) syncChrome()
   })
 
   const stops: Array<() => void> = []
@@ -66,6 +78,24 @@ export function installDocumentSession(): () => void {
           })
         } else if (action === 'save') void saveProject()
         else if (action === 'save-as') void saveProjectAs()
+      }),
+    )
+  }
+  if (api?.onHelp) {
+    stops.push(
+      api.onHelp((action) => {
+        if (action === 'tutorial') replayTour()
+        else {
+          setHelpPage(action)
+          setHelpOpen(true)
+        }
+      }),
+    )
+  }
+  if (api?.onFullscreen) {
+    stops.push(
+      api.onFullscreen((on) => {
+        if (useSettings.getState().fullscreen !== on) useSettings.getState().setSettings({ fullscreen: on })
       }),
     )
   }

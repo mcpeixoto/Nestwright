@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
+import type { HelpAction, MenuLabels } from './menuLabels'
 
 interface BootPayload {
   autosave: string | null
@@ -65,7 +66,8 @@ contextBridge.exposeInMainWorld('nestwright', {
   setEditorState: (state: {
     dirty: boolean
     prompt: { message: string; save: string; dontSave: string; cancel: string }
-    menu: { file: string; new: string; open: string; save: string; saveAs: string; close: string }
+    menu: MenuLabels
+    fullscreen: boolean
   }) => {
     ipcRenderer.send('nestwright:editor-state', state)
   },
@@ -76,6 +78,16 @@ contextBridge.exposeInMainWorld('nestwright', {
     const listener = (_event: IpcRendererEvent, action: 'new' | 'open' | 'save' | 'save-as') => cb(action)
     ipcRenderer.on('nestwright:menu', listener)
     return () => ipcRenderer.removeListener('nestwright:menu', listener)
+  },
+  onHelp: (cb: (action: HelpAction) => void) => {
+    const listener = (_event: IpcRendererEvent, action: HelpAction) => cb(action)
+    ipcRenderer.on('nestwright:help', listener)
+    return () => ipcRenderer.removeListener('nestwright:help', listener)
+  },
+  onFullscreen: (cb: (on: boolean) => void) => {
+    const listener = (_event: IpcRendererEvent, on: boolean) => cb(on === true)
+    ipcRenderer.on('nestwright:fullscreen', listener)
+    return () => ipcRenderer.removeListener('nestwright:fullscreen', listener)
   },
   onRequestSave: (cb: () => Promise<boolean> | boolean) => {
     saveHandler = () => Promise.resolve(cb())

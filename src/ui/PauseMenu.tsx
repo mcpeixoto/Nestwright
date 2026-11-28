@@ -58,6 +58,7 @@ export function PauseMenu() {
         <button type="button" onClick={() => act(() => openHome())}>
           <T k="Main menu" />
         </button>
+        {/* nestwright:quit → app.quit() → before-quit in electron/main.ts runs the unsaved-changes prompt. */}
         {getPlatform().isElectron ? (
           <button type="button" onClick={() => act(() => void getPlatform().quit?.())}>
             <T k="Quit" />

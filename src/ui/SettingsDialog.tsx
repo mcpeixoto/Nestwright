@@ -128,6 +128,16 @@ export function SettingsDialog() {
             />
             <T k="Continue last project" />
           </label>
+          {getPlatform().isElectron ? (
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={settings.fullscreen}
+                onChange={(event) => set({ fullscreen: event.target.checked })}
+              />
+              <T k="Fullscreen" />
+            </label>
+          ) : null}
           <label className="field">
             <T k="UI scale" />
             <input

@@ -1087,4 +1087,7 @@ export const pt: { [K in MessageKey]: string } = {
   'How bright colours roll off into white.': 'Como as cores fortes se fundem no branco.',
   'Nudges the automatic exposure darker or brighter.':
     'Ajusta a exposição automática para mais escuro ou mais claro.',
+  Tutorial: 'Tutorial',
+  Fullscreen: 'Ecrã inteiro',
+  'About Nestwright': 'Acerca do Nestwright',
 }
