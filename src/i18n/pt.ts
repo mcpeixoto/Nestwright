@@ -1090,4 +1090,6 @@ export const pt: { [K in MessageKey]: string } = {
   Tutorial: 'Tutorial',
   Fullscreen: 'Ecrã inteiro',
   'About Nestwright': 'Acerca do Nestwright',
+  'Add level': 'Adicionar piso',
+  Snap: 'Ajuste',
 }

@@ -11,7 +11,7 @@ export interface DropMenuItem {
 }
 
 /**
- * A top-bar menu (`☰` glyph for `icon="menu"`): a `tb-btn` trigger and a popover of menu items. Closes on an
+ * A top-bar menu (`☰` glyph for `icon="menu"`, `+` for `icon="plus"`): a `tb-btn` trigger and a popover of menu items. Closes on an
  * outside pointerdown, Escape, and after any item runs. Arrow keys move focus.
  */
 export function DropMenu({
@@ -24,7 +24,7 @@ export function DropMenu({
   label: string
   /** Visible trigger text when it differs from the accessible label. */
   text?: string
-  icon?: 'menu'
+  icon?: 'menu' | 'plus'
   items: DropMenuItem[]
   align?: 'left' | 'right'
 }) {
@@ -80,6 +80,8 @@ export function DropMenu({
         >
           {glyph ? (
             '☰'
+          ) : icon === 'plus' ? (
+            '+'
           ) : (
             <>
               {text ? tr(text) : name}

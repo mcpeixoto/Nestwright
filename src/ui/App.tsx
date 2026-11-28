@@ -17,13 +17,12 @@ import './panels/BriefPanel'
 import './panels/EnvironmentPanel'
 import './together/install'
 import { Inspector } from './Inspector'
-import { LevelBar } from './LevelBar'
+import { BottomBar } from './BottomBar'
 import { PanelSlot } from './panels/PanelSlot'
 import { useOpenPanelIds, usePanelList } from './panels/registry'
 import './panels/library'
 import './panels/OutsidePanel'
 import { SettingsDialog } from './SettingsDialog'
-import { StatusBar } from './StatusBar'
 import { installDocumentSession } from './documentSession'
 import { installShortcuts } from './installShortcuts'
 import { installTheme } from './theme'
@@ -101,8 +100,7 @@ function EditorShell() {
           ))}
         </div>
       )}
-      <LevelBar />
-      <StatusBar />
+      <BottomBar />
       <TogetherChrome />
       <ToastHost />
       <Celebrate />
