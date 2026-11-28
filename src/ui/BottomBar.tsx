@@ -112,7 +112,7 @@ export function BottomBar() {
           align="left"
           items={[
             { id: 'grid', label: 'Grid', run: () => store().setSnap({ snapGrid: !snapGrid }), checked: snapGrid },
-            { id: 'joints', label: 'Joints', run: () => store().setSnap({ snapEnds: !snapEnds }), checked: snapEnds },
+            { id: 'joints', label: 'Walls', run: () => store().setSnap({ snapEnds: !snapEnds }), checked: snapEnds },
             { id: 'angles', label: 'Angles', run: () => store().setSnap({ snapAngles: !snapAngles }), checked: snapAngles },
           ]}
         />

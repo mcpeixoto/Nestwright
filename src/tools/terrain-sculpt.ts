@@ -52,7 +52,7 @@ registerShortcut({
 
 registerTool({
   id: 'terrain-sculpt',
-  label: 'Sculpt',
+  label: 'Shape ground',
   shortcut: 'H',
   group: 'outside',
   cursor: 'crosshair',

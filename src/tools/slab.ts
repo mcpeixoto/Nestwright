@@ -41,7 +41,7 @@ function openRing(points: Vec2[]): Vec2[] {
 
 registerTool({
   id: 'slab',
-  label: 'Slab',
+  label: 'Floor slab',
   group: 'build',
   cursor: 'crosshair',
   icon: icon('<path d="M4 16 L8 8 h8 l4 8 z"/>'),

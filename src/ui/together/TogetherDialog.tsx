@@ -44,9 +44,9 @@ function TogetherDialog({ onClose }: { onClose: () => void }) {
   const share = live.addresses.map((host) => `${host}:${live.port}`)
 
   return (
-    <Modal label={tr('Together')} onClose={onClose}>
+    <Modal label={tr('Play together')} onClose={onClose}>
         <h2>
-          <T k="Together" />
+          <T k="Play together" />
         </h2>
         <p className="hint">
           <T k="Set your name so your partner can tell your pins and cursor apart. It is saved with the other settings." />
@@ -198,7 +198,7 @@ function TogetherDialog({ onClose }: { onClose: () => void }) {
 
 registerTopBarAction({
   id: 'together',
-  label: 'Together',
+  label: 'Play together',
   order: 50,
   run: openTogether,
   Component: TogetherHost,

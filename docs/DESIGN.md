@@ -136,5 +136,26 @@ alternate theme: the pre-0.16 dark look, with slate panels, sand accent (#E8B86D
 for active states. Layout stays a left vertical tool rail, right inspector, and top bar with the view
 switcher. Plan view: off-white paper with a soft grid, charcoal walls, pastel room fills by room type.
 
+## Vocabulary
+Players see everyday words. Code ids stay as they are; new UI text uses the label on the right.
+
+| internal name | label (en / pt-PT) |
+|---|---|
+| snap ends (`joints`) | Walls / Paredes |
+| slab | Floor slab / Laje de piso |
+| plot boundary | Garden boundary / Limite do jardim |
+| terrain sculpt | Shape ground / Moldar terreno |
+| trace calibrate | Set scale / Definir escala |
+| variants | Options A/B / Opções A/B |
+| wishes | Wish list / Lista de desejos |
+| together (co-op) | Play together / Jogar a dois |
+| outside panel | Garden / Jardim |
+| library panel | Furniture / Mobiliário |
+| openings group | Doors & windows |
+| render scale | Resolution / Resolução |
+| renderer backend | Graphics engine (restart needed) / Motor gráfico (requer reinício) |
+| tone mapping | Colour look / Aspeto da cor |
+| exposure compensation | Brightness / Brilho |
+
 ## Out of scope for v1
 Ray tracing, VR, DWG/DXF import, Steam Workshop upload (designed for, not built).

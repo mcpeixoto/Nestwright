@@ -351,7 +351,7 @@ export function WishesPanel() {
 
 registerPanel({
   id: 'wishes',
-  title: 'Wishes',
+  title: 'Wish list',
   placement: 'floating',
   Component: WishesPanel,
 })

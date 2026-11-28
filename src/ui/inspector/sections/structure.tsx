@@ -441,7 +441,7 @@ registerInspectorSection({
 registerInspectorSection({
   id: 'slab',
   order: 37,
-  title: 'Slab',
+  title: 'Floor slab',
   match: (selection, state) => {
     const facts = selectionFacts(selection, state)
     return facts.total === 1 && facts.slabs.length === 1

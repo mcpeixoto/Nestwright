@@ -68,7 +68,7 @@ export function startTraceCalibration(): void {
 
 registerTool({
   id: 'trace-calibrate',
-  label: 'Calibrate trace',
+  label: 'Set scale',
   group: 'measure',
   hidden: true,
   cursor: 'crosshair',

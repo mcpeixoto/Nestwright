@@ -68,7 +68,7 @@ function LevelSection() {
         }
       />
       <LengthField
-        label="Slab"
+        label="Floor slab"
         value={level.slabThickness}
         onCommit={(value) =>
           patchLevel('Slab thickness', (draft) => {
