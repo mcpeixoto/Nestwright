@@ -276,7 +276,13 @@ input, select {
   line-height: 1.15;
   color: var(--muted);
 }
-.rail.with-labels .rail-label { font-size: 10px; line-height: 1.1; }
+.rail.with-labels .rail-label {
+  font-size: 10px;
+  line-height: 1.1;
+  white-space: normal;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
 .rail.with-labels .rail-flyout { left: calc(100% + 6px); }
 .flyout-icon { width: 18px; height: 18px; display: grid; place-items: center; }
 .flyout-icon svg { width: 18px; height: 18px; }
