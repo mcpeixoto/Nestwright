@@ -11,6 +11,7 @@ import { labelOf, NumberField } from '../inspector/fields'
 import { registerPanel, setPanelOpen } from './registry'
 import { T } from '../../i18n/T'
 import { useTranslate } from '../../i18n'
+import { Tooltip } from '../Tooltip'
 
 const SPECIES_ICON: Record<string, string> = {
   oak: '<path d="M12 22V12"/><circle cx="12" cy="8" r="4"/>',
@@ -89,11 +90,10 @@ function SpeciesPalette() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
       {PLANT_SPECIES.map((id) => (
+        <Tooltip key={id} label={tr(labelOf(id))}>
         <button
           type="button"
-          key={id}
           className={species === id ? 'on' : ''}
-          title={tr(labelOf(id))}
           aria-label={tr(labelOf(id))}
           onClick={() => {
             selectSpecies(id)
@@ -101,6 +101,7 @@ function SpeciesPalette() {
           }}
           dangerouslySetInnerHTML={{ __html: icon(SPECIES_ICON[id] ?? '<circle cx="12" cy="12" r="3"/>') }}
         />
+        </Tooltip>
       ))}
     </div>
   )

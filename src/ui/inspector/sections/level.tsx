@@ -34,7 +34,7 @@ function LevelSection() {
         />
       </label>
       {areas.rooms > 0 ? (
-        <p className="readout" title={tr('Net floor area, inside the wall faces')}>
+        <p className="readout">
           {tr('Net area {area}', { area: formatArea(areas.net, units) })}
           <br />
           {tr('Gross area {area}', { area: formatArea(areas.gross, units) })}
@@ -44,6 +44,8 @@ function LevelSection() {
               {tr('Outdoor {area}', { area: formatArea(areas.outdoor, units) })}
             </>
           ) : null}
+          <br />
+          <span className="hint">{tr('Net floor area, inside the wall faces')}</span>
         </p>
       ) : null}
       <NumberField

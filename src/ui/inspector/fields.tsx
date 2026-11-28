@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useTranslate } from '../../i18n'
 import { formatLengthInput, parseLength } from '../../model/units'
 import { selectActiveLevel, useStore } from '../../store'
+import { Tooltip } from '../Tooltip'
 
 export function patchLevel(label: string, recipe: (level: NonNullable<ReturnType<typeof selectActiveLevel>>) => void) {
   const id = useStore.getState().activeLevelId
@@ -99,13 +100,13 @@ export function LengthField({
   return (
     <label className={error ? 'field invalid' : 'field'}>
       {tr(label)}
+      <Tooltip label={error ? tr(error) : tr(units === 'metric' ? 'e.g. 3.5 m or 350 cm' : 'e.g. 11\' 4"')}>
       <input
         type="text"
         inputMode="decimal"
         spellCheck={false}
         aria-label={tr(label)}
         aria-invalid={error ? true : undefined}
-        title={error ? tr(error) : tr(units === 'metric' ? 'e.g. 3.5 m or 350 cm' : 'e.g. 11\' 4"')}
         value={shown}
         onFocus={(event) => {
           cancelled.current = false
@@ -138,6 +139,7 @@ export function LengthField({
           setText(null)
         }}
       />
+      </Tooltip>
       {error ? <span className="field-error" role="alert">{tr(error)}</span> : null}
     </label>
   )

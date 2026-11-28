@@ -24,36 +24,19 @@ import {
   type PhotoResolution,
 } from './photoSession'
 import { registerTopBarAction } from './topbar/registry'
-import { photoIcon } from './topbar/icons'
-import { Tooltip } from './Tooltip'
 import { T } from '../i18n/T'
 import { useTranslate } from '../i18n'
 
 const ASPECTS: PhotoAspect[] = ['free', '16:9', '4:3', '1:1', '9:16']
 const RESOLUTIONS: PhotoResolution[] = ['1080p', '1440p', '4k']
 
-function PhotoButton() {
-  const tr = useTranslate()
-  const name = tr('Photo')
-  return (
-    <Tooltip label={name}>
-      <button
-        type="button"
-        className="tb-btn"
-        aria-label={name}
-        onClick={() => {
-          const camera = getController()?.camera
-          enterPhoto(camera?.fov ?? null)
-        }}
-      >
-        <span className="tb-glyph" dangerouslySetInnerHTML={{ __html: photoIcon }} />
-        <span className="tb-label">{name}</span>
-      </button>
-    </Tooltip>
-  )
+/** Enters photo mode from the current camera; the Share menu calls this. */
+export function startPhoto(): void {
+  const camera = getController()?.camera
+  enterPhoto(camera?.fov ?? null)
 }
 
-registerTopBarAction({ id: 'photo', label: 'Photo', order: 55, Component: PhotoButton })
+registerTopBarAction({ id: 'photo', label: 'Photo', order: 55, run: startPhoto })
 
 export function PhotoMode() {
   const tr = useTranslate()

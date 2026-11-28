@@ -556,6 +556,10 @@ input, select {
   border-radius: var(--r-md);
 }
 .menu-pop button { text-align: left; }
+.menu-pop.left { right: auto; left: 0; }
+.view-switch button { min-width: 56px; }
+.topbar .menu-pop { min-width: 200px; }
+.tb-btn .caret { opacity: .6; margin-left: 2px; }
 
 .quiet .fit-btn { display: none; }
 .walk-hud { position: absolute; inset: 0; pointer-events: none; }

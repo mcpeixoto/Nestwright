@@ -8,6 +8,7 @@ import { roomsFor, selectActiveLevel, useStore } from '../store'
 import { T } from '../i18n/T'
 import { useTranslate } from '../i18n'
 import { setUnits } from '../settings/units'
+import { Tooltip } from './Tooltip'
 
 export function StatusBar() {
   const tr = useTranslate()
@@ -42,13 +43,15 @@ export function StatusBar() {
         {units === 'metric' ? tr('Metric') : tr('Imperial')}
       </button>
       {house.rooms > 0 ? (
-        <span className="status-area" title={tr('Net floor area, inside the wall faces')}>
+        <Tooltip label={tr('Net floor area, inside the wall faces')}>
+        <span className="status-area" tabIndex={0}>
           {tr('Floor {level} · House {house}', {
             level: formatArea(floor?.net ?? 0, units),
             house: formatArea(house.net, units),
           })}
           {house.outdoor > 0 ? ` · ${tr('Outdoor {area}', { area: formatArea(house.outdoor, units) })}` : ''}
         </span>
+        </Tooltip>
       ) : null}
       <span>{plotArea}</span>
       <span className="status-msg">{message ? tr(message) : message}</span>

@@ -104,9 +104,12 @@ function ItemSection() {
             {tr(slotLabelKey(slot, labelOf(slot)))}
             {scanned ? (
               // A scanned model keeps its own materials; the picks only drive the procedural fallback.
-              <fieldset className="mat-locked" disabled title={tr('Scanned model — material fixed')}>
-                {picker}
-              </fieldset>
+              <>
+                <fieldset className="mat-locked" disabled>
+                  {picker}
+                </fieldset>
+                <span className="hint">{tr('Scanned model — material fixed')}</span>
+              </>
             ) : (
               picker
             )}

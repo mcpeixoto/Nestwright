@@ -4,6 +4,12 @@ import { createPortal } from 'react-dom'
 const HOVER_MS = 400
 const GAP = 8
 
+/** The element the hint describes: the first focusable child, else the first child. */
+function anchorOf(host: HTMLElement | null): HTMLElement | null {
+  if (!host) return null
+  return host.querySelector<HTMLElement>('button, input, [tabindex]') ?? (host.firstElementChild as HTMLElement | null)
+}
+
 /**
  * Hover (after a short delay) or keyboard-focus hint. Portaled so a panel
  * with overflow hidden cannot clip it, then nudged back inside the window.
@@ -19,7 +25,7 @@ export function Tooltip({ label, children, disabled = false }: { label: string; 
   const shown = open && !disabled
 
   useEffect(() => {
-    const button = host.current?.querySelector<HTMLElement>('button')
+    const button = anchorOf(host.current)
     if (!button) return
     let timer: number | null = null
     const clear = () => {
@@ -65,7 +71,7 @@ export function Tooltip({ label, children, disabled = false }: { label: string; 
   }, [disabled])
 
   useEffect(() => {
-    const button = host.current?.querySelector<HTMLElement>('button')
+    const button = anchorOf(host.current)
     if (!button) return
     if (shown) button.setAttribute('aria-describedby', id)
     else button.removeAttribute('aria-describedby')
@@ -73,7 +79,7 @@ export function Tooltip({ label, children, disabled = false }: { label: string; 
 
   useLayoutEffect(() => {
     if (!shown) return
-    const button = host.current?.querySelector<HTMLElement>('button')
+    const button = anchorOf(host.current)
     const node = tip.current
     if (!button || !node) return
     const rect = button.getBoundingClientRect()

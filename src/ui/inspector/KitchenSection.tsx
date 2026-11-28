@@ -37,11 +37,11 @@ function update(id: string, kind: NonNullable<ReturnType<typeof kitchenKind>>, r
 }
 
 function ModuleList({
-  title,
+  heading,
   modules,
   onChange,
 }: {
-  title: string
+  heading: string
   modules: KitchenModule[]
   onChange: (next: KitchenModule[]) => void
 }) {
@@ -58,11 +58,11 @@ function ModuleList({
   }
   return (
     <div className="props">
-      <h2>{tr(title)}</h2>
+      <h2>{tr(heading)}</h2>
       {modules.map((module, index) => (
         <div className="mod-row" key={`${module.type}-${index}`}>
           <select
-            aria-label={`${tr(title)} ${index + 1}`}
+            aria-label={`${tr(heading)} ${index + 1}`}
             value={module.type}
             onChange={(event) => {
               const type = event.target.value as KitchenModuleType
@@ -76,7 +76,7 @@ function ModuleList({
             ))}
           </select>
           <input
-            aria-label={`${tr(title)} ${index + 1}`}
+            aria-label={`${tr(heading)} ${index + 1}`}
             inputMode="decimal"
             value={String(Math.round(module.width * 1000) / 1000)}
             onChange={(event) => {
@@ -118,9 +118,9 @@ function KitchenSection() {
   const spec = readKitchen(item.params, kind)
   return (
     <div className="props">
-      <ModuleList title={kind === 'l' ? 'Main run' : 'Modules'} modules={spec.modules} onChange={(modules) => update(id, kind, (next) => { next.modules = modules })} />
+      <ModuleList heading={kind === 'l' ? 'Main run' : 'Modules'} modules={spec.modules} onChange={(modules) => update(id, kind, (next) => { next.modules = modules })} />
       {kind === 'l' && (
-        <ModuleList title="Return run" modules={spec.returns} onChange={(returns) => update(id, kind, (next) => { next.returns = returns })} />
+        <ModuleList heading="Return run" modules={spec.returns} onChange={(returns) => update(id, kind, (next) => { next.returns = returns })} />
       )}
       <label className="check">
         <input type="checkbox" checked={spec.wall} onChange={(event) => update(id, kind, (next) => { next.wall = event.target.checked })} />

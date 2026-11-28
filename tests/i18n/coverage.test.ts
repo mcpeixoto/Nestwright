@@ -75,6 +75,7 @@ const SAME_IN_PT = new Set<string>([
   'Ultra',
   'Total',
   'Natural (AgX)',
+  'Menu',
   // City names that are spelled the same.
   'Porto',
   'Sydney',

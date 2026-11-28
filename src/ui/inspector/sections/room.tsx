@@ -91,10 +91,12 @@ function RoomSection() {
           }
         />
       </label>
-      <p className="readout" title={tr('Net floor area, inside the wall faces')}>
+      <p className="readout">
         {tr('Net area {area}', { area: formatArea(roomNetArea(level, room), units) })}
         <br />
         {tr('Gross area {area}', { area: formatArea(room.area, units) })}
+        <br />
+        <span className="hint">{tr('Net floor area, inside the wall faces')}</span>
       </p>
     </div>
   )

@@ -5,6 +5,7 @@ import { useSettings } from '../settings'
 import { getMaterialDef, MATERIAL_CATEGORIES, MATERIALS, swatchColor } from '../materials/library'
 import type { MaterialRef } from '../model/types'
 import { T } from '../i18n/T'
+import { Tooltip } from './Tooltip'
 
 function channel(hex: string, index: number): number {
   const body = hex.replace('#', '')
@@ -112,10 +113,10 @@ export function MaterialPicker({ value, onChange }: { value: MaterialRef; onChan
               <div className="swatch-cat">{materialCategoryName(language, category)}</div>
               <div className="swatch-grid">
                 {MATERIALS.filter((material) => material.category === category).map((material) => (
+                  <Tooltip key={material.id} label={tr(material.name)}>
                   <button
                     type="button"
-                    key={material.id}
-                    title={tr(material.name)}
+                    aria-label={tr(material.name)}
                     className={material.id === value.id ? 'swatch on' : 'swatch'}
                     style={{ background: material.color }}
                     onClick={() => {
@@ -123,6 +124,7 @@ export function MaterialPicker({ value, onChange }: { value: MaterialRef; onChan
                       setOpen(false)
                     }}
                   />
+                  </Tooltip>
                 ))}
               </div>
             </div>

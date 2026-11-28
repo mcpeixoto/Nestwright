@@ -25,7 +25,6 @@ import {
   subscribeSettings,
   type SettingsTab,
 } from './settingsDialogState'
-import { registerTopBarAction } from './topbar/registry'
 
 const QUALITIES: GraphicsQuality[] = ['low', 'medium', 'high', 'ultra']
 const BACKENDS: RendererBackendSetting[] = ['auto', 'webgpu', 'webgl']
@@ -38,23 +37,6 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'sound', label: 'Sound' },
   { id: 'advanced', label: 'Advanced' },
 ]
-
-function SettingsButton() {
-  const tr = useTranslate()
-  const open = useSyncExternalStore(subscribeSettings, isSettingsOpen, () => false)
-  return (
-    <button type="button" className={open ? 'on' : ''} onClick={() => setSettingsOpen(!open)}>
-      {tr('Settings')}
-    </button>
-  )
-}
-
-registerTopBarAction({
-  id: 'settings',
-  label: 'Settings',
-  order: 70,
-  Component: SettingsButton,
-})
 
 function ResetDefaults() {
   const tr = useTranslate()

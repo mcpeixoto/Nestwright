@@ -1,31 +1,34 @@
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { getPlatform } from '../../platform'
 import { useSettings } from '../../settings'
 import { T } from '../../i18n/T'
 import { useTranslate } from '../../i18n'
 import { Modal } from '../Modal'
-import { Tooltip } from '../Tooltip'
-import { togetherIcon } from '../topbar/icons'
 import { registerTopBarAction } from '../topbar/registry'
 import { joinSession, lastAddress, leaveSession, notify, startHosting, useLive } from '../../net/live'
 
-function TogetherButton() {
-  const [open, setOpen] = useState(false)
-  const live = useLive()
-  const tr = useTranslate()
-  const on = open || live.role !== 'idle'
-  const name = tr('Together')
-  return (
-    <>
-      <Tooltip label={name}>
-        <button type="button" className={on ? 'tb-btn on' : 'tb-btn'} aria-label={name} onClick={() => setOpen((value) => !value)}>
-          <span className="tb-glyph" dangerouslySetInnerHTML={{ __html: togetherIcon }} />
-          <span className="tb-label">{name}</span>
-        </button>
-      </Tooltip>
-      {open && <TogetherDialog onClose={() => setOpen(false)} />}
-    </>
-  )
+let togetherOpen = false
+const togetherListeners = new Set<() => void>()
+
+function setTogetherOpen(next: boolean): void {
+  if (togetherOpen === next) return
+  togetherOpen = next
+  for (const listener of togetherListeners) listener()
+}
+
+function subscribeTogether(listener: () => void): () => void {
+  togetherListeners.add(listener)
+  return () => togetherListeners.delete(listener)
+}
+
+/** Opens the Together dialog; the top bar's Share menu calls this. */
+export function openTogether(): void {
+  setTogetherOpen(true)
+}
+
+function TogetherHost() {
+  const open = useSyncExternalStore(subscribeTogether, () => togetherOpen, () => false)
+  return open ? <TogetherDialog onClose={() => setTogetherOpen(false)} /> : null
 }
 
 function TogetherDialog({ onClose }: { onClose: () => void }) {
@@ -197,5 +200,6 @@ registerTopBarAction({
   id: 'together',
   label: 'Together',
   order: 50,
-  Component: TogetherButton,
+  run: openTogether,
+  Component: TogetherHost,
 })
