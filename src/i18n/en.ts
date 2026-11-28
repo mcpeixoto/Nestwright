@@ -34,6 +34,7 @@ export const en = {
   'No recent projects': 'No recent projects',
   'Template gallery': 'Template gallery',
   Back: 'Back',
+  Next: 'Next',
   'New house': 'New house',
   Blank: 'Blank',
   'From template': 'From template',

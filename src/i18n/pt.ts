@@ -36,6 +36,7 @@ export const pt: { [K in MessageKey]: string } = {
   'No recent projects': 'Sem projetos recentes',
   'Template gallery': 'Modelos',
   Back: 'Voltar',
+  Next: 'Seguinte',
   'New house': 'Casa nova',
   Blank: 'Em branco',
   'From template': 'A partir de um modelo',

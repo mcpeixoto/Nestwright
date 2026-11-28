@@ -11,12 +11,15 @@ export interface TourStep {
   id: string
   titleKey: string
   bodyKey: string
+  /** `data-tour` value of the control this step points at. */
+  anchor?: string
   done(now: TourSnap, baseline: TourSnap): boolean
 }
 
 export const TOUR_STEPS: readonly TourStep[] = [
   {
     id: 'walls',
+    anchor: 'build',
     titleKey: 'tour.walls.title',
     bodyKey: 'tour.walls.body',
     done: (now, baseline) => now.walls > baseline.walls,
@@ -29,24 +32,28 @@ export const TOUR_STEPS: readonly TourStep[] = [
   },
   {
     id: 'view',
+    anchor: 'view-3d',
     titleKey: 'tour.view.title',
     bodyKey: 'tour.view.body',
     done: (now, baseline) => now.view !== baseline.view && (now.view === '3d' || now.view === 'split' || now.view === 'walk'),
   },
   {
     id: 'door',
+    anchor: 'doors',
     titleKey: 'tour.door.title',
     bodyKey: 'tour.door.body',
     done: (now, baseline) => now.doors > baseline.doors,
   },
   {
     id: 'sofa',
+    anchor: 'library',
     titleKey: 'tour.sofa.title',
     bodyKey: 'tour.sofa.body',
     done: (now, baseline) => now.sofas > baseline.sofas,
   },
   {
     id: 'walk',
+    anchor: 'view-walk',
     titleKey: 'tour.walk.title',
     bodyKey: 'tour.walk.body',
     done: (now, baseline) => now.view === 'walk' && (now.view !== baseline.view || now.seenWalk),
@@ -64,4 +71,12 @@ export function tourProgress(step: number, now: TourSnap, baseline: TourSnap): n
     guard += 1
   }
   return next
+}
+
+export function stepAfterNext(step: number): number {
+  return Math.min(step + 1, TOUR_STEPS.length)
+}
+
+export function stepAfterBack(step: number): number {
+  return Math.max(step - 1, 0)
 }

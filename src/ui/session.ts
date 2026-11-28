@@ -8,6 +8,7 @@ import { createProject } from '../model/defaults'
 import { useSettings } from '../settings'
 import { useStore, type ViewMode } from '../store'
 import { registerEnterEditor } from './enterEditor'
+import { armTour, disarmTour } from './onboarding/Tour'
 import { presentProject } from './presentProject'
 import { setHelpOpen } from './shortcuts'
 import { studioApartment } from '../templates'
@@ -105,6 +106,7 @@ export function enterEditor(): void {
 export function beginBlankProject(): void {
   const project = createProject(translate(useSettings.getState().language, 'Untitled'), 'house')
   beginProject(project)
+  armTour()
 }
 
 export function openCredits(): void {
@@ -116,6 +118,7 @@ export function beginProject(project: Project, filePath: string | null = null): 
   const units = useSettings.getState().units
   project.units = units
   setFilePath(filePath)
+  disarmTour()
   presentProject(project)
   markSaved()
   returnView = 'split'

@@ -12,6 +12,7 @@ import { selectActiveLevel, useStore } from '../store'
 import { confirmIfNeeded } from './confirm'
 import { fitVisible } from './fit'
 import { presentProject } from './presentProject'
+import { armTour } from './onboarding/Tour'
 import { getPlatform } from '../platform'
 import { useSettings } from '../settings'
 import { requestEnterEditor } from './enterEditor'
@@ -119,6 +120,7 @@ export function newProject(): void {
     project.units = useSettings.getState().units
     setFilePath(null)
     presentProject(project)
+    armTour()
     markSaved()
     requestEnterEditor()
     say('New project')

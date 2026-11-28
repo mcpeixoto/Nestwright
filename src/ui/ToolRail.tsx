@@ -165,6 +165,7 @@ export function ToolRail() {
           icon={iconTool.icon}
           caption={showLabels ? tr(group.label) : undefined}
           expanded={expanded}
+          dataTour={group.id === 'build' ? 'build' : group.id === 'openings' ? 'doors' : undefined}
           onClick={() => {
             chosenGroups.add(group.id)
             lastToolByGroup[group.id] = iconTool.id
