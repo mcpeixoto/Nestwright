@@ -427,16 +427,11 @@ input, select {
 .mod-row input, .mod-row select { width: 100%; }
 .thumb-hit { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
 .thumb-remove { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; }
-.levelbar, .statusbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
-  padding: 0 10px;
-  border-width: 1px 0 0;
-}
-.levelbar { height: auto; min-height: 44px; flex-wrap: wrap; padding-top: 4px; padding-bottom: 4px; }
-.statusbar { height: 30px; color: var(--muted); font-family: ui-monospace, monospace; font-size: 12px; }
+.bottombar { display: flex; flex-direction: column; flex: none; border-top: 1px solid var(--line); background: var(--panel); }
+.bottombar .levelbar, .bottombar .statusbar { display: flex; align-items: center; gap: var(--s2); padding: var(--s1) var(--s3); min-height: 36px; border: 0; }
+.bottombar .levelbar { flex-wrap: wrap; }
+.bottombar .statusbar { font-size: var(--fs-xs); color: var(--muted); }
+.chip { border-radius: 999px; padding: 2px var(--s3); border: 1px solid var(--line); }
 
 .levels { display: flex; gap: 6px; overflow: auto; }
 .level { display: flex; align-items: center; gap: 6px; }
@@ -604,6 +599,7 @@ input, select {
 .app.photo-mode .topbar,
 .app.photo-mode .rail,
 .app.photo-mode .inspector,
+.app.photo-mode .bottombar,
 .app.photo-mode .levelbar,
 .app.photo-mode .statusbar,
 .app.photo-mode .panel-slot,

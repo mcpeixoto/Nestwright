@@ -1094,4 +1094,6 @@ export const pt: { [K in MessageKey]: string } = {
   Furniture: 'Mobiliário',
   Garden: 'Jardim',
   'Close {name}': 'Fechar {name}',
+  'Add level': 'Adicionar piso',
+  Snap: 'Ajuste',
 }

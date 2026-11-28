@@ -1091,6 +1091,8 @@ export const en = {
   Furniture: 'Furniture',
   Garden: 'Garden',
   'Close {name}': 'Close {name}',
+  'Add level': 'Add level',
+  Snap: 'Snap',
 } as const
 
 export type MessageKey = keyof typeof en
