@@ -1,6 +1,6 @@
 import { dist, pointInPolygon, polygonArea } from './geometry'
 import { DEFAULT_LEVEL_HEIGHT } from './defaults'
-import type { Stair, Vec2 } from './types'
+import type { Level, Stair, Vec2 } from './types'
 
 /** Comfort limit: no riser taller than this. */
 export const MAX_RISER = 0.19
@@ -333,4 +333,13 @@ function runDepth(polygon: Vec2[]): number {
 /** Plan cut used by the 2D stair symbol. Steps above this height are broken off. */
 export function cutHeight(): number {
   return 1.2
+}
+
+/**
+ * Absolute walking height over a stair's treads, or null off them. Replaces the walk rig's
+ * local ramp, which ran 90 degrees off the built flight; treads match what the builder draws.
+ */
+export function stairRampHeightAt(stair: Stair, level: Level, x: number, y: number): number | null {
+  const height = stairHeightAt(stair, { x, y }, level.height)
+  return height == null ? null : level.elevation + height
 }
