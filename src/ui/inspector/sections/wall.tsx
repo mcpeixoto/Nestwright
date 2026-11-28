@@ -1,7 +1,7 @@
 import { selectActiveLevel, useStore } from '../../../store'
 import { MaterialPicker } from '../../MaterialPicker'
 import { selectionFacts } from '../facts'
-import { LengthField, NumberField, patchLevel } from '../fields'
+import { LengthField, PercentField, patchLevel } from '../fields'
 import { MIN_WALL_LENGTH, setWallLength } from '../../../model/ops/sizes'
 import { wallLength } from '../../../model/walls'
 import { registerInspectorSection } from '../registry'
@@ -13,8 +13,7 @@ function WallSection() {
   const wall = level?.walls.find((item) => item.id === id)
   if (!wall) return null
   return (
-    <div className="props">
-      <h2><T k="Wall" /></h2>
+    <div className="card-body">
       <LengthField
         label="Length"
         value={wallLength(wall)}
@@ -73,10 +72,9 @@ function WallSection() {
           }
         />
       </label>
-      <NumberField
+      <PercentField
         label="Ivy left"
         value={wall.ivy?.left ?? 0}
-        step={0.05}
         onCommit={(value) =>
           patchLevel('Ivy', (draft) => {
             const found = draft.walls.find((item) => item.id === id)
@@ -87,10 +85,9 @@ function WallSection() {
           })
         }
       />
-      <NumberField
+      <PercentField
         label="Ivy right"
         value={wall.ivy?.right ?? 0}
-        step={0.05}
         onCommit={(value) =>
           patchLevel('Ivy', (draft) => {
             const found = draft.walls.find((item) => item.id === id)

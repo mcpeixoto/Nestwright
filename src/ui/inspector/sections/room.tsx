@@ -48,8 +48,7 @@ function RoomSection() {
     })
   }
   return (
-    <div className="props">
-      <h2><T k="Room" /></h2>
+    <div className="card-body">
       <label className="field">
         <T k="Name" />
         <input

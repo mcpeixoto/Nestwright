@@ -5,7 +5,7 @@ import { selectActiveLevel, useStore } from '../../../store'
 import { halfWallHeight, setHalfWallHeight, setWallDrawKind, wallDrawKind, type WallDrawKind } from '../../../tools/wallOptions'
 import { MaterialPicker } from '../../MaterialPicker'
 import { selectionFacts } from '../facts'
-import { labelOf, NumberField, patchLevel } from '../fields'
+import { labelOf, LengthField, patchLevel } from '../fields'
 import { registerInspectorSection, type InspectorSectionProps } from '../registry'
 import { T } from '../../../i18n/T'
 import { useTranslate } from '../../../i18n'
@@ -20,8 +20,7 @@ function StairSection({ selection }: InspectorSectionProps) {
   const stair = level?.stairs.find((item) => item.id === id)
   if (!stair || !level) return null
   return (
-    <div className="props">
-      <h2><T k="Stair" /></h2>
+    <div className="card-body">
       <label className="field">
         <T k="Shape" />
         <select
@@ -41,10 +40,9 @@ function StairSection({ selection }: InspectorSectionProps) {
           ))}
         </select>
       </label>
-      <NumberField
+      <LengthField
         label="Width"
         value={stair.width}
-        step={0.05}
         onCommit={(value) =>
           patchLevel('Stair width', (draft) => {
             const found = draft.stairs.find((item) => item.id === id)
@@ -52,10 +50,9 @@ function StairSection({ selection }: InspectorSectionProps) {
           })
         }
       />
-      <NumberField
+      <LengthField
         label="Rise"
         value={stair.rise > 0.05 ? stair.rise : level.height}
-        step={0.05}
         onCommit={(value) =>
           patchLevel('Stair rise', (draft) => {
             const found = draft.stairs.find((item) => item.id === id)
@@ -120,8 +117,7 @@ function RoofSection({ selection }: InspectorSectionProps) {
   const pitchDeg = Math.round((roof.pitch * 180) / Math.PI)
   const ridgeDeg = Math.round((roof.ridgeAngle * 180) / Math.PI)
   return (
-    <div className="props">
-      <h2><T k="Roof" /></h2>
+    <div className="card-body">
       <label className="field">
         <T k="Shape" />
         <select
@@ -159,10 +155,10 @@ function RoofSection({ selection }: InspectorSectionProps) {
           }}
         />
       </label>
-      <NumberField
+      <LengthField
         label="Overhang"
         value={roof.overhang}
-        step={0.05}
+        allowZero
         onCommit={(value) =>
           patchLevel('Roof overhang', (draft) => {
             const found = draft.roofs.find((item) => item.id === id)
@@ -199,10 +195,9 @@ function RoofSection({ selection }: InspectorSectionProps) {
       >
         <T k="Rotate ridge 90°" />
       </button>
-      <NumberField
+      <LengthField
         label="Thickness"
         value={roof.thickness}
-        step={0.01}
         onCommit={(value) =>
           patchLevel('Roof thickness', (draft) => {
             const found = draft.roofs.find((item) => item.id === id)
@@ -250,12 +245,10 @@ function ColumnSection({ selection }: InspectorSectionProps) {
   const column = level?.columns.find((item) => item.id === id)
   if (!column) return null
   return (
-    <div className="props">
-      <h2><T k="Column" /></h2>
-      <NumberField
+    <div className="card-body">
+      <LengthField
         label="Size"
         value={column.size}
-        step={0.02}
         onCommit={(value) =>
           patchLevel('Column size', (draft) => {
             const found = draft.columns.find((item) => item.id === id)
@@ -299,12 +292,10 @@ function SlabSection({ selection }: InspectorSectionProps) {
   const slab = level?.slabs.find((item) => item.id === id)
   if (!slab) return null
   return (
-    <div className="props">
-      <h2><T k="Slab" /></h2>
-      <NumberField
+    <div className="card-body">
+      <LengthField
         label="Thickness"
         value={slab.thickness}
-        step={0.01}
         onCommit={(value) =>
           patchLevel('Slab thickness', (draft) => {
             const found = draft.slabs.find((item) => item.id === id)
@@ -312,10 +303,11 @@ function SlabSection({ selection }: InspectorSectionProps) {
           })
         }
       />
-      <NumberField
+      <LengthField
         label="Top offset"
         value={slab.top}
-        step={0.05}
+        allowZero
+        min={-50}
         onCommit={(value) =>
           patchLevel('Slab height', (draft) => {
             const found = draft.slabs.find((item) => item.id === id)
@@ -347,7 +339,7 @@ function CurveSection({ selection }: InspectorSectionProps) {
   if (!wall || wall.kind === 'railing') return null
   const limit = bulgeLimit(wall)
   return (
-    <div className="props">
+    <div className="card-body">
       <label className="field">
         {tr('Curve {bulge} m', { bulge: wall.bulge.toFixed(2) })}
         <input
@@ -376,7 +368,7 @@ function WallToolSection({ state }: InspectorSectionProps) {
   const [height, setHeight] = useState(halfWallHeight())
   if (state.tool !== 'wall') return null
   return (
-    <div className="props">
+    <div className="card-body">
       <label className="field">
         <T k="Wall kind" />
         <select

@@ -10,8 +10,7 @@ function PaintSection() {
   const tool = useStore((s) => s.tool)
   if (tool !== 'paint') return null
   return (
-    <div className="props">
-      <h2><T k="Paint" /></h2>
+    <div className="card-body">
       <p className="hint"><T k="Click a wall side, floor, ceiling, roof, or a furniture material. Shift paints the ceiling. Alt-click picks up a material." /></p>
       <MaterialPicker value={brush} onChange={setPaintBrush} />
     </div>

@@ -25,8 +25,8 @@ function OpeningSection() {
   }
   const types: OpeningType[] = [...DOOR_TYPES, ...WINDOW_TYPES]
   return (
-    <div className="props">
-      <h2>{tr(labelOf(opening.type))}</h2>
+    <div className="card-body">
+      <p className="card-subtitle">{tr(labelOf(opening.type))}</p>
       <label className="field">
         <T k="Type" />
         <select

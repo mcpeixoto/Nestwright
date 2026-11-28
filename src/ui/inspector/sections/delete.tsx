@@ -5,7 +5,7 @@ import { registerInspectorSection } from '../registry'
 
 function DeleteSection() {
   return (
-    <div className="props">
+    <div className="card-body">
       <button type="button" className="danger" onClick={deleteSelection}>
         <T k="Delete" />
       </button>

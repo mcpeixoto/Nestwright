@@ -1,7 +1,7 @@
 import { carveBasin, FENCE_STYLES, PLANT_SPECIES, waterDepth } from '../../../model/terrain'
 import type { Terrain } from '../../../model/types'
 import { useStore } from '../../../store'
-import { labelOf, NumberField } from '../fields'
+import { AngleField, labelOf, LengthField, PercentField } from '../fields'
 import { registerInspectorSection } from '../registry'
 import { T } from '../../../i18n/T'
 import { useTranslate } from '../../../i18n'
@@ -25,8 +25,8 @@ function WaterSection() {
   if (!body) return null
   const depth = waterDepth(body)
   return (
-    <div className="props">
-      <h2>{tr(labelOf(body.kind))}</h2>
+    <div className="card-body">
+      <p className="card-subtitle">{tr(labelOf(body.kind))}</p>
       <label className="field">
         <T k="Kind" />
         <select
@@ -46,10 +46,11 @@ function WaterSection() {
           <option value="stream">{tr('Stream')}</option>
         </select>
       </label>
-      <NumberField
+      <LengthField
         label="Water level"
         value={body.level}
-        step={0.05}
+        allowZero
+        min={-50}
         onCommit={(level) => {
           useStore.getState().apply('Water level', (draft) => {
             const found = findWater(draft.terrain, id)
@@ -59,10 +60,9 @@ function WaterSection() {
           })
         }}
       />
-      <NumberField
+      <LengthField
         label="Depth"
         value={depth}
-        step={0.05}
         onCommit={(next) => {
           useStore.getState().apply('Water depth', (draft) => {
             const found = findWater(draft.terrain, id)
@@ -84,8 +84,7 @@ function FenceSection() {
   const segments = Math.max(0, fence.points.length - 1)
   const gates = new Set(fence.gates ?? [])
   return (
-    <div className="props">
-      <h2><T k="Fence" /></h2>
+    <div className="card-body">
       <label className="field">
         <T k="Style" />
         <select
@@ -105,10 +104,9 @@ function FenceSection() {
           ))}
         </select>
       </label>
-      <NumberField
+      <LengthField
         label="Height"
         value={fence.height}
-        step={0.05}
         onCommit={(height) => {
           useStore.getState().apply('Fence height', (draft) => {
             const found = findFence(draft.terrain, id)
@@ -146,8 +144,8 @@ function PlantSection() {
   const plant = useStore((s) => findPlant(s.project.terrain, id))
   if (!plant) return null
   return (
-    <div className="props">
-      <h2>{tr(labelOf(plant.species))}</h2>
+    <div className="card-body">
+      <p className="card-subtitle">{tr(labelOf(plant.species))}</p>
       <label className="field">
         <T k="Species" />
         <select
@@ -167,10 +165,10 @@ function PlantSection() {
           ))}
         </select>
       </label>
-      <NumberField
+      <PercentField
         label="Scale"
         value={plant.scale}
-        step={0.05}
+        max={500}
         onCommit={(scale) => {
           useStore.getState().apply('Plant scale', (draft) => {
             const found = findPlant(draft.terrain, id)
@@ -178,10 +176,9 @@ function PlantSection() {
           })
         }}
       />
-      <NumberField
+      <AngleField
         label="Rotation °"
         value={(plant.rotation * 180) / Math.PI}
-        step={15}
         onCommit={(degrees) => {
           useStore.getState().apply('Plant rotation', (draft) => {
             const found = findPlant(draft.terrain, id)
