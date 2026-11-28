@@ -57,6 +57,7 @@ function usedKeys(): { key: string; where: string }[] {
  * format names, and words Portuguese borrows unchanged.
  */
 const SAME_IN_PT = new Set<string>([
+  'Tutorial',
   '2D',
   '3D',
   'GLB',
@@ -75,6 +76,7 @@ const SAME_IN_PT = new Set<string>([
   'Ultra',
   'Total',
   'Natural (AgX)',
+  'Menu',
   // City names that are spelled the same.
   'Porto',
   'Sydney',

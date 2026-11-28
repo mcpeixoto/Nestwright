@@ -14,8 +14,8 @@ describe('rail copy', () => {
     }
   })
 
-  it('keeps tool labels off when an older settings file has no railLabels field', () => {
-    expect(normalizeSettings({}).railLabels).toBe(false)
-    expect(normalizeSettings({ railLabels: true }).railLabels).toBe(true)
+  it('shows tool labels when an older settings file has no railLabels field', () => {
+    expect(normalizeSettings({}).railLabels).toBe(true)
+    expect(normalizeSettings({ railLabels: false }).railLabels).toBe(false)
   })
 })

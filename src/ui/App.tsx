@@ -16,15 +16,13 @@ import { usePhotoSession } from './photoSession'
 import './panels/BriefPanel'
 import './panels/EnvironmentPanel'
 import './together/install'
-import './topbar/exportMenu'
 import { Inspector } from './Inspector'
-import { LevelBar } from './LevelBar'
+import { BottomBar } from './BottomBar'
 import { PanelSlot } from './panels/PanelSlot'
 import { useOpenPanelIds, usePanelList } from './panels/registry'
 import './panels/library'
 import './panels/OutsidePanel'
 import { SettingsDialog } from './SettingsDialog'
-import { StatusBar } from './StatusBar'
 import { installDocumentSession } from './documentSession'
 import { installShortcuts } from './installShortcuts'
 import { installTheme } from './theme'
@@ -41,7 +39,6 @@ import { PauseMenu } from './PauseMenu'
 import { useScreen } from './session'
 import { showToast } from './toast'
 import { StartScreen } from './start/StartScreen'
-import './start/home'
 import { scheduleThumb } from './start/thumbs'
 import { rememberProject } from './start/recent'
 
@@ -103,8 +100,7 @@ function EditorShell() {
           ))}
         </div>
       )}
-      <LevelBar />
-      <StatusBar />
+      <BottomBar />
       <TogetherChrome />
       <ToastHost />
       <Celebrate />

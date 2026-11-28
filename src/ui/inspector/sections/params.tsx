@@ -28,7 +28,7 @@ function ParamsSection() {
     })
   }
   return (
-    <div className="props">
+    <div className="card-body">
       {defs.map((def) => {
         const value = valueOf(item.params, def)
         if (def.kind === 'boolean') {

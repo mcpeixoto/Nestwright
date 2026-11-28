@@ -1,29 +1,29 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useStore } from '../store'
 import { noteReturnView } from '../view3d/rigs/walk'
 import { useOpenPanelIds, usePanelList, togglePanel } from './panels/registry'
-import { listTopBarActions, type TopBarAction } from './topbar/registry'
+import { listTopBarActions } from './topbar/registry'
 import './topbar/builtins'
 import './builtinShortcuts'
-import { listShortcuts } from './shortcuts'
+import { listShortcuts, setHelpOpen } from './shortcuts'
 import { useTranslate } from '../i18n'
-import type { PanelDef } from './panels/registry'
 import { Tooltip } from './Tooltip'
-import { NARROW_BAR } from './breakpoints'
-import { useMediaQuery } from './useMediaQuery'
 import { saveStateLabel, useSaveState } from './saveState'
-import { redoIcon, saveIcon, undoIcon, variantsIcon, wishesIcon } from './topbar/icons'
-
-const FILE_MENU = ['new', 'open', 'export-json', 'settings', 'shortcuts']
-const NARROW_ACTIONS = ['together', 'photo']
-const CLAIMED = new Set([...FILE_MENU, ...NARROW_ACTIONS, 'home', 'save', 'export'])
+import { redoIcon, undoIcon } from './topbar/icons'
+import { DropMenu, type DropMenuItem } from './topbar/DropMenu'
+import { PlanPdfDialog } from './topbar/PlanPdfDialog'
+import { exportHouseGlb } from '../io/export/glb'
+import { exportPlanPng, exportViewImage } from '../io/export/images'
+import { setSettingsOpen } from './settingsDialogState'
+import { setHelpPage } from '../achievements/helpPage'
 
 const VIEWS = [
-  { id: '2d', label: '2D' },
+  { id: '2d', label: 'Plan' },
   { id: '3d', label: '3D' },
-  { id: 'split', label: 'Split' },
   { id: 'walk', label: 'Walk' },
 ] as const
+
+const FILE_IDS = ['new', 'open', 'save', 'save-as', 'export-json'] as const
 
 function macSymbols(): boolean {
   if (typeof navigator === 'undefined') return false
@@ -49,70 +49,6 @@ function chordText(keys: string): string {
 function historyTip(id: string, fallback: string, name: string): string {
   const keys = listShortcuts().find((item) => item.id === id)?.keys ?? fallback
   return `${name} (${chordText(keys)})`
-}
-
-function pickActions(actions: TopBarAction[], ids: readonly string[]): TopBarAction[] {
-  const byId = new Map(actions.map((action) => [action.id, action]))
-  return ids.flatMap((id) => {
-    const action = byId.get(id)
-    return action ? [action] : []
-  })
-}
-
-function OverflowMenu({ actions, panels }: { actions: TopBarAction[]; panels: PanelDef[] }) {
-  const tr = useTranslate()
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const openIds = useOpenPanelIds()
-  useEffect(() => {
-    if (!open) return
-    const onPointer = (event: PointerEvent) => {
-      if (!ref.current?.contains(event.target as Node)) setOpen(false)
-    }
-    window.addEventListener('pointerdown', onPointer)
-    return () => window.removeEventListener('pointerdown', onPointer)
-  }, [open])
-  if (actions.length === 0 && panels.length === 0) return null
-  return (
-    <div className="menu" ref={ref}>
-      <button type="button" className="icon-btn" aria-expanded={open} aria-label={tr('More')} title={tr('More')} onClick={() => setOpen((value) => !value)}>
-        ⋯
-      </button>
-      <div className={open ? 'menu-pop' : 'menu-pop closed'} role="menu">
-        {actions.map((action) =>
-          action.Component ? (
-            <action.Component key={action.id} />
-          ) : (
-            <button
-              type="button"
-              key={action.id}
-              role="menuitem"
-              onClick={() => {
-                action.run?.()
-                setOpen(false)
-              }}
-            >
-              {tr(action.label)}
-            </button>
-          ),
-        )}
-        {panels.map((panel) => (
-          <button
-            type="button"
-            key={panel.id}
-            role="menuitem"
-            className={openIds.includes(panel.id) ? 'on' : ''}
-            onClick={() => {
-              togglePanel(panel.id)
-              setOpen(false)
-            }}
-          >
-            {tr(panel.title)}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
 }
 
 function HistoryButton({
@@ -148,50 +84,6 @@ function HistoryButton({
   )
 }
 
-function LabeledButton({
-  label,
-  icon,
-  pressed,
-  onClick,
-}: {
-  label: string
-  icon: string
-  pressed?: boolean
-  onClick: () => void
-}) {
-  const tr = useTranslate()
-  const name = tr(label)
-  return (
-    <Tooltip label={name}>
-      <button type="button" className={pressed ? 'tb-btn on' : 'tb-btn'} aria-label={name} aria-pressed={pressed} onClick={onClick}>
-        <span className="tb-glyph" dangerouslySetInnerHTML={{ __html: icon }} />
-        <span className="tb-label">{name}</span>
-      </button>
-    </Tooltip>
-  )
-}
-
-function LoosePanelButton({ panel, open }: { panel: PanelDef; open: boolean }) {
-  const tr = useTranslate()
-  if (panel.icon) {
-    return (
-      <button
-        type="button"
-        className={open ? 'icon-btn on' : 'icon-btn'}
-        aria-label={tr(panel.title)}
-        title={tr(panel.title)}
-        onClick={() => togglePanel(panel.id)}
-        dangerouslySetInnerHTML={{ __html: panel.icon }}
-      />
-    )
-  }
-  return (
-    <button type="button" className={open ? 'on' : ''} onClick={() => togglePanel(panel.id)}>
-      {tr(panel.title)}
-    </button>
-  )
-}
-
 export function TopBar() {
   const tr = useTranslate()
   const name = useStore((s) => s.project.name)
@@ -200,84 +92,110 @@ export function TopBar() {
   const view = useStore((s) => s.view)
   const canUndo = useStore((s) => s.canUndo)
   const canRedo = useStore((s) => s.canRedo)
-  const narrow = useMediaQuery(NARROW_BAR)
   const hasBrief = useStore((s) => s.project.brief != null)
-  const panels = usePanelList().filter(
-    (panel) => (panel.placement === 'bottom' || panel.placement === 'floating') && (panel.id !== 'brief' || hasBrief),
-  )
+  const [pdfOpen, setPdfOpen] = useState(false)
   const open = useOpenPanelIds()
+  const panels = usePanelList().filter(
+    (panel) => panel.placement === 'floating' && panel.id !== 'brush' && (panel.id !== 'brief' || hasBrief),
+  )
   const actions = listTopBarActions()
-  const wishes = panels.find((panel) => panel.id === 'wishes')
-  const variants = panels.find((panel) => panel.id === 'variants')
-  const loose = panels.filter((panel) => panel.id !== 'wishes' && panel.id !== 'variants')
-  const home = actions.find((action) => action.id === 'home')
-  const save = actions.find((action) => action.id === 'save')
-  const together = actions.find((action) => action.id === 'together')
-  const photo = actions.find((action) => action.id === 'photo')
-  const exportAction = actions.find((action) => action.id === 'export')
-  const menuIds = narrow ? [...FILE_MENU, ...NARROW_ACTIONS] : FILE_MENU
-  const menuActions = [...pickActions(actions, menuIds), ...actions.filter((action) => !CLAIMED.has(action.id))]
-  const menuPanels = narrow && variants ? [variants] : []
+  const byId = new Map(actions.map((action) => [action.id, action]))
+  const fromRegistry = (id: string): DropMenuItem[] => {
+    const action = byId.get(id)
+    const run = action?.run
+    return action && run ? [{ id: action.id, label: action.label, run }] : []
+  }
+  const together = byId.get('together')
+
+  const planItems: DropMenuItem[] = panels.map((panel) => ({
+    id: panel.id,
+    label: panel.title,
+    checked: open.includes(panel.id),
+    run: () => togglePanel(panel.id),
+  }))
+  const shareItems: DropMenuItem[] = [
+    ...fromRegistry('together'),
+    ...fromRegistry('photo'),
+    { id: 'image', label: 'Image', run: () => void exportViewImage(1920, 1080) },
+    { id: 'pdf', label: 'Floor plan PDF', run: () => setPdfOpen(true) },
+    { id: 'png', label: 'Plan PNG', run: () => void exportPlanPng() },
+    { id: 'glb', label: 'GLB', run: () => void exportHouseGlb() },
+  ]
+  const menuItems: DropMenuItem[] = [
+    ...FILE_IDS.flatMap(fromRegistry),
+    { id: 'settings', label: 'Settings', run: () => setSettingsOpen(true) },
+    {
+      id: 'help',
+      label: 'Help',
+      run: () => {
+        setHelpPage('shortcuts')
+        setHelpOpen(true)
+      },
+    },
+  ]
 
   return (
     <header className="topbar">
       <div className="wordmark">Nestwright</div>
       <div className="project-title">
-        <input
-          className="project-name"
-          aria-label={tr('Project name')}
-          value={name}
-          onChange={(event) => {
-            const next = event.target.value
-            useStore.getState().apply('Rename', (draft) => {
-              draft.name = next
-            })
-          }}
-        />
+        <Tooltip label={tr('Project name')}>
+          <input
+            className="project-name"
+            aria-label={tr('Project name')}
+            value={name}
+            onChange={(event) => {
+              const next = event.target.value
+              useStore.getState().apply('Rename', (draft) => {
+                draft.name = next
+              })
+            }}
+          />
+        </Tooltip>
         <span className={saveState.dirty ? 'save-state dirty' : 'save-state'} role="status">
           {label ? tr(label) : ''}
         </span>
       </div>
-      <div className="view-switch" role="group" aria-label={tr('View')}>
-        {VIEWS.map((item) => (
+      <div className="top-actions">
+        <div className="view-switch" role="group" aria-label={tr('View')}>
+          {VIEWS.map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              className={view === item.id ? 'on' : ''}
+              aria-pressed={view === item.id}
+              data-tour={item.id === '3d' ? 'view-3d' : item.id === 'walk' ? 'view-walk' : undefined}
+              onClick={() => {
+                if (item.id === 'walk') noteReturnView(useStore.getState().view)
+                useStore.getState().setView(item.id)
+              }}
+            >
+              {tr(item.label)}
+            </button>
+          ))}
+        </div>
+        <Tooltip label={tr('Plan + 3D')}>
           <button
             type="button"
-            key={item.id}
-            className={view === item.id ? 'on' : ''}
-            onClick={() => {
-              if (item.id === 'walk') noteReturnView(useStore.getState().view)
-              useStore.getState().setView(item.id)
-            }}
+            className={view === 'split' ? 'tb-btn on' : 'tb-btn'}
+            aria-pressed={view === 'split'}
+            onClick={() => useStore.getState().setView(view === 'split' ? '2d' : 'split')}
           >
-            {tr(item.label)}
+            {tr('Plan + 3D')}
           </button>
-        ))}
-      </div>
-      <div className="top-actions">
+        </Tooltip>
         <div className="top-cluster history">
           <HistoryButton id="undo" fallback="mod+z" label="Undo" icon={undoIcon} enabled={canUndo} onClick={() => useStore.getState().undo()} />
           <HistoryButton id="redo" fallback="mod+shift+z" label="Redo" icon={redoIcon} enabled={canRedo} onClick={() => useStore.getState().redo()} />
         </div>
         <span className="top-divider" aria-hidden="true" />
-        <div className="top-cluster design">
-          {wishes && <LabeledButton label={wishes.title} icon={wishesIcon} pressed={open.includes(wishes.id)} onClick={() => togglePanel(wishes.id)} />}
-          {!narrow && variants && (
-            <LabeledButton label={variants.title} icon={variantsIcon} pressed={open.includes(variants.id)} onClick={() => togglePanel(variants.id)} />
-          )}
-          {!narrow && together?.Component && <together.Component />}
-          {!narrow && photo?.Component && <photo.Component />}
-          {exportAction?.Component && <exportAction.Component />}
-          {loose.map((panel) => (
-            <LoosePanelButton key={panel.id} panel={panel} open={open.includes(panel.id)} />
-          ))}
-        </div>
-        <span className="top-divider" aria-hidden="true" />
-        <div className="top-cluster file">
-          {save && <LabeledButton label={save.label} icon={saveIcon} onClick={() => save.run?.()} />}
-          {home?.Component && <home.Component />}
-          <OverflowMenu actions={menuActions} panels={menuPanels} />
+        <div className="top-cluster menus">
+          <DropMenu label="Plan menu" text="Plan" items={planItems} />
+          <DropMenu label="Share" items={shareItems} />
+          <DropMenu label="Menu" icon="menu" items={menuItems} />
         </div>
       </div>
+      {together?.Component && <together.Component />}
+      {pdfOpen && <PlanPdfDialog onClose={() => setPdfOpen(false)} />}
     </header>
   )
 }

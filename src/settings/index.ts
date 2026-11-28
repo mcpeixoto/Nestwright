@@ -55,6 +55,8 @@ export interface Settings {
    * the NESTWRIGHT_PHOTO3D environment variable. Older saved settings omit this.
    */
   photo3dCommand: string
+  /** Desktop only; mirrors the window state. */
+  fullscreen: boolean
 }
 
 const KEY = 'nestwright:settings'
@@ -76,7 +78,7 @@ export const DEFAULT_SETTINGS: Settings = {
   invertY: false,
   autosaveInterval: 15,
   uiScale: 1,
-  railLabels: false,
+  railLabels: true,
   backend: 'auto',
   renderScale: 0,
   qualityAuto: false,
@@ -88,6 +90,7 @@ export const DEFAULT_SETTINGS: Settings = {
   muted: false,
   briefStars: {},
   photo3dCommand: '',
+  fullscreen: false,
 }
 
 function clamp(value: number, min: number, max: number, fallback: number): number {
@@ -119,7 +122,7 @@ export function normalizeSettings(partial: Partial<Settings> | null | undefined)
     invertY: source.invertY === true,
     autosaveInterval,
     uiScale: clamp(source.uiScale ?? 1, 0.9, 1.25, 1),
-    railLabels: source.railLabels === true,
+    railLabels: source.railLabels !== false,
     backend: BACKENDS.includes(source.backend as RendererBackendSetting)
       ? (source.backend as RendererBackendSetting)
       : DEFAULT_SETTINGS.backend,
@@ -133,6 +136,7 @@ export function normalizeSettings(partial: Partial<Settings> | null | undefined)
     muted: source.muted === true,
     briefStars: normalizeBriefStars(source.briefStars),
     photo3dCommand: normalizeCommandPath(source.photo3dCommand),
+    fullscreen: source.fullscreen === true,
   }
 }
 

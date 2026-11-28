@@ -9,7 +9,7 @@ function FloorNumberSection() {
   const level = useStore(selectActiveLevel)
   if (!level) return null
   return (
-    <div className="props">
+    <div className="card-body">
       <NumberField
         label="Floor number"
         value={floorNumber(level.elevation)}

@@ -8,7 +8,7 @@ import { useSettings } from '../../../settings'
 import { selectActiveLevel, useStore } from '../../../store'
 import { MaterialPicker } from '../../MaterialPicker'
 import { selectionFacts } from '../facts'
-import { labelOf, NumberField, patchLevel } from '../fields'
+import { AngleField, labelOf, LengthField, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
 
 function ItemSection() {
@@ -30,12 +30,11 @@ function ItemSection() {
   const money = (amount: number) => formatMoney(amount, currency, language)
   const slots = entry ? Object.keys(entry.materialSlots) : Object.keys(item.materials)
   return (
-    <div className="props">
-      <h2>{entry ? catalogName(language, entry.id, entry.name) : item.catalogId}</h2>
-      <NumberField
+    <div className="card-body">
+      <p className="card-subtitle">{entry ? catalogName(language, entry.id, entry.name) : item.catalogId}</p>
+      <LengthField
         label="Width"
         value={item.size.w}
-        step={0.05}
         onCommit={(value) =>
           patchLevel('Item size', (draft) => {
             const found = draft.items.find((entry) => entry.id === id)
@@ -43,10 +42,9 @@ function ItemSection() {
           })
         }
       />
-      <NumberField
+      <LengthField
         label="Depth"
         value={item.size.d}
-        step={0.05}
         onCommit={(value) =>
           patchLevel('Item size', (draft) => {
             const found = draft.items.find((entry) => entry.id === id)
@@ -54,10 +52,9 @@ function ItemSection() {
           })
         }
       />
-      <NumberField
+      <LengthField
         label="Height"
         value={item.size.h}
-        step={0.05}
         onCommit={(value) =>
           patchLevel('Item size', (draft) => {
             const found = draft.items.find((entry) => entry.id === id)
@@ -65,10 +62,9 @@ function ItemSection() {
           })
         }
       />
-      <NumberField
+      <AngleField
         label="Rotation °"
         value={(item.rotation * 180) / Math.PI}
-        step={15}
         onCommit={(value) =>
           patchLevel('Rotate', (draft) => {
             const found = draft.items.find((entry) => entry.id === id)
@@ -76,10 +72,10 @@ function ItemSection() {
           })
         }
       />
-      <NumberField
+      <LengthField
         label="Elevation"
         value={item.elevation}
-        step={0.05}
+        allowZero
         onCommit={(value) =>
           patchLevel('Item elevation', (draft) => {
             const found = draft.items.find((entry) => entry.id === id)
@@ -104,9 +100,12 @@ function ItemSection() {
             {tr(slotLabelKey(slot, labelOf(slot)))}
             {scanned ? (
               // A scanned model keeps its own materials; the picks only drive the procedural fallback.
-              <fieldset className="mat-locked" disabled title={tr('Scanned model — material fixed')}>
-                {picker}
-              </fieldset>
+              <>
+                <fieldset className="mat-locked" disabled>
+                  {picker}
+                </fieldset>
+                <span className="hint">{tr('Scanned model — material fixed')}</span>
+              </>
             ) : (
               picker
             )}

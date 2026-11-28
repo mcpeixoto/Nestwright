@@ -90,7 +90,6 @@ export interface StoreState {
   snapGrid: boolean
   snapEnds: boolean
   snapAngles: boolean
-  libraryOpen: boolean
   message: string
   /** Label of the pointer stroke currently grouping undo steps, if any. */
   stroke: string | null
@@ -109,7 +108,6 @@ export interface StoreState {
   setActiveLevel: (id: string) => void
   setOpeningSubtype: (type: OpeningType) => void
   setSnap: (partial: Partial<Pick<StoreState, 'snapGrid' | 'snapEnds' | 'snapAngles'>>) => void
-  setLibraryOpen: (open: boolean) => void
   setMessage: (message: string) => void
   subscribePatches: (listener: PatchListener) => () => void
   /** Apply, undo, and redo. Inverse patches let a co-op client rebase in-flight edits. */
@@ -140,7 +138,6 @@ export const useStore = create<StoreState>((set, get) => ({
   snapGrid: true,
   snapEnds: true,
   snapAngles: true,
-  libraryOpen: false,
   message: '',
   stroke: null,
 
@@ -326,10 +323,6 @@ export const useStore = create<StoreState>((set, get) => ({
 
   setSnap(partial) {
     set(partial)
-  },
-
-  setLibraryOpen(libraryOpen) {
-    set({ libraryOpen })
   },
 
   setMessage(message) {

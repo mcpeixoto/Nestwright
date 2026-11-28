@@ -9,7 +9,7 @@ import {
 } from '../../model/kitchen'
 import { selectActiveLevel, useStore } from '../../store'
 import { selectionFacts } from './facts'
-import { NumberField, patchLevel } from './fields'
+import { LengthField, patchLevel } from './fields'
 import { registerInspectorSection } from './registry'
 import { T } from '../../i18n/T'
 import { useTranslate } from '../../i18n'
@@ -37,11 +37,11 @@ function update(id: string, kind: NonNullable<ReturnType<typeof kitchenKind>>, r
 }
 
 function ModuleList({
-  title,
+  heading,
   modules,
   onChange,
 }: {
-  title: string
+  heading: string
   modules: KitchenModule[]
   onChange: (next: KitchenModule[]) => void
 }) {
@@ -57,12 +57,12 @@ function ModuleList({
     onChange(next)
   }
   return (
-    <div className="props">
-      <h2>{tr(title)}</h2>
+    <div className="card-body">
+      <h3>{tr(heading)}</h3>
       {modules.map((module, index) => (
         <div className="mod-row" key={`${module.type}-${index}`}>
           <select
-            aria-label={`${tr(title)} ${index + 1}`}
+            aria-label={`${tr(heading)} ${index + 1}`}
             value={module.type}
             onChange={(event) => {
               const type = event.target.value as KitchenModuleType
@@ -76,7 +76,7 @@ function ModuleList({
             ))}
           </select>
           <input
-            aria-label={`${tr(title)} ${index + 1}`}
+            aria-label={`${tr(heading)} ${index + 1}`}
             inputMode="decimal"
             value={String(Math.round(module.width * 1000) / 1000)}
             onChange={(event) => {
@@ -117,17 +117,17 @@ function KitchenSection() {
   if (!item || !kind) return null
   const spec = readKitchen(item.params, kind)
   return (
-    <div className="props">
-      <ModuleList title={kind === 'l' ? 'Main run' : 'Modules'} modules={spec.modules} onChange={(modules) => update(id, kind, (next) => { next.modules = modules })} />
+    <div className="card-body">
+      <ModuleList heading={kind === 'l' ? 'Main run' : 'Modules'} modules={spec.modules} onChange={(modules) => update(id, kind, (next) => { next.modules = modules })} />
       {kind === 'l' && (
-        <ModuleList title="Return run" modules={spec.returns} onChange={(returns) => update(id, kind, (next) => { next.returns = returns })} />
+        <ModuleList heading="Return run" modules={spec.returns} onChange={(returns) => update(id, kind, (next) => { next.returns = returns })} />
       )}
       <label className="check">
         <input type="checkbox" checked={spec.wall} onChange={(event) => update(id, kind, (next) => { next.wall = event.target.checked })} />
         <T k="Wall cabinets" />
       </label>
       {spec.wall && (
-        <NumberField label="Wall height" value={spec.wallH} step={0.05} onCommit={(value) => update(id, kind, (next) => { next.wallH = Math.max(0.2, value) })} />
+        <LengthField label="Wall height" value={spec.wallH} onCommit={(value) => update(id, kind, (next) => { next.wallH = Math.max(0.2, value) })} />
       )}
       <label className="field">
         <T k="Handles" />

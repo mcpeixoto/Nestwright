@@ -22,7 +22,7 @@ function ClearanceSection() {
     lines.push(tr('Walkway {gap} (min {min})', { gap: formatLength(issue.gap, units), min: formatLength(WALKWAY_MIN, units) }))
   }
   return (
-    <div className="props clearance-hints">
+    <div className="card-body clearance-hints">
       {overlaps && (
         <p className="warning-line" role="status">
           {tr('Overlaps another item or a wall')}

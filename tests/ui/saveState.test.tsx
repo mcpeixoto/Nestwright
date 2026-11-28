@@ -15,7 +15,6 @@ import '../../src/ui/PhotoMode'
 import '../../src/ui/panels/VariantsPanel'
 import '../../src/ui/panels/WishesPanel'
 import '../../src/ui/together/TogetherDialog'
-import '../../src/ui/topbar/exportMenu'
 
 let host: HTMLDivElement
 let root: Root

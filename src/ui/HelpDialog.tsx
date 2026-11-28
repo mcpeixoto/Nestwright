@@ -8,7 +8,6 @@ import { listTools } from '../tools/registry'
 import { replayTour } from './onboarding/Tour'
 import { formatShortcut, isHelpOpen, listShortcuts, setHelpOpen, subscribeHelp } from './shortcuts'
 import { Modal } from './Modal'
-import { registerTopBarAction } from './topbar/registry'
 
 function useHelpOpen(): boolean {
   return useSyncExternalStore(subscribeHelp, isHelpOpen, () => false)
@@ -17,25 +16,6 @@ function useHelpOpen(): boolean {
 function describe(description: string, tr: (key: string) => string): string {
   if (description.startsWith('Toggle ')) return `${tr('Toggle')} ${tr(description.slice('Toggle '.length))}`
   return tr(description)
-}
-
-export function ShortcutsButton() {
-  const open = useHelpOpen()
-  const tr = useTranslate()
-  return (
-    <button
-      type="button"
-      className={open ? 'icon-btn on' : 'icon-btn'}
-      title={tr('Help')}
-      aria-label={tr('Help')}
-      onClick={() => {
-        if (!open) setHelpPage('shortcuts')
-        setHelpOpen(!open)
-      }}
-    >
-      ?
-    </button>
-  )
 }
 
 function ShortcutsPage() {
@@ -118,10 +98,3 @@ export function HelpDialog() {
     </Modal>
   )
 }
-
-registerTopBarAction({
-  id: 'shortcuts',
-  label: 'Help',
-  order: 80,
-  Component: ShortcutsButton,
-})

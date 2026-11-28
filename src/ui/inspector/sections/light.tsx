@@ -24,7 +24,7 @@ function LightSection() {
     })
   }
   return (
-    <div className="props">
+    <div className="card-body">
       <label className="check">
         <input
           type="checkbox"

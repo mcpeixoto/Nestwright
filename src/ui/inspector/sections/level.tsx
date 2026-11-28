@@ -6,7 +6,7 @@ import { importTraceImage } from '../../levelActions'
 import { levelDisplayName } from '../../../i18n/rooms'
 import { useSettings } from '../../../settings'
 import { selectionFacts } from '../facts'
-import { NumberField, patchLevel } from '../fields'
+import { LengthField, patchLevel } from '../fields'
 import { registerInspectorSection } from '../registry'
 import { T } from '../../../i18n/T'
 
@@ -19,8 +19,7 @@ function LevelSection() {
   if (!level) return null
   const areas = levelAreas(level, roomsFor(level))
   return (
-    <div className="props">
-      <h2><T k="Level" /></h2>
+    <div className="card-body">
       <label className="field">
         <T k="Name" />
         <input
@@ -34,7 +33,7 @@ function LevelSection() {
         />
       </label>
       {areas.rooms > 0 ? (
-        <p className="readout" title={tr('Net floor area, inside the wall faces')}>
+        <p className="readout">
           {tr('Net area {area}', { area: formatArea(areas.net, units) })}
           <br />
           {tr('Gross area {area}', { area: formatArea(areas.gross, units) })}
@@ -44,32 +43,33 @@ function LevelSection() {
               {tr('Outdoor {area}', { area: formatArea(areas.outdoor, units) })}
             </>
           ) : null}
+          <br />
+          <span className="hint">{tr('Net floor area, inside the wall faces')}</span>
         </p>
       ) : null}
-      <NumberField
+      <LengthField
         label="Height"
         value={level.height}
-        step={0.05}
         onCommit={(value) =>
           patchLevel('Level height', (draft) => {
             if (value > 0.2) draft.height = value
           })
         }
       />
-      <NumberField
+      <LengthField
         label="Elevation"
         value={level.elevation}
-        step={0.1}
+        allowZero
+        min={-50}
         onCommit={(value) =>
           patchLevel('Level elevation', (draft) => {
             draft.elevation = value
           })
         }
       />
-      <NumberField
-        label="Slab"
+      <LengthField
+        label="Floor slab"
         value={level.slabThickness}
-        step={0.01}
         onCommit={(value) =>
           patchLevel('Slab thickness', (draft) => {
             if (value > 0) draft.slabThickness = value

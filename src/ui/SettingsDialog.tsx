@@ -25,7 +25,6 @@ import {
   subscribeSettings,
   type SettingsTab,
 } from './settingsDialogState'
-import { registerTopBarAction } from './topbar/registry'
 
 const QUALITIES: GraphicsQuality[] = ['low', 'medium', 'high', 'ultra']
 const BACKENDS: RendererBackendSetting[] = ['auto', 'webgpu', 'webgl']
@@ -38,23 +37,6 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'sound', label: 'Sound' },
   { id: 'advanced', label: 'Advanced' },
 ]
-
-function SettingsButton() {
-  const tr = useTranslate()
-  const open = useSyncExternalStore(subscribeSettings, isSettingsOpen, () => false)
-  return (
-    <button type="button" className={open ? 'on' : ''} onClick={() => setSettingsOpen(!open)}>
-      {tr('Settings')}
-    </button>
-  )
-}
-
-registerTopBarAction({
-  id: 'settings',
-  label: 'Settings',
-  order: 70,
-  Component: SettingsButton,
-})
 
 function ResetDefaults() {
   const tr = useTranslate()
@@ -146,6 +128,16 @@ export function SettingsDialog() {
             />
             <T k="Continue last project" />
           </label>
+          {getPlatform().isElectron ? (
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={settings.fullscreen}
+                onChange={(event) => set({ fullscreen: event.target.checked })}
+              />
+              <T k="Fullscreen" />
+            </label>
+          ) : null}
           <label className="field">
             <T k="UI scale" />
             <input
@@ -273,7 +265,7 @@ export function SettingsDialog() {
       {tab === 'advanced' ? (
         <div className="settings-page">
           <label className="field">
-            <T k="Render scale" />
+            <T k="Resolution" />
             <select value={String(settings.renderScale)} onChange={(event) => set({ renderScale: Number(event.target.value) })}>
               {RENDER_SCALES.map((scale) => (
                 <option key={scale} value={scale}>
@@ -286,7 +278,7 @@ export function SettingsDialog() {
             </span>
           </label>
           <label className="field">
-            <T k="Renderer (applies on restart)" />
+            <T k="Graphics engine (restart needed)" />
             <select
               value={settings.backend}
               onChange={(event) => set({ backend: event.target.value as RendererBackendSetting })}
@@ -302,7 +294,7 @@ export function SettingsDialog() {
             </span>
           </label>
           <label className="field">
-            <T k="Tone mapping" />
+            <T k="Colour look" />
             <select
               value={settings.toneMapping}
               onChange={(event) => set({ toneMapping: event.target.value as ToneMapSetting })}
@@ -315,13 +307,13 @@ export function SettingsDialog() {
             </span>
           </label>
           <label className="field">
-            <T k="Exposure compensation" />
+            <T k="Brightness" />
             <input
               type="range"
               min={EV_COMP_MIN}
               max={EV_COMP_MAX}
               step={0.1}
-              aria-label={tr('Exposure compensation')}
+              aria-label={tr('Brightness')}
               value={settings.exposureComp}
               onChange={(event) => set({ exposureComp: Number(event.target.value) })}
             />
