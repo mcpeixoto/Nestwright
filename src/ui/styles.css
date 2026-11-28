@@ -906,3 +906,16 @@ input, select {
 .photo-missing { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .photo-result { display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .photo-preview { width: 192px; height: 192px; border-radius: 10px; image-rendering: auto; background: #e4e0d8; }
+
+/* Inspector cards (u09) */
+.card h2 button { all: unset; cursor: pointer; display: flex; justify-content: space-between; width: 100%; }
+.card h2 button:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 2px; }
+.card h2 button::after { content: '▾'; opacity: .6; }
+.card h2 button[aria-expanded='false']::after { content: '▸'; }
+.card:has(> .card-content:empty) { display: none; }
+.card-body { display: flex; flex-direction: column; gap: 10px; }
+.card-body h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.card-subtitle { margin: 0; font-weight: 600; }
+.room-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s1); }
+.room-list button { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px var(--s2); text-align: left; }
+.room-list .hint { margin: 0; }

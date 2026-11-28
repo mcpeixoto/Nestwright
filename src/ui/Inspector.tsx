@@ -1,8 +1,11 @@
 import { matchingInspectorSections, type InspectorMatchState } from './inspector/registry'
+import { InspectorCard } from './inspector/InspectorCard'
+import { useTranslate } from '../i18n'
 import { useStore } from '../store'
 import './inspector/sections'
 
 export function Inspector() {
+  const tr = useTranslate()
   const selection = useStore((s) => s.selection)
   const project = useStore((s) => s.project)
   const activeLevelId = useStore((s) => s.activeLevelId)
@@ -14,7 +17,9 @@ export function Inspector() {
   return (
     <aside className="inspector">
       {sections.map((section) => (
-        <section.Component key={section.id} selection={selection} state={state} />
+        <InspectorCard key={section.id} id={section.id} heading={tr(section.title)}>
+          <section.Component selection={selection} state={state} />
+        </InspectorCard>
       ))}
     </aside>
   )

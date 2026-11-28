@@ -9,8 +9,8 @@ function MultiSection({ selection, state }: InspectorSectionProps) {
   const count = useStore((s) => s.selection.length)
   const items = selectionFacts(selection, state).items.length
   return (
-    <div className="props">
-      <h2>{tr('{count} selected', { count })}</h2>
+    <div className="card-body">
+      <p className="card-subtitle">{tr('{count} selected', { count })}</p>
       {items > 0 && (
         <>
           <p className="readout multi-items">{tr('{count} items', { count: items })}</p>

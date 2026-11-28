@@ -2,7 +2,7 @@ import type { TraceImage } from '../../../model/types'
 import { selectActiveLevel, useStore } from '../../../store'
 import { startTraceCalibration } from '../../../tools/traceCalibrate'
 import { importTraceImage } from '../../levelActions'
-import { NumberField } from '../fields'
+import { AngleField, LengthField } from '../fields'
 import { registerInspectorSection } from '../registry'
 import { T } from '../../../i18n/T'
 import { useTranslate } from '../../../i18n'
@@ -23,8 +23,7 @@ function TraceSection() {
   const locked = trace.locked === true
   const hidden = trace.visible === false
   return (
-    <div className="props">
-      <h2><T k="Trace" /></h2>
+    <div className="card-body">
       <label className="field">
         <T k="Opacity" />
         <input
@@ -73,10 +72,9 @@ function TraceSection() {
           <T k="Import trace image…" />
         </button>
       </div>
-      <NumberField
+      <AngleField
         label="Rotation °"
         value={(trace.rotation * 180) / Math.PI}
-        step={1}
         onCommit={(degrees) =>
           patchTrace('Rotate trace', (draft) => {
             draft.rotation = (degrees * Math.PI) / 180
@@ -85,10 +83,12 @@ function TraceSection() {
       />
       {locked ? null : (
         <>
-          <NumberField
+          <LengthField
             label="Origin X"
             value={trace.origin.x}
-            step={0.1}
+            allowZero
+            min={-1000}
+            max={1000}
             onCommit={(value) =>
               patchTrace('Move trace', (draft) => {
                 if (draft.locked) return
@@ -96,10 +96,12 @@ function TraceSection() {
               })
             }
           />
-          <NumberField
+          <LengthField
             label="Origin Y"
             value={trace.origin.y}
-            step={0.1}
+            allowZero
+            min={-1000}
+            max={1000}
             onCommit={(value) =>
               patchTrace('Move trace', (draft) => {
                 if (draft.locked) return
