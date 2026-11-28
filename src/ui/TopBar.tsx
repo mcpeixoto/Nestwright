@@ -163,6 +163,7 @@ export function TopBar() {
               key={item.id}
               className={view === item.id ? 'on' : ''}
               aria-pressed={view === item.id}
+              data-tour={item.id === '3d' ? 'view-3d' : item.id === 'walk' ? 'view-walk' : undefined}
               onClick={() => {
                 if (item.id === 'walk') noteReturnView(useStore.getState().view)
                 useStore.getState().setView(item.id)

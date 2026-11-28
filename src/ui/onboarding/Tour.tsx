@@ -1,9 +1,8 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { detectRooms } from '../../model/rooms'
 import { useStore } from '../../store'
-import { T } from '../../i18n/T'
-import { useTranslate } from '../../i18n'
-import { TOUR_STEPS, tourProgress, type TourSnap } from './logic'
+import { CoachMark } from './CoachMark'
+import { TOUR_STEPS, stepAfterBack, stepAfterNext, tourProgress, type TourSnap } from './logic'
 
 const KEY = 'nestwright:tour'
 
@@ -14,6 +13,8 @@ let step = 0
 let baseline: TourSnap | null = null
 let seenWalk = false
 let armedRun = -1
+/** Only a blank new house or Help → Replay arms the tour; templates and briefs never do. */
+let armed = false
 let tourSnap = { run, tick, step }
 const listeners = new Set<() => void>()
 
@@ -48,6 +49,7 @@ function freshBaseline(): void {
 
 function markDone(): void {
   memoryDone = true
+  armed = false
   try {
     localStorage.setItem(KEY, 'done')
   } catch {
@@ -57,8 +59,44 @@ function markDone(): void {
   publish()
 }
 
+export function armTour(): void {
+  armed = true
+  run += 1
+  tick += 1
+  freshBaseline()
+  armedRun = run
+  publish()
+}
+
+export function disarmTour(): void {
+  if (!armed) return
+  armed = false
+  tick += 1
+  publish()
+}
+
+export function isTourArmed(): boolean {
+  return armed
+}
+
+export function nextStep(): void {
+  step = stepAfterNext(step)
+  baseline = readSnap(seenWalk)
+  if (step >= TOUR_STEPS.length) {
+    markDone()
+    return
+  }
+  publish()
+}
+
+export function backStep(): void {
+  step = stepAfterBack(step)
+  baseline = readSnap(seenWalk)
+  publish()
+}
+
 export function isTourOpen(): boolean {
-  if (dismissed()) return false
+  if (!armed || dismissed()) return false
   return step >= 0 && step < TOUR_STEPS.length
 }
 
@@ -85,6 +123,7 @@ export function replayTour(): void {
   tick += 1
   freshBaseline()
   armedRun = run
+  armed = true
   publish()
 }
 
@@ -108,7 +147,6 @@ function readSnap(seenWalk: boolean): TourSnap {
 
 export function Tour() {
   const snap = useSyncExternalStore(subscribe, readTourSnap, readTourSnap)
-  const tr = useTranslate()
 
   useEffect(() => {
     if (armedRun !== snap.run) {
@@ -117,7 +155,7 @@ export function Tour() {
     }
     if (dismissed()) return
     return useStore.subscribe(() => {
-      if (dismissed() || !baseline) return
+      if (!armed || dismissed() || !baseline) return
       const now = readSnap(seenWalk)
       if (now.view === 'walk') seenWalk = true
       now.seenWalk = seenWalk
@@ -135,21 +173,17 @@ export function Tour() {
 
   useEffect(() => bindTourEscape(), [])
 
-  if (dismissed()) return null
+  if (!armed || dismissed()) return null
   const current = TOUR_STEPS[snap.step]
   if (!current) return null
   return (
-    <aside className="tour-card" role="dialog" aria-label={tr(current.titleKey)}>
-      <p className="hint">{tr('Step {n} of {total}', { n: snap.step + 1, total: TOUR_STEPS.length })}</p>
-      <h2>
-        <T k={current.titleKey} />
-      </h2>
-      <p>
-        <T k={current.bodyKey} />
-      </p>
-      <button type="button" onClick={() => markDone()}>
-        <T k="Skip" />
-      </button>
-    </aside>
+    <CoachMark
+      step={current}
+      index={snap.step}
+      total={TOUR_STEPS.length}
+      onNext={nextStep}
+      onBack={backStep}
+      onSkip={markDone}
+    />
   )
 }

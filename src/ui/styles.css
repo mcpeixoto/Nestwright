@@ -742,21 +742,15 @@ input, select {
 .recent-list { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow: auto; list-style: none; margin: 0; padding: 0; }
 .recent-list button { display: flex; gap: 8px; align-items: center; }
 .recent-list img { width: 64px; height: 40px; object-fit: cover; border-radius: 6px; background: var(--overlay); }
-.tour-card {
-  position: fixed;
-  z-index: 28;
-  left: auto;
-  right: 16px;
-  bottom: 96px;
-  width: min(320px, calc(100% - 96px));
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 14px;
-  border-radius: 14px;
-  background: var(--panel-glass);
-  border: 1px solid var(--line);
-}
+.coach-mark { position: fixed; z-index: 70; width: 280px; padding: var(--s4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sh-2); }
+.coach-mark .arrow { position: absolute; left: -8px; top: 16px; width: 14px; height: 14px; background: var(--panel); border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); transform: rotate(45deg); }
+.coach-mark.below .arrow { left: 16px; top: -8px; border-bottom: 0; border-top: 1px solid var(--line); }
+.coach-mark.centered { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.coach-mark.centered .arrow { display: none; }
+.coach-mark .dots { display: flex; gap: 6px; margin: var(--s2) 0; }
+.coach-mark .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.coach-mark .dots i.on { background: var(--accent); }
+.coach-mark .row { display: flex; gap: var(--s2); justify-content: flex-end; }
 .settings-dialog { width: 520px; max-height: 80vh; display: flex; flex-direction: column; }
 .settings-page { display: flex; flex-direction: column; gap: var(--s3); overflow: auto; padding: var(--s2) 0; }
 .settings-foot { margin-top: auto; padding-top: var(--s3); border-top: 1px solid var(--line); }
