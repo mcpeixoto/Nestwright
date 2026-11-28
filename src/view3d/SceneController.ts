@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { buildFloors } from '../builders/floors'
 import { stairHoleOutline } from '../model/stairs'
+import { clampOrbitTarget, easeTarget } from '../model/orbitClamp'
 import { contactShadowFor, releaseContactShadow, CONTACT } from '../builders/contactShadow'
 import { buildItem } from '../builders/items'
 import { isFlatItem, itemFootprint } from '../model/clearance'
@@ -10,6 +11,7 @@ import { isSharedGeometry, modelFor, modelsLoading, releaseModelGeometry, subscr
 import { ModelInstancer } from './modelInstances'
 import { buildOpening } from '../builders/openings'
 import { buildWall } from '../builders/walls'
+import { diffWalls } from './wallDiff'
 import { resolveTrim } from '../model/trim'
 import type { Item, Level, Project } from '../model/types'
 import { gizmoOwnsPointer, releaseGizmo } from './layers/gizmo'
@@ -71,6 +73,9 @@ interface Bucket {
   shadows: THREE.Group
   itemMap: Map<string, { source: Item; object: THREE.Object3D; scanned: boolean; shadow: THREE.Mesh | null }>
   instancer: ModelInstancer
+  /** Per wall: its group plus its opening groups, so one wall edit rebuilds only what it touched. */
+  wallObjects: Map<string, THREE.Object3D[]>
+  floorObject: THREE.Object3D | null
 }
 
 /** Longest a batch of model loads waits for the rest before swapping in what has arrived. */
@@ -113,6 +118,9 @@ export class SceneController {
   private root = new THREE.Group()
   private helpers = new THREE.Group()
   private levels = new Map<string, Bucket>()
+  /** Wall/opening/floor rebuild cost of the last reconcile that rebuilt anything (perf report extras). */
+  private lastRebuildMs = 0
+  private lastWallsRebuilt = 0
   private layers = new Map<string, SceneLayer>()
   private raycaster = new THREE.Raycaster()
   private pointer = new THREE.Vector2()
@@ -120,6 +128,10 @@ export class SceneController {
   private rig: CameraRig | null = null
   private framedFor: string | null = null
   private pendingFrame = false
+  /** Target the orbit glides to after an active-level change. */
+  private orbitGoal: THREE.Vector3 | null = null
+  /** Visible walls of the active level; the orbit target stays over them. */
+  private orbitBounds: THREE.Box3 | null = null
   private disposed = false
   private failed = false
   private raf = 0
@@ -154,6 +166,7 @@ export class SceneController {
     this.scene.environmentIntensity = ENV_INTENSITY
     this.camera = new THREE.PerspectiveCamera(48, 1, 0.2, 6000)
     this.camera.position.set(12, 10, 14)
+    this.camera.up.set(0, 1, 0)
     if (this.primary) bindController(this)
 
     this.controls = new OrbitControls(this.camera, canvas)
@@ -171,6 +184,8 @@ export class SceneController {
       canvas.addEventListener('pointerdown', this.onDown, true)
       canvas.addEventListener('pointerup', this.onUp)
       setPerfExtra('instancing', () => this.instancingStats())
+      setPerfExtra('structuralRebuildMs', () => Math.round(this.lastRebuildMs * 100) / 100)
+      setPerfExtra('structuralWallsRebuilt', () => this.lastWallsRebuilt)
     }
     this.unsubscribeModels = subscribeModels(() => {
       this.modelsWaitingSince ??= performance.now()
@@ -369,6 +384,7 @@ export class SceneController {
   frameAt(point: { x: number; y: number; z: number }): void {
     if (!this.controls || this.disposed) return
     if (![point.x, point.y, point.z].every((value) => Number.isFinite(value))) return
+    this.orbitGoal = null
     this.controls.target.set(point.x, point.y, point.z)
     this.camera.position.set(point.x + 6, point.y + 5, point.z + 7)
     this.controls.update()
@@ -407,6 +423,8 @@ export class SceneController {
       this.compileWanted = true
     }
     this.reconcile(project)
+    this.orbitBounds = visibleWallBounds(project, state)
+    if (prev && prev.activeLevelId !== state.activeLevelId && state.view !== 'walk') this.glideToLevel(project, state)
     this.applyVisibility(project, state)
     this.updateHelpers(state.selection)
     for (const layer of this.eachLayer()) layer.sync(project, state)
@@ -459,6 +477,9 @@ export class SceneController {
       disposeTree(bucket.group)
       this.levels.delete(id)
     }
+    let rebuildMs = 0
+    let wallsTotal = 0
+    let rebuiltAny = false
     let lowest = Infinity
     for (const level of project.levels) lowest = Math.min(lowest, level.elevation)
     for (const level of project.levels) {
@@ -472,9 +493,7 @@ export class SceneController {
       const above = levelAbove(project, level)
       const belowStairs = below?.stairs
       const ground = level.elevation <= lowest + 1e-6
-      const same =
-        bucket.walls === level.walls &&
-        bucket.openings === level.openings &&
+      const others =
         bucket.rooms === level.rooms &&
         bucket.elevation === level.elevation &&
         bucket.ground === ground &&
@@ -485,26 +504,74 @@ export class SceneController {
         bucket.trim === level.trim &&
         bucket.aboveWalls === above?.walls &&
         bucket.aboveSlab === above?.slabThickness
+      const same = others && bucket.walls === level.walls && bucket.openings === level.openings
       if (!same) {
-        disposeTree(bucket.structural)
-        bucket.structural.clear()
+        const started = performance.now()
         const rooms = roomsFor(level)
-        const trim = resolveTrim(level.trim)
-        const ceiling = above ? { rooms: roomsFor(above), slab: above.slabThickness } : undefined
-        for (const wall of level.walls) {
-          bucket.structural.add(buildWall(wall, level, level.walls, { rooms, trim, above: ceiling, ground }))
-          if (wall.kind === 'railing') continue
-          for (const opening of level.openings) {
-            if (opening.wallId === wall.id) bucket.structural.add(buildOpening(opening, wall, level.elevation, { rooms }))
-          }
+        const ctx = {
+          rooms,
+          trim: resolveTrim(level.trim),
+          above: above ? { rooms: roomsFor(above), slab: above.slabThickness } : undefined,
+          ground,
         }
-        bucket.structural.add(
-          buildFloors(level, roomsFor(level), {
+        const buildFor = (wall: Level['walls'][number]): THREE.Object3D[] => {
+          const objects: THREE.Object3D[] = [buildWall(wall, level, level.walls, ctx)]
+          if (wall.kind !== 'railing') {
+            for (const opening of level.openings) {
+              if (opening.wallId === wall.id) objects.push(buildOpening(opening, wall, level.elevation, { rooms }))
+            }
+          }
+          return objects
+        }
+        const buildFloorObject = () =>
+          buildFloors(level, rooms, {
             holes: (belowStairs ?? []).map((stair) => stairHoleOutline(stair)),
             upper: !!below,
             skipCeiling: level.roofs.length > 0,
-          }),
-        )
+          })
+        let wallsRebuilt = 0
+        if (others && bucket.floorObject) {
+          const diff = diffWalls(bucket.walls, level.walls, bucket.openings, level.openings)
+          for (const id of [...diff.remove, ...diff.rebuild]) {
+            const objects = bucket.wallObjects.get(id)
+            if (!objects) continue
+            for (const object of objects) {
+              bucket.structural.remove(object)
+              disposeTree(object)
+            }
+            bucket.wallObjects.delete(id)
+          }
+          const byId = new Map(level.walls.map((wall) => [wall.id, wall]))
+          for (const id of diff.rebuild) {
+            const wall = byId.get(id)
+            if (!wall) continue
+            const objects = buildFor(wall)
+            for (const object of objects) bucket.structural.add(object)
+            bucket.wallObjects.set(id, objects)
+            wallsRebuilt++
+          }
+          if (diff.floors) {
+            bucket.structural.remove(bucket.floorObject)
+            disposeTree(bucket.floorObject)
+            bucket.floorObject = buildFloorObject()
+            bucket.structural.add(bucket.floorObject)
+          }
+        } else {
+          disposeTree(bucket.structural)
+          bucket.structural.clear()
+          bucket.wallObjects.clear()
+          for (const wall of level.walls) {
+            const objects = buildFor(wall)
+            for (const object of objects) bucket.structural.add(object)
+            bucket.wallObjects.set(wall.id, objects)
+            wallsRebuilt++
+          }
+          bucket.floorObject = buildFloorObject()
+          bucket.structural.add(bucket.floorObject)
+        }
+        rebuildMs += performance.now() - started
+        wallsTotal += wallsRebuilt
+        rebuiltAny = true
         bucket.walls = level.walls
         bucket.belowStairs = belowStairs
         bucket.roofs = level.roofs
@@ -519,6 +586,10 @@ export class SceneController {
         bucket.slab = level.slabThickness
       }
       this.syncItems(bucket, level)
+    }
+    if (rebuiltAny) {
+      this.lastRebuildMs = rebuildMs
+      this.lastWallsRebuilt = wallsTotal
     }
   }
 
@@ -636,6 +707,7 @@ export class SceneController {
     const pitch = 0.46
     const yaw = Math.PI / 4.2
     const horiz = Math.cos(pitch)
+    this.orbitGoal = null
     this.controls.target.copy(sphere.center)
     this.camera.position.set(
       sphere.center.x + dist * horiz * Math.sin(yaw),
@@ -643,6 +715,34 @@ export class SceneController {
       sphere.center.z + dist * horiz * Math.cos(yaw),
     )
     this.controls.update()
+  }
+
+  private glideToLevel(project: Project, state: SceneViewState): void {
+    const level = project.levels.find((entry) => entry.id === state.activeLevelId)
+    if (!level || !this.controls || !this.orbitBounds) return
+    const goal = { x: this.controls.target.x, y: level.elevation + 1, z: this.controls.target.z }
+    const clamped = clampOrbitTarget(goal, this.orbitBounds, 3)
+    this.orbitGoal = new THREE.Vector3(clamped.x, clamped.y, clamped.z)
+  }
+
+  /** Eases the target toward a level goal, then holds it over the house; the camera moves with it. */
+  private orbitStep(dt: number): void {
+    if (!this.controls) return
+    const target = this.controls.target
+    if (this.orbitGoal) {
+      const next = easeTarget(target, this.orbitGoal, dt)
+      this.camera.position.add(new THREE.Vector3(next.x - target.x, next.y - target.y, next.z - target.z))
+      target.set(next.x, next.y, next.z)
+      if (target.distanceTo(this.orbitGoal) < 0.01) this.orbitGoal = null
+    }
+    if (!this.orbitBounds || this.orbitBounds.isEmpty()) return
+    const held = clampOrbitTarget(target, this.orbitBounds, 3)
+    const dx = held.x - target.x
+    const dy = held.y - target.y
+    const dz = held.z - target.z
+    if (dx === 0 && dy === 0 && dz === 0) return
+    this.camera.position.add(new THREE.Vector3(dx, dy, dz))
+    target.set(held.x, held.y, held.z)
   }
 
   private syncRig(view: SceneViewState['view']): void {
@@ -693,6 +793,7 @@ export class SceneController {
         else {
           const sens = useSettings.getState().mouseSensitivity
           if (this.controls && Number.isFinite(sens) && sens > 0) this.controls.rotateSpeed = sens
+          this.orbitStep(dt)
           this.controls?.update()
         }
       }
@@ -937,6 +1038,8 @@ function emptyBucket(): Bucket {
     elevation: Number.NaN,
     height: Number.NaN,
     slab: Number.NaN,
+    wallObjects: new Map(),
+    floorObject: null,
     shadows,
     itemMap: new Map(),
     instancer: new ModelInstancer(items),
