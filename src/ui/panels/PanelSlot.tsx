@@ -1,5 +1,5 @@
 import { useTranslate } from '../../i18n'
-import type { PanelDef } from './registry'
+import { setPanelOpen, type PanelDef } from './registry'
 
 export function PanelSlot({ panel, stacked = false }: { panel: PanelDef; stacked?: boolean }) {
   const tr = useTranslate()
@@ -11,9 +11,23 @@ export function PanelSlot({ panel, stacked = false }: { panel: PanelDef; stacked
     : panel.placement === 'bottom'
       ? 'panel-slot bottom'
       : 'panel-slot'
+  const title = tr(panel.title)
+  const close = (
+    <button
+      type="button"
+      className="icon-btn"
+      aria-label={tr('Close {name}', { name: title })}
+      onClick={() => setPanelOpen(panel.id, false)}
+    >
+      ×
+    </button>
+  )
   return (
-    <section className={className} aria-label={tr(panel.title)}>
-      {floating && <h2 className="float-title">{tr(panel.title)}</h2>}
+    <section className={className} aria-label={title}>
+      <header className="panel-head">
+        <h2 className={floating ? 'float-title' : undefined}>{title}</h2>
+        {close}
+      </header>
       <panel.Component />
     </section>
   )

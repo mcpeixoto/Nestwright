@@ -1,18 +1,16 @@
-import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { Fragment, useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useTranslate } from '../i18n'
 import { useSettings } from '../settings'
 import { useStore } from '../store'
 import { listTools } from '../tools/registry'
-import { togglePanel, useOpenPanelIds, usePanelList } from './panels/registry'
+import { setPanelOpen, togglePanel, useOpenPanelIds, usePanelList } from './panels/registry'
 import { railIconTool } from './railDefaults'
 import { Tooltip } from './Tooltip'
 
 const GROUPS = [
   { id: 'build', label: 'Build' },
-  { id: 'openings', label: 'Openings' },
-  { id: 'interior', label: 'Interior' },
-  { id: 'outside', label: 'Outside' },
-  { id: 'measure', label: 'Measure' },
+  { id: 'openings', label: 'Doors & windows' },
+  { id: 'outside', label: 'Garden' },
 ] as const
 
 const lastToolByGroup: Record<string, string> = {}
@@ -51,22 +49,21 @@ export function ToolRail() {
     if (!apartment && item.id === 'balcony') return false
     return true
   })
-  const panels = usePanelList().filter(
-    (panel) => (panel.placement === 'left' || panel.placement === 'right') && !(apartment && panel.id === 'outside'),
+  const allPanels = usePanelList()
+  const libraryIcon = allPanels.find((panel) => panel.id === 'library')?.icon
+  const paintTool = listTools().find((item) => item.id === 'paint')
+  const measureTool = listTools().find((item) => item.id === 'measure')
+  const panels = allPanels.filter(
+    (panel) => (panel.placement === 'left' || panel.placement === 'right') && panel.id !== 'outside' && panel.id !== 'library',
   )
   const open = useOpenPanelIds()
   const hostRef = useRef<HTMLElement>(null)
   const pendingFocus = useRef<string | null>(null)
-  const [hoverGroup, setHoverGroup] = useState<string | null>(null)
   const [pinnedGroup, setPinnedGroup] = useState<string | null>(null)
-  /** Click-to-close must win over a hover that is still inside the group. */
-  const [suppressHover, setSuppressHover] = useState(false)
-  const openGroup = suppressHover ? null : (pinnedGroup ?? hoverGroup)
+  const openGroup = pinnedGroup
 
   function dismiss() {
     setPinnedGroup(null)
-    setHoverGroup(null)
-    setSuppressHover(true)
   }
 
   useEffect(() => {
@@ -134,7 +131,6 @@ export function ToolRail() {
       if (!id) return
       event.preventDefault()
       pendingFocus.current = id
-      setSuppressHover(false)
       setPinnedGroup(id)
       if (openGroup === id) group?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
       return
@@ -153,6 +149,56 @@ export function ToolRail() {
     const groupId = target.closest<HTMLElement>('.rail-group')?.dataset.group
     if (groupId === openGroup) return
     dismiss()
+  }
+
+  function renderGroup(group: (typeof GROUPS)[number]) {
+    const groupTools = tools.filter((item) => item.group === group.id)
+    const iconTool = railIconTool(groupTools, group.id, tool, chosenGroups.has(group.id) ? lastToolByGroup[group.id] : undefined)
+    if (!iconTool) return null
+    const active = groupTools.some((item) => item.id === tool)
+    const expanded = openGroup === group.id
+    return (
+      <div className="rail-group" data-group={group.id}>
+        <RailButton
+          label={tr(group.label)}
+          className={active ? 'tool on' : 'tool'}
+          icon={iconTool.icon}
+          caption={showLabels ? tr(group.label) : undefined}
+          expanded={expanded}
+          onClick={() => {
+            chosenGroups.add(group.id)
+            lastToolByGroup[group.id] = iconTool.id
+            useStore.getState().setTool(iconTool.id)
+            if (group.id === 'outside') setPanelOpen('outside', true)
+            setPinnedGroup(pinnedGroup === group.id ? null : group.id)
+          }}
+        />
+        {expanded && (
+          <div className="rail-flyout" role="menu" aria-label={tr(group.label)}>
+            {groupTools.map((item) => (
+              <Tooltip key={item.id} label={tipText(tr(item.label), item.shortcut)}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={tool === item.id ? 'on' : ''}
+                  aria-label={tr(item.label)}
+                  onClick={() => {
+                    chosenGroups.add(group.id)
+                    lastToolByGroup[group.id] = item.id
+                    useStore.getState().setTool(item.id)
+                    dismiss()
+                  }}
+                >
+                  <span className="flyout-icon" dangerouslySetInnerHTML={{ __html: item.icon }} />
+                  <span>{tr(item.label)}</span>
+                  {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
+                </button>
+              </Tooltip>
+            ))}
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -175,73 +221,42 @@ export function ToolRail() {
           onClick={() => useStore.getState().setTool(select.id)}
         />
       )}
-      {GROUPS.map((group) => {
-        const groupTools = tools.filter((item) => item.group === group.id)
-        const iconTool = railIconTool(groupTools, group.id, tool, chosenGroups.has(group.id) ? lastToolByGroup[group.id] : undefined)
-        if (!iconTool) return null
-        const active = groupTools.some((item) => item.id === tool)
-        const expanded = openGroup === group.id
-        return (
-          <div
-            key={group.id}
-            className="rail-group"
-            data-group={group.id}
-            onMouseEnter={() => {
-              setSuppressHover(false)
-              setHoverGroup(group.id)
-            }}
-            onMouseLeave={() => {
-              setHoverGroup((current) => (current === group.id ? null : current))
-              setSuppressHover(false)
-            }}
-          >
+      {GROUPS.map((group) => (
+        <Fragment key={group.id}>
+          {renderGroup(group)}
+          {group.id === 'openings' && (
             <RailButton
-              label={tr(group.label)}
-              className={active ? 'tool on' : 'tool'}
-              icon={iconTool.icon}
-              caption={showLabels ? tr(group.label) : undefined}
-              expanded={expanded}
-              onClick={() => {
-                chosenGroups.add(group.id)
-                lastToolByGroup[group.id] = iconTool.id
-                useStore.getState().setTool(iconTool.id)
-                if (group.id === 'interior') useStore.getState().setLibraryOpen(true)
-                if (pinnedGroup === group.id) {
-                  setPinnedGroup(null)
-                  setSuppressHover(true)
-                } else {
-                  setPinnedGroup(group.id)
-                  setSuppressHover(false)
-                }
-              }}
+              label={tr('Furniture')}
+              className={open.includes('library') ? 'tool on' : 'tool'}
+              icon={libraryIcon}
+              caption={showLabels ? tr('Furniture') : undefined}
+              pressed={open.includes('library')}
+              dataTour="library"
+              onClick={() => togglePanel('library')}
             />
-            {expanded && (
-              <div className="rail-flyout" role="menu" aria-label={tr(group.label)}>
-                {groupTools.map((item) => (
-                  <Tooltip key={item.id} label={tipText(tr(item.label), item.shortcut)}>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className={tool === item.id ? 'on' : ''}
-                      aria-label={tr(item.label)}
-                      onClick={() => {
-                        chosenGroups.add(group.id)
-                        lastToolByGroup[group.id] = item.id
-                        useStore.getState().setTool(item.id)
-                        dismiss()
-                      }}
-                    >
-                      <span className="flyout-icon" dangerouslySetInnerHTML={{ __html: item.icon }} />
-                      <span>{tr(item.label)}</span>
-                      {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
-                    </button>
-                  </Tooltip>
-                ))}
-              </div>
-            )}
-          </div>
-        )
-      })}
+          )}
+          {group.id === 'openings' && paintTool && (
+            <RailButton
+              label={tr(paintTool.label)}
+              shortcut={paintTool.shortcut}
+              className={tool === paintTool.id ? 'tool on' : 'tool'}
+              icon={paintTool.icon}
+              caption={showLabels ? tr(paintTool.label) : undefined}
+              onClick={() => useStore.getState().setTool(paintTool.id)}
+            />
+          )}
+        </Fragment>
+      ))}
+      {measureTool && (
+        <RailButton
+          label={tr(measureTool.label)}
+          shortcut={measureTool.shortcut}
+          className={tool === measureTool.id ? 'tool on' : 'tool'}
+          icon={measureTool.icon}
+          caption={showLabels ? tr(measureTool.label) : undefined}
+          onClick={() => useStore.getState().setTool(measureTool.id)}
+        />
+      )}
       <div className="rail-panels">
         {panels.map((panel) => (
           <RailButton
@@ -268,6 +283,7 @@ function RailButton({
   caption,
   expanded,
   pressed,
+  dataTour,
   onClick,
 }: {
   label: string
@@ -277,6 +293,7 @@ function RailButton({
   caption?: string
   expanded?: boolean
   pressed?: boolean
+  dataTour?: string
   onClick: () => void
 }) {
   return (
@@ -287,6 +304,7 @@ function RailButton({
         aria-label={label}
         aria-expanded={expanded}
         aria-pressed={pressed}
+        data-tour={dataTour}
         onClick={onClick}
       >
         {icon ? (

@@ -276,6 +276,7 @@ input, select {
   line-height: 1.15;
   color: var(--muted);
 }
+.rail.with-labels .rail-label { font-size: 10px; line-height: 1.1; }
 .rail.with-labels .rail-flyout { left: calc(100% + 6px); }
 .flyout-icon { width: 18px; height: 18px; display: grid; place-items: center; }
 .flyout-icon svg { width: 18px; height: 18px; }
@@ -371,6 +372,7 @@ input, select {
 .props h2 { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
 .inspector > * + * { margin-top: 14px; }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.panel-head h2 { margin: 0; font-size: var(--fs-md); }
 .rename-wide { flex: 1; min-width: 120px; }
 .rename-wide input, .rename-label { width: 100%; text-align: left; }
 .recent-meta { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }

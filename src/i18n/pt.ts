@@ -1090,4 +1090,8 @@ export const pt: { [K in MessageKey]: string } = {
   Tutorial: 'Tutorial',
   Fullscreen: 'Ecrã inteiro',
   'About Nestwright': 'Acerca do Nestwright',
+  'Doors & windows': 'Portas e janelas',
+  Furniture: 'Mobiliário',
+  Garden: 'Jardim',
+  'Close {name}': 'Fechar {name}',
 }

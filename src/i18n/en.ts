@@ -1087,6 +1087,10 @@ export const en = {
   Tutorial: 'Tutorial',
   Fullscreen: 'Fullscreen',
   'About Nestwright': 'About Nestwright',
+  'Doors & windows': 'Doors & windows',
+  Furniture: 'Furniture',
+  Garden: 'Garden',
+  'Close {name}': 'Close {name}',
 } as const
 
 export type MessageKey = keyof typeof en

@@ -31,14 +31,8 @@ function groupButtons(): HTMLButtonElement[] {
   return [...document.querySelectorAll<HTMLButtonElement>('[role="toolbar"] [aria-expanded]')]
 }
 
-function enterGroup(button: HTMLButtonElement): void {
-  const group = button.closest('.rail-group')
-  if (!group) throw new Error('missing group')
-  group.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
-}
-
-function leaveGroup(button: HTMLButtonElement): void {
-  button.closest('.rail-group')?.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }))
+function openGroup(button: HTMLButtonElement): void {
+  button.click()
 }
 
 async function renderRail(): Promise<void> {
@@ -84,7 +78,7 @@ describe('rail flyout tooltip', () => {
     try {
       const build = groupButtons()[0]
       await act(async () => {
-        enterGroup(build!)
+        openGroup(build!)
         build?.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
       })
       expect(build?.getAttribute('aria-expanded')).toBe('true')
@@ -102,10 +96,10 @@ describe('rail flyout tooltip', () => {
     await renderRail()
     const [build, openings] = groupButtons()
     expect(build?.getAttribute('aria-label')).toBe('Build')
-    expect(openings?.getAttribute('aria-label')).toBe('Openings')
+    expect(openings?.getAttribute('aria-label')).toBe('Doors & windows')
 
     await act(async () => {
-      enterGroup(build!)
+      openGroup(build!)
     })
     expect(document.querySelector('[role="menu"]')).not.toBeNull()
     build?.focus()
@@ -116,7 +110,7 @@ describe('rail flyout tooltip', () => {
     expect(document.querySelector('[role="menu"]')).toBeNull()
 
     await act(async () => {
-      enterGroup(openings!)
+      openGroup(openings!)
     })
     expect(openings?.getAttribute('aria-expanded')).toBe('true')
     openings?.focus()
@@ -125,14 +119,14 @@ describe('rail flyout tooltip', () => {
     expect(document.querySelector('[role="menu"]')).toBeNull()
   })
 
-  it('closes a hovered flyout when focus moves to another rail button, and hover still opens after the pointer moves', async () => {
+  it('closes a clicked flyout when focus moves to another rail button, and a click opens it again', async () => {
     await renderRail()
     const [build, openings] = groupButtons()
     const select = document.querySelector<HTMLButtonElement>('[role="toolbar"] [aria-label="Select"]')
     expect(select).not.toBeNull()
 
     await act(async () => {
-      enterGroup(build!)
+      openGroup(build!)
     })
     expect(document.querySelector('[role="menu"]')).not.toBeNull()
 
@@ -148,8 +142,7 @@ describe('rail flyout tooltip', () => {
     expect(document.querySelector('[role="menu"]')).toBeNull()
 
     await act(async () => {
-      leaveGroup(build!)
-      enterGroup(build!)
+      openGroup(build!)
     })
     expect(build?.getAttribute('aria-expanded')).toBe('true')
     expect(document.querySelector('[role="menu"]')).not.toBeNull()

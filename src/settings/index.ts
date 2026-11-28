@@ -78,7 +78,7 @@ export const DEFAULT_SETTINGS: Settings = {
   invertY: false,
   autosaveInterval: 15,
   uiScale: 1,
-  railLabels: false,
+  railLabels: true,
   backend: 'auto',
   renderScale: 0,
   qualityAuto: false,
@@ -122,7 +122,7 @@ export function normalizeSettings(partial: Partial<Settings> | null | undefined)
     invertY: source.invertY === true,
     autosaveInterval,
     uiScale: clamp(source.uiScale ?? 1, 0.9, 1.25, 1),
-    railLabels: source.railLabels === true,
+    railLabels: source.railLabels !== false,
     backend: BACKENDS.includes(source.backend as RendererBackendSetting)
       ? (source.backend as RendererBackendSetting)
       : DEFAULT_SETTINGS.backend,

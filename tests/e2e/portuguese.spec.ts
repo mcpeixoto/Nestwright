@@ -45,7 +45,7 @@ test('plays in European Portuguese: start screen, library and default room names
   const nameInput = roomSection.locator('input').first()
   await expect(nameInput).toHaveValue('Sala 1')
 
-  await page.getByRole('button', { name: 'Biblioteca', exact: true }).first().click()
+  await page.getByRole('button', { name: 'Mobiliário', exact: true }).first().click()
   const library = page.locator('.library')
   await expect(library).toBeVisible()
   await expect(library.getByRole('button', { name: 'Estar', exact: true })).toBeVisible()
