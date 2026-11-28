@@ -36,7 +36,15 @@ function disabled(): boolean {
   }
 }
 
+let revision = 0
+
+/** Bumps whenever a model arrives or fails, for `useSyncExternalStore` snapshots. */
+export function modelsRevision(): number {
+  return revision
+}
+
 function emit(): void {
+  revision += 1
   for (const listener of [...listeners]) listener()
 }
 

@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { getMaterial, isCachedMaterial } from '../materials/materialCache'
 import { getOffscreenRenderer } from '../view3d/render/offscreen'
+import { buildModel, isSharedGeometry, modelFor, releaseModelGeometry } from './models'
+import { occupy } from './parts'
 import { getEntry } from './registry'
 
 const thumbs = new Map<string, string>()
@@ -59,7 +61,9 @@ export function disposeThumbObject(root: THREE.Object3D): void {
   const materials = new Set<THREE.Material>()
   root.traverse((obj) => {
     const mesh = obj as THREE.Mesh
-    mesh.geometry?.dispose()
+    // Scanned-model geometry belongs to the template (or a ref-counted slice): release, never dispose.
+    if (isSharedGeometry(mesh.geometry)) releaseModelGeometry(mesh.geometry)
+    else mesh.geometry?.dispose()
     const listed = mesh.material
     for (const material of Array.isArray(listed) ? listed : listed ? [listed] : []) {
       if (material.userData?.owned && !isCachedMaterial(material)) materials.add(material)
@@ -84,7 +88,15 @@ function renderOne(id: string, gl: THREE.WebGPURenderer | null) {
   try {
     const materials: Record<string, THREE.MeshStandardMaterial> = {}
     for (const [slot, ref] of Object.entries(entry.materialSlots)) materials[slot] = getMaterial(ref)
-    built = entry.build({ size: entry.defaultSize, materials, params: {} })
+    const template = modelFor(id)
+    if (template) {
+      // Scanned model from the content pack: the thumbnail shows what gets placed.
+      built = new THREE.Group()
+      built.add(buildModel(template, entry.defaultSize, !!entry.light))
+      occupy(built, entry.defaultSize)
+    } else {
+      built = entry.build({ size: entry.defaultSize, materials, params: {} })
+    }
     scene.add(built)
     const box = new THREE.Box3().setFromObject(built)
     const sphere = box.getBoundingSphere(new THREE.Sphere())

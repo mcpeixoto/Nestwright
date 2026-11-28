@@ -449,6 +449,14 @@ input, select {
 .thumb { position: relative; display: flex; flex-direction: column; gap: 4px; align-items: stretch; padding: 6px; border: 1px solid var(--line); }
 .thumb img, .thumb-fallback { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: var(--line); }
 .thumb-fallback { display: grid; place-items: center; color: var(--sand); font-size: 22px; }
+.library .cats { gap: 2px; }
+.library .cats button { padding: 4px; }
+.library .cats button svg { display: block; width: 18px; height: 18px; }
+.library-head { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.library-head .size-toggle { margin-left: auto; }
+.thumbs.large { grid-template-columns: 1fr; }
+.thumb .fav { position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; padding: 0; }
+.cat-badge { font-size: 10px; color: var(--muted); }
 
 @media (max-width: 1360px) {
   .inspector { width: 240px; }
